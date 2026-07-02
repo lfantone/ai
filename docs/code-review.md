@@ -74,8 +74,28 @@ The command is a thin orchestrator (**Slowking**). The actual work is done by ag
 | `alakazam`  | Opus   | Security reviewer                      |
 | `porygon`   | Haiku  | Verifies each suggestion's line number |
 
-Gitea access goes through the [`tea-cli`](../skills/tea-cli) skill. Context caches live
-under `.claude/cache/`.
+Gitea access goes through the [`tea-cli`](../skills/tea-cli) skill.
+
+## Caching
+
+To keep re-reviews cheap, the agents cache context in `.agents/cache/` — i.e. inside the
+deployed catalog at the root of the **project being reviewed** (see the README's
+Installation section):
+
+| File                          | Holds                                  | Owner        |
+| ----------------------------- | -------------------------------------- | ------------ |
+| `repo-profile.md`             | Stack & conventions                    | `espeon`     |
+| `security-profile.md`         | Threat surface                         | `growlithe`  |
+| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `kadabra`    |
+| `review-<index>.md`           | Review state for incremental re-review | orchestrator |
+
+These are generated files. The catalog ignores `cache/` itself, and the target project
+should ignore the whole `.agents/` directory.
+
+**Changing the location:** `.agents/cache/` is just the default path the command and
+agents use. To store caches elsewhere, replace `.agents/cache/` in
+[`commands/review-orchestrator.md`](../commands/review-orchestrator.md) and the agents that
+reference it (`espeon`, `growlithe`, `kadabra`) with your preferred folder.
 
 ## Requirements
 

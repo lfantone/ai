@@ -48,8 +48,28 @@ AI/
 ├── agents/     # One Markdown file per agent (spawnable definition)
 ├── skills/     # One directory per skill (Agent Skills format)
 ├── commands/   # One Markdown file per command (invokable workflow)
+├── docs/       # Human-facing documentation
 └── README.md
 ```
+
+## Installation
+
+This repository is designed to be deployed as the **`.agents/`** directory of a target
+project — clone or symlink it there:
+
+```bash
+git clone git@github.com:lfantone/ai.git <project>/.agents
+# or symlink a single local clone:
+ln -s ~/Workspace/ai <project>/.agents
+```
+
+That gives the project `.agents/agents/`, `.agents/commands/`, `.agents/skills/`, and a
+runtime `.agents/cache/` (see [Code review › Caching](./docs/code-review.md#caching)).
+Add `.agents/` to the target project's `.gitignore`.
+
+> Symlinking one clone into several projects makes them **share `.agents/cache/`**, and the
+> repo-level caches (`repo-profile.md`, `security-profile.md`) are project-specific — clone
+> per project if you don't want them to collide.
 
 ## Conventions
 

@@ -111,8 +111,9 @@ Conventions:
 - Any output-format contract the agent must follow (e.g. a review finding template) lives
   in the agent's own body, so a command that spawns it can assemble the output as-is.
 
-These files are only spawnable once installed into a harness (e.g. symlinked into a
-tool's agents directory); this repo is the source catalog.
+These files are only spawnable once the catalog is deployed as a project's `.agents/`
+directory (see the README's Installation section), so an agent resolves to
+`.agents/agents/<name>.md`; this repo is the source catalog.
 
 ## Writing a command
 

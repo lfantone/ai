@@ -82,7 +82,7 @@ remote, make sure it's checked out first (e.g. `tea pr checkout <index>`).
 Before spawning anything, decide **fresh** vs **re-review**:
 
 - Read the head SHA: `tea api repos/{owner}/{repo}/pulls/<index> | jq -r '.head.sha'`.
-- If `.claude/cache/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
+- If `.agents/cache/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
   `head:` value if `reviewed_sha` is absent) that differs from the current head →
   **RE-REVIEW MODE (incremental)**. Otherwise → fresh review (normal flow).
 
@@ -92,7 +92,7 @@ In re-review mode the whole point is to spend tokens only on what changed:
   and the cached ticket brief (skip `slowpoke`) unless the underlying source changed.
 - **Recompute the delta** — spawn `kadabra` in incremental mode (pass `<reviewed_sha>` and
   the current head; it diffs only the newly pushed changes and reports which prior-finding
-  anchors the delta touches). Load prior findings from `.claude/cache/review-<index>.md`
+  anchors the delta touches). Load prior findings from `.agents/cache/review-<index>.md`
   (tracked by **anchor text**, not line number, so they survive line shifts).
 - **Reviewers triage + delta-only** — pass `mewtwo`/`alakazam` the prior findings + statuses
   and the incremental diff; they triage each prior finding (`resolved` /
@@ -217,7 +217,7 @@ On confirmation, post with `tea` (payload details in the `tea-cli` skill):
   comment: `tea comment <index> <body>`.
 
 **Capture comment ids.** The POST response returns each comment's id — store each
-`gitea_comment_id` against its finding in `.claude/cache/review-<index>.md`; that id links
+`gitea_comment_id` against its finding in `.agents/cache/review-<index>.md`; that id links
 the thread for auto-resolution later.
 
 ## Auto-resolve fixed threads (re-review only)
@@ -233,14 +233,14 @@ After triage identifies findings the new push **resolved**, close their Gitea th
 - This runs under the same Phase 5 gate — include it in the confirmation prompt
   (_"...and resolve N fixed threads?"_) and only act on explicit yes.
 
-After posting, update `.claude/cache/review-<index>.md`: new/updated `gitea_comment_id`s,
+After posting, update `.agents/cache/review-<index>.md`: new/updated `gitea_comment_id`s,
 per-finding `status`, and `reviewed_sha` = the head just reviewed.
 
 ---
 
 # Memoization
 
-Caches live under `.claude/cache/` and start with a `generated: <date>, head: <sha>` line
+Caches live under `.agents/cache/` and start with a `generated: <date>, head: <sha>` line
 for the freshness guard.
 
 - **Repo profile** (`repo-profile.md`) and **security profile** (`security-profile.md`) —

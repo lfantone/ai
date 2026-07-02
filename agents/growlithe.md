@@ -9,7 +9,7 @@ tools: Bash, Read, Grep, Glob, Write
 
 ## Cache first
 
-Check `.claude/cache/security-profile.md`. If present and fresh (<14 days old, no
+Check `.agents/cache/security-profile.md`. If present and fresh (<14 days old, no
 dependency/config change since its `generated` line), return it verbatim and skip scanning.
 
 ## Scan (only when stale or missing)
@@ -27,5 +27,5 @@ Map, for THIS repo:
 ## Return
 
 A ranked, repo-specific **threat checklist** — the lens the security reviewer applies.
-Write it to `.claude/cache/security-profile.md` with a first line
+Write it to `.agents/cache/security-profile.md` with a first line
 `generated: <date>, head: <sha>` for the freshness guard.

@@ -1,1 +1,5 @@
+.claude/
 node_modules/
+
+# Runtime cache written when this catalog is deployed as a project's .agents/ dir
+cache/

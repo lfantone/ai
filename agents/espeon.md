@@ -11,7 +11,7 @@ Return a compact brief, never file dumps.
 
 ## Repo-stable cache
 
-Check `.claude/cache/repo-profile.md`. If present and fresh, return it verbatim and skip
+Check `.agents/cache/repo-profile.md`. If present and fresh, return it verbatim and skip
 scouting. Treat it as stale (re-scout) if it is >14 days old OR the dependency/lockfile or
 build/lint config has changed since the cached `generated` line.
 
@@ -26,5 +26,5 @@ README, AGENTS.md / CLAUDE.md, docs/, contributing guides, lint/test config.
 - Durable repo facts worth remembering (key modules, established helpers) — curated, not a
   dump.
 
-Write it to `.claude/cache/repo-profile.md` with a first line
+Write it to `.agents/cache/repo-profile.md` with a first line
 `generated: <date>, head: <sha>` for the freshness guard.

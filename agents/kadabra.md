@@ -27,7 +27,7 @@ Never parse `tea ... -o json` / `-f` for reading — it is lossy (silently drops
 ## SHA-keyed cache
 
 1. Read the head SHA first.
-2. If `.claude/cache/impl-brief-<index>-<sha>.md` exists for that exact SHA, return it
+2. If `.agents/cache/impl-brief-<index>-<sha>.md` exists for that exact SHA, return it
    verbatim and skip fetching — the diff hasn't changed. Any new push changes the SHA and
    misses the cache, so this never serves stale code.
 3. Otherwise fetch, build the brief, and write it to that path with a first line
