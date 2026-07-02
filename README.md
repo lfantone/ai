@@ -45,7 +45,7 @@ matches, and load bundled files only as needed.
 
 ```
 AI/
-├── agents/     # One directory per agent
+├── agents/     # One Markdown file per agent (spawnable definition)
 ├── skills/     # One directory per skill (Agent Skills format)
 ├── commands/   # One Markdown file per command (invokable workflow)
 └── README.md
@@ -59,6 +59,10 @@ AI/
 
 See [AGENTS.md](./AGENTS.md) for how to author skills and agents, including
 token-efficiency practices.
+
+## Documentation
+
+- [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
 
 ## Development
 

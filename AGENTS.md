@@ -9,7 +9,7 @@ as possible.**
 
 ```
 skills/<skill-name>/SKILL.md   # one skill per dir; dir name == frontmatter `name`
-agents/<agent-name>/           # one agent per dir, with its own README.md
+agents/<agent-name>.md         # one spawnable agent definition per file
 commands/<command-name>.md     # one invokable workflow per file
 ```
 
@@ -80,9 +80,39 @@ Rules that keep token cost low:
 
 ## Writing an agent
 
-Each agent lives in `agents/<name>/` with a `README.md` covering: purpose, inputs,
-which skills/tools it uses, and how to run or invoke it. Prefer composing existing
-skills over duplicating their instructions inline.
+An agent is a single Markdown file in `agents/` — a self-contained, spawnable definition
+another agent (usually a command) invokes by name. Frontmatter + a body that is the
+agent's system prompt:
+
+```markdown
+---
+name: kadabra # spawnable name (== filename without .md)
+description: What the agent produces and when to spawn it. # how the orchestrator picks it
+model: haiku | sonnet | opus # pin the model deliberately — the intelligence tier is a design choice
+reasoning: low | medium | high # optional thinking-effort hint (add a `# escalate to xhigh …` note where it applies)
+tools: Bash, Read, Write # least-privilege list of what it may use
+---
+
+<the agent's role, its input contract, and the exact shape of the brief/output it returns>
+```
+
+Conventions:
+
+- **Self-contained.** A sub-agent only sees its spawn prompt — it does **not** auto-load
+  skills or other agents. So an agent that uses a skill embeds the few exact commands it
+  needs and cites the skill as the source of truth (don't make the caller paste them).
+- **Return a compact brief, not raw dumps** — same token discipline as skills.
+- **Match the model to the reasoning load, not the importance.** Pin the cheapest tier
+  that does the job: deterministic extraction/matching → Haiku, judgment-based
+  gathering/synthesis → Sonnet, open-ended reasoning → Opus. A task being _critical_ isn't
+  a reason to over-provision — reliability comes from deterministic instructions (e.g. have
+  the agent find a line with `grep -n` rather than counting by eye). Keep `tools`
+  least-privilege, and set `reasoning` to match.
+- Any output-format contract the agent must follow (e.g. a review finding template) lives
+  in the agent's own body, so a command that spawns it can assemble the output as-is.
+
+These files are only spawnable once installed into a harness (e.g. symlinked into a
+tool's agents directory); this repo is the source catalog.
 
 ## Writing a command
 
@@ -101,12 +131,37 @@ argument-hint: [ticket id] [PR url] # optional, documents expected arguments
 - Keep the same token discipline: a command that fans work out to sub-agents should
   have those agents return **compact briefs**, not raw files/diffs/tickets, and should
   never read whole files into its own context.
-- **Sub-agents don't auto-load skills.** When a command spawns a sub-agent that needs a
-  skill, paste the exact commands/instructions it needs into the spawn prompt.
-- Compose existing skills and agents rather than inlining their logic.
+- **Prefer spawning a defined agent** from `agents/` over inlining a persona in the
+  command. Reference it by name; don't restate its instructions or override its model.
+- **Sub-agents don't auto-load skills or agent files.** A defined agent carries what it
+  needs in its own body; if you spawn an ad-hoc sub-agent instead, paste the exact
+  commands/instructions it needs into the spawn prompt.
 
 ## Validate before committing
 
 ```bash
 skills-ref validate ./skills/<skill-name>
 ```
+
+## Commit messages
+
+All commits must follow [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+<type>[optional scope][!]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- **type** — one of `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `build`, `ci`,
+  `perf`, `style`, `revert`.
+- **scope** (optional) — the affected area, e.g. `skills`, `agents`, `commands`, or a
+  specific name like `review-orchestrator`.
+- **description** — imperative mood, lowercase, no trailing period.
+- **breaking changes** — append `!` after the type/scope and/or add a
+  `BREAKING CHANGE:` footer.
+
+Examples: `feat(agents): add porygon line-anchor verifier` ·
+`docs: document conventional commits` · `refactor(commands)!: split reviewers into agents`.
