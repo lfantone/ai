@@ -10,6 +10,7 @@ as possible.**
 ```
 skills/<skill-name>/SKILL.md   # one skill per dir; dir name == frontmatter `name`
 agents/<agent-name>/           # one agent per dir, with its own README.md
+commands/<command-name>.md     # one invokable workflow per file
 ```
 
 ## Writing a skill
@@ -82,6 +83,27 @@ Rules that keep token cost low:
 Each agent lives in `agents/<name>/` with a `README.md` covering: purpose, inputs,
 which skills/tools it uses, and how to run or invoke it. Prefer composing existing
 skills over duplicating their instructions inline.
+
+## Writing a command
+
+A command is a single Markdown file in `commands/` defining an invokable workflow
+(a slash command). Frontmatter plus a prompt body:
+
+```markdown
+---
+description: One line — what the command does and when to run it. # shown in the command list
+argument-hint: [ticket id] [PR url] # optional, documents expected arguments
+---
+
+<the workflow prompt; reference user input with `$ARGUMENTS`>
+```
+
+- Keep the same token discipline: a command that fans work out to sub-agents should
+  have those agents return **compact briefs**, not raw files/diffs/tickets, and should
+  never read whole files into its own context.
+- **Sub-agents don't auto-load skills.** When a command spawns a sub-agent that needs a
+  skill, paste the exact commands/instructions it needs into the spawn prompt.
+- Compose existing skills and agents rather than inlining their logic.
 
 ## Validate before committing
 

@@ -14,6 +14,9 @@ that package focused capabilities any agent can load on demand.
   [Agent Skills](https://agentskills.io/home) format, so they work across any
   skills-compatible agent (Claude Code, Cursor, Gemini CLI, OpenCode, Goose, and
   many others) rather than being tied to a single tool.
+- **Commands** — invokable prompts (slash commands) that drive a specific workflow
+  end to end, orchestrating agents and skills. Each is a Markdown file with
+  frontmatter (`description`, `argument-hint`) and takes arguments via `$ARGUMENTS`.
 
 ## Skill format
 
@@ -44,6 +47,7 @@ matches, and load bundled files only as needed.
 AI/
 ├── agents/     # One directory per agent
 ├── skills/     # One directory per skill (Agent Skills format)
+├── commands/   # One Markdown file per command (invokable workflow)
 └── README.md
 ```
 
