@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Formats tracked Markdown with Prettier before pushing.
+# If formatting produces changes, the push is aborted so the formatted
+# files can be reviewed and committed — this prevents pushing unformatted
+# Markdown, since the commit being pushed is already fixed by this point.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# No package install → skip rather than block the push.
+if [ ! -x node_modules/.bin/prettier ]; then
+  echo "pre-push: prettier not installed; run 'npm install' to enable Markdown formatting. Skipping." >&2
+  exit 0
+fi
+
+echo "pre-push: formatting Markdown with prettier..."
+node_modules/.bin/prettier --write --log-level warn "**/*.md"
+
+# Abort if formatting changed any tracked file.
+if ! git diff --quiet -- '*.md'; then
+  echo >&2
+  echo "pre-push: Markdown was reformatted. Review and commit the changes, then push again:" >&2
+  git --no-pager diff --stat -- '*.md' >&2
+  exit 1
+fi
+
+echo "pre-push: Markdown already formatted."
