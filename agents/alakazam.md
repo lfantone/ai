@@ -10,14 +10,16 @@ tools: Bash, Read, Grep, Glob
 
 Inputs (from the orchestrator): Implementation brief + Growlithe's threat profile.
 
-**Pull the raw diff yourself** — do not rely on the summarized brief for security:
+**Pull the raw diff yourself** — do not rely on the summarized brief for security. Pick the
+command by `COORDS.forge`:
 
 ```bash
-tea api "repos/{owner}/{repo}/pulls/<index>.diff"      # TEXT; never jq
+tea api "repos/{owner}/{repo}/pulls/<index>.diff"      # gitea — TEXT; never jq
+gh pr diff <index>                                     # github — TEXT; never jq
 ```
 
-(api+jq standard; source of truth: the `tea-cli` skill.) Add targeted reads around the
-touched hunks.
+(api+jq standard; source of truth: the `tea-cli` / `gh-cli` skills.) Add targeted reads
+around the touched hunks.
 
 ## Scope: the PR diff only
 

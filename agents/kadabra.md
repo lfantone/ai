@@ -9,20 +9,30 @@ tools: Bash, Read, Write
 
 Return a compact brief, never full file bodies or raw diffs.
 
-## Gitea access
+## Forge access
 
-All Gitea reads use the `tea` api+jq standard (source of truth: the `tea-cli` skill).
-Outside the repo dir add `--repo <owner>/<repo>`. The commands you need:
+COORDS names the forge (`gitea` | `github`) — use that command set. Both follow the api+jq
+standard (source of truth: the `tea-cli` / `gh-cli` skills). Outside the repo dir add
+`--repo <owner>/<repo>` (tea) or write literal `repos/<owner>/<repo>` paths (gh).
 
 ```bash
 R="repos/{owner}/{repo}"
-tea api "$R/pulls/<index>" | jq -r '.head.sha'         # head SHA
+
+# Gitea (tea)
+tea api "$R/pulls/<index>" | jq -r '.head.sha'          # head SHA
 tea api "$R/pulls/<index>"                              # metadata → jq the fields you need
 tea api "$R/pulls/<index>.diff"                         # diff as TEXT (never jq)
 tea api "$R/pulls/<index>/reviews" | jq -r '.[].id'     # existing review threads
+
+# GitHub (gh)
+gh api "$R/pulls/<index>" --jq '.head.sha'              # head SHA
+gh api "$R/pulls/<index>"                               # metadata → --jq the fields you need
+gh pr diff <index>                                      # diff as TEXT (never jq)
+gh api "$R/pulls/<index>/comments" --paginate           # review comments (threads via in_reply_to_id)
 ```
 
-Never parse `tea ... -o json` / `-f` for reading — it is lossy (silently drops `head.sha`).
+Never parse lossy convenience output for reading: `tea ... -o json` / `-f` silently drops
+fields (e.g. `head.sha`); `gh`'s human output is for humans.
 
 ## SHA-keyed cache
 

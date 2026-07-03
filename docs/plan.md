@@ -94,6 +94,7 @@ the other benefits. Re-running the command for the same ticket revises the exist
 ## Requirements
 
 - A Jira tool available (for ticket briefs by reference) — or paste the ticket text.
-- The [`tea`](../skills/tea-cli) CLI, if related Gitea PRs/issues are referenced.
+- The forge CLI ([`tea`](../skills/tea-cli) for Gitea, [`gh`](../skills/gh-cli) for
+  GitHub), if related PRs/issues are referenced.
 - The agents and skill installed where your harness can find them (see
   [AGENTS.md](../AGENTS.md)).

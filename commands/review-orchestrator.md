@@ -12,7 +12,7 @@ reviewers and assemble their findings.
 
 The sub-agents live in `agents/` and are spawned by name via the Agent tool. Each pins its
 own model (the intelligence ladder: **Haiku** extraction → **Sonnet** gathering/verify →
-**Opus** reasoning) and carries its own instructions, cache rules, and `tea` commands.
+**Opus** reasoning) and carries its own instructions, cache rules, and forge commands.
 Spawn them as-is — do not restate their instructions or override their model:
 
 - `slowpoke` — ticket brief
@@ -35,25 +35,35 @@ Spawn them as-is — do not restate their instructions or override their model:
   PR URL/index.
 - If TARGET is missing or ambiguous, ASK once: "What should I review? (ticket id/description
   and/or PR url)"
-- Resolve the PR index from the URL (`.../pulls/123` → `123`). If running outside the repo,
-  every `tea` command needs `--repo <owner>/<repo>`.
+- Resolve the PR index from the URL (Gitea `.../pulls/123` or GitHub `.../pull/123` →
+  `123`). If running outside the repo, pass the repo explicitly (tea: `--repo
+<owner>/<repo>`; gh: literal `repos/<owner>/<repo>` api paths, `-R` on subcommands).
 
-## Gitea access (orchestrator's own calls)
+## Forge detection & access (orchestrator's own calls)
 
-Your direct `tea` use is limited to head-SHA reads (Phase 0) and posting/resolving
-(Phase 5), via the api+jq standard — source of truth: the `tea-cli` skill. The gatherer and
-reviewer agents already carry the `tea` commands they each need, so you don't paste them.
+The PR may live on **Gitea** (CLI: `tea`, skill: `tea-cli`) or **GitHub** (CLI: `gh`,
+skill: `gh-cli`). Detect the forge FIRST and record it in COORDS:
+
+- PR URL given → its host decides: `github.com` → **github**; otherwise → **gitea**.
+- No URL → `git remote get-url origin`: a `github.com` remote → **github**; else **gitea**.
+
+Both skills encode the same api+jq standard; the detected forge's skill is the source of
+truth for every payload. Your direct CLI use is limited to head-SHA reads (Phase 0) and
+posting/resolving (Phase 5). The gatherer and reviewer agents carry both forges' commands
+and pick by `COORDS.forge` — you don't paste commands, just pass COORDS.
 
 ## PR coordinates (resolve once, reuse everywhere)
 
-The `tea`-using agents carry the _commands_ but not the _identifiers_ — their commands have
+The forge-using agents carry the _commands_ but not the _identifiers_ — their commands have
 `{owner}/{repo}`, `<index>`, and `<sha>` placeholders they cannot know on their own. Resolve
 these up front and inject them into every such agent's spawn prompt. Call this block
 **COORDS**:
 
-- `owner`, `repo` — from the PR URL (or `--repo <owner>/<repo>`).
+- `forge` — `gitea` | `github` (detected above; agents pick their command set by this).
+- `owner`, `repo` — from the PR URL (or the git remote).
 - `index` — the PR number.
-- `head_sha` — `tea api repos/{owner}/{repo}/pulls/<index> | jq -r '.head.sha'`.
+- `head_sha` — gitea: `tea api repos/{owner}/{repo}/pulls/<index> | jq -r '.head.sha'` ·
+  github: `gh api repos/{owner}/{repo}/pulls/<index> --jq '.head.sha'`.
 - `base_ref` — the PR base branch.
 
 ## Spawn context contract
@@ -73,7 +83,8 @@ raw diff into your own context: pass COORDS and let the agent fetch it.
 | `porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                        |
 
 Gatherers (`espeon`, `growlithe`) profile the repo the command runs in; if the PR is
-remote, make sure it's checked out first (e.g. `tea pr checkout <index>`).
+remote, make sure it's checked out first (`tea pr checkout <index>` /
+`gh pr checkout <index>`).
 
 ---
 
@@ -81,7 +92,7 @@ remote, make sure it's checked out first (e.g. `tea pr checkout <index>`).
 
 Before spawning anything, decide **fresh** vs **re-review**:
 
-- Read the head SHA: `tea api repos/{owner}/{repo}/pulls/<index> | jq -r '.head.sha'`.
+- Read the head SHA per `COORDS.forge` (the `head_sha` commands above).
 - If `.agents/cache/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
   `head:` value if `reviewed_sha` is absent) that differs from the current head →
   **RE-REVIEW MODE (incremental)**. Otherwise → fresh review (normal flow).
@@ -203,37 +214,42 @@ _"Publish these N findings to PR #<index>? (all / must-fix only / summary-only /
 **wait for an explicit reply.** Never auto-publish. Only publish the Porygon-verified,
 postable findings (skip any marked `unpostable (sketch)` for inline posting).
 
-On confirmation, post with `tea` (payload details in the `tea-cli` skill):
+On confirmation, post via the detected forge's CLI (payload details in the `tea-cli` /
+`gh-cli` skill):
 
 - **Inline suggestions (preferred).** POST one review to
   `repos/{owner}/{repo}/pulls/<index>/reviews`. Per finding, one comment object: `path`,
-  `new_position` = **Porygon's verified new-file line**, and a `body` of
+  the line field per forge (gitea: `new_position`; github: `line` + `side: "RIGHT"`) =
+  **Porygon's verified new-file line**, and a `body` of
   `**[<severity>] <title>**\n<what's wrong>\n\n` + the `suggestion` block. Set `commit_id`
   to the head SHA and `event` to `"COMMENT"`. If the API rejects a comment, drop that one to
-  the summary fallback rather than posting it wrong. Post **single-line** replacements
-  inline; route multi-line fixes to the summary (Gitea 1.21 anchors each comment to one
-  line).
+  the summary fallback rather than posting it wrong. **Multi-line fixes:** on gitea route
+  them to the summary (1.21 anchors each comment to one line); on github post them inline
+  with `start_line` + `start_side: "RIGHT"` (supported).
 - **Summary comment (fallback / `summary-only`).** Post the whole assembled report as one PR
-  comment: `tea comment <index> <body>`.
+  comment: gitea `tea comment <index> <body>` · github `gh pr comment <index> --body <body>`.
 
 **Capture comment ids.** The POST response returns each comment's id — store each
-`gitea_comment_id` against its finding in `.agents/cache/review-<index>.md`; that id links
+`forge_comment_id` against its finding in `.agents/cache/review-<index>.md`; that id links
 the thread for auto-resolution later.
 
 ## Auto-resolve fixed threads (re-review only)
 
 After triage identifies findings the new push **resolved**, close their Gitea threads:
 
-- For each `resolved` finding with a stored `gitea_comment_id`: `tea pr resolve <comment id>`.
+- For each `resolved` finding with a stored `forge_comment_id`: gitea
+  `tea pr resolve <comment id>` · github: map the comment id to its thread's GraphQL node
+  id (the `gh-cli` skill's `reviewThreads` query, matching `databaseId`), then the
+  `resolveReviewThread` mutation.
 - If the id wasn't stored, match by `path` + anchor against the review comments (per the
-  `tea-cli` skill), take the `id`, and resolve it.
+  forge's skill), take the id, and resolve it.
 - **Safety rails:** only resolve threads for _our_ findings confirmed `resolved` by triage;
-  skip any whose `resolver` is already set; never resolve just because a line moved; never
-  touch unrelated/human threads.
+  skip any already resolved (gitea: `resolver` set; github: `isResolved`); never resolve
+  just because a line moved; never touch unrelated/human threads.
 - This runs under the same Phase 5 gate — include it in the confirmation prompt
   (_"...and resolve N fixed threads?"_) and only act on explicit yes.
 
-After posting, update `.agents/cache/review-<index>.md`: new/updated `gitea_comment_id`s,
+After posting, update `.agents/cache/review-<index>.md`: new/updated `forge_comment_id`s,
 per-finding `status`, and `reviewed_sha` = the head just reviewed.
 
 ---
@@ -255,5 +271,5 @@ for the freshness guard.
   `reviewed_sha: <sha>` (older caches may only have `head: <sha>`, accepted as a fallback).
   Then one entry per finding: a stable id, **anchor text** (the match key — survives line
   shifts), file, severity, `status` (open / resolved / partially-addressed),
-  `last_seen_sha`, and `gitea_comment_id`. On every run, update statuses and `reviewed_sha`
+  `last_seen_sha`, and `forge_comment_id`. On every run, update statuses and `reviewed_sha`
   to the head just reviewed. Never re-raise an entry already marked resolved.

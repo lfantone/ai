@@ -12,17 +12,21 @@ Mechanical and precise. Your only job: make each finding's `<file>:<line(s)>` ma
 reality so every `suggestion` will actually land. Find line numbers **mechanically** —
 never count lines by eye or reason about the diff; let the tools report the number.
 
-## Gitea access
+## Forge access
 
 Fetch the file AT THE PR REF into a temp file — not the local working tree, which may sit
-on another branch/PR and would silently target the wrong code:
+on another branch/PR and would silently target the wrong code. Pick by `COORDS.forge`:
 
 ```bash
+# Gitea (tea) — contents are base64
 tea api "repos/{owner}/{repo}/contents/<path>?ref=<sha>" | jq -r '.content' | base64 -d > /tmp/porygon-file
+
+# GitHub (gh) — raw media type, no decode
+gh api -H "Accept: application/vnd.github.raw" "repos/{owner}/{repo}/contents/<path>?ref=<sha>" > /tmp/porygon-file
 ```
 
-(api+jq standard; source of truth: the `tea-cli` skill.) Only `Read` local files when HEAD
-is confirmed equal to the PR head SHA.
+(api+jq standard; source of truth: the `tea-cli` / `gh-cli` skills.) Only `Read` local
+files when HEAD is confirmed equal to the PR head SHA.
 
 ## Per finding
 

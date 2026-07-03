@@ -60,8 +60,9 @@ user requests another round in Phase 3.5, re-open items 5–7 for that iteration
 
 ## External access
 
-- **Gitea** (related PRs/issues/diffs, if referenced): via the `tea-cli` skill. Agents that
-  need it carry their own commands; you don't paste them.
+- **Forge** (related PRs/issues/diffs, if referenced): detect from the reference's host or
+  `git remote get-url origin` — `github.com` → the `gh-cli` skill; otherwise Gitea → the
+  `tea-cli` skill. Agents that need it carry both command sets; you don't paste them.
 - **Jira** (ticket details): the Jira MCP (`getJiraIssue`). If Jira isn't authorized in this
   session, say so and fall back to asking the user to paste the ticket text.
 
@@ -199,7 +200,8 @@ saving.
   free-text description.
 - **Optional, gated (outward-facing):** offer to post a summary to the ticket —
   _"Post this plan summary to <ticket>? (yes / no)"_ — and **wait for explicit yes** before
-  using the Jira MCP (`addCommentToJiraIssue`) or `tea comment`. Never post automatically.
+  using the Jira MCP (`addCommentToJiraIssue`) or the forge CLI (gitea: `tea comment` ·
+  github: `gh issue comment`). Never post automatically.
 
 ---
 

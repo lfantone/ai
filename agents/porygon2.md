@@ -13,8 +13,9 @@ redesign; you flag what's wrong and fix what's mechanically fixable.
 ## Checks
 
 - **`file:symbol` existence.** Every `file:symbol` cited as _existing_ must exist at HEAD —
-  verify with `grep`/`Read` on the working tree (or fetch at the ref via the `tea-cli` skill
-  if planning against a remote ref; don't assume the local tree matches). Flag phantoms.
+  verify with `grep`/`Read` on the working tree (or fetch at the ref via the forge's skill —
+  `tea-cli` / `gh-cli` — if planning against a remote ref; don't assume the local tree
+  matches). Flag phantoms.
 - **New paths** must be clearly marked new and sit in a plausible location per the repo's
   conventions.
 - **Dependency-graph integrity.** Every id in "Depends on" / "Enables" exists; the DAG is

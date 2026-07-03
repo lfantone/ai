@@ -15,9 +15,10 @@ COORDS (owner/repo, index, head_sha, base_ref). Do NOT re-read what the briefs a
 
 The implementation brief gives `file:line` pointers, not the code itself. To inspect the
 actual changes: if the local working tree is at `head_sha`, `Read`/`grep` those files
-directly; otherwise pull the diff via
-`tea api "repos/{owner}/{repo}/pulls/<index>.diff"` (TEXT; never jq — source of truth: the
-`tea-cli` skill) and read around the hunks the brief flagged.
+directly; otherwise pull the diff per `COORDS.forge` — gitea:
+`tea api "repos/{owner}/{repo}/pulls/<index>.diff"` · github: `gh pr diff <index>` (TEXT;
+never jq — source of truth: the `tea-cli` / `gh-cli` skills) and read around the hunks the
+brief flagged.
 
 Compare the diff against ticket intent + repo conventions + correctness/quality. Cover:
 correctness/bugs, missed acceptance criteria, convention violations, simplification/reuse,

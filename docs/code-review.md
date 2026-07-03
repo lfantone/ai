@@ -14,9 +14,13 @@ Examples:
 
 ```
 /review-orchestrator IE-1234 https://gitea.example.com/acme/app/pulls/87
+/review-orchestrator https://github.com/acme/app/pull/87
 /review-orchestrator 87
 /review-orchestrator "add rate limiting to the login endpoint"
 ```
+
+Works on **Gitea** (via `tea`) and **GitHub** (via `gh`) — the forge is detected from the
+PR URL or the git remote.
 
 If you pass nothing, it asks once what to review. Outside the repo directory, give the PR
 URL (or the command falls back to `--repo <owner>/<repo>`).
@@ -74,7 +78,9 @@ The command is a thin orchestrator (**Slowking**). The actual work is done by ag
 | `alakazam`  | Opus   | Security reviewer                      |
 | `porygon`   | Haiku  | Verifies each suggestion's line number |
 
-Gitea access goes through the [`tea-cli`](../skills/tea-cli) skill.
+Forge access goes through the [`tea-cli`](../skills/tea-cli) (Gitea) or
+[`gh-cli`](../skills/gh-cli) (GitHub) skill — the orchestrator detects the forge from the
+PR URL or the git remote and picks the right one.
 
 ## Caching
 
@@ -99,7 +105,8 @@ reference it (`espeon`, `growlithe`, `kadabra`) with your preferred folder.
 
 ## Requirements
 
-- The [`tea`](../skills/tea-cli) CLI, configured for your Gitea server.
+- The forge CLI, authenticated: [`tea`](../skills/tea-cli) for Gitea or
+  [`gh`](../skills/gh-cli) for GitHub.
 - A Jira tool available (for ticket briefs by reference).
 - The agents and skill installed where your harness can find them (see
   [AGENTS.md](../AGENTS.md)).
