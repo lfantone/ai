@@ -134,6 +134,11 @@ argument-hint: [ticket id] [PR url] # optional, documents expected arguments
   never read whole files into its own context.
 - **Prefer spawning a defined agent** from `agents/` over inlining a persona in the
   command. Reference it by name; don't restate its instructions or override its model.
+- **The orchestrator persona is the one exception.** The command body _is_ the top-level
+  agent definition (e.g. Slowking): it runs in the main conversation, so it can hard-stop
+  and wait for user replies — something a spawned agent cannot do. Entries in `agents/`
+  are workers that run to completion and return a brief; never move the orchestrator
+  there.
 - **Sub-agents don't auto-load skills or agent files.** A defined agent carries what it
   needs in its own body; if you spawn an ad-hoc sub-agent instead, paste the exact
   commands/instructions it needs into the spawn prompt.
@@ -166,3 +171,5 @@ All commits must follow [Conventional Commits](https://www.conventionalcommits.o
 
 Examples: `feat(agents): add porygon line-anchor verifier` ·
 `docs: document conventional commits` · `refactor(commands)!: split reviewers into agents`.
+
+If a body is included, it must be a bullet list of completed tasks. Short and concise. Less than 100 words in total.

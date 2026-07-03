@@ -244,8 +244,10 @@ Caches live under `.agents/cache/` and start with a `generated: <date>, head: <s
 for the freshness guard.
 
 - **Repo profile** (`repo-profile.md`) and **security profile** (`security-profile.md`) —
-  repo-stable; owned by `espeon` and `growlithe`. Stale if >14 days old OR the
-  dependency/lockfile or build/lint config changed since the `generated` line.
+  repo-stable; owned by `espeon` and `growlithe`, and **shared with the plan-orchestrator**.
+  The owning agents carry the canonical staleness check (fresh if cached `head:` == HEAD;
+  stale on a material change since the cached sha, or >14 days + HEAD moved) — they
+  self-check on spawn, so just spawn them.
 - **Implementation brief** (`impl-brief-<index>-<sha>.md`) — **SHA-keyed**; owned by
   `kadabra`. Reused only when the head SHA matches, so it never serves stale code.
 - **Prior findings** (`review-<index>.md`) — **orchestrator-owned**; the state that drives

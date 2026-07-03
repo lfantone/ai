@@ -1,6 +1,6 @@
 ---
 name: growlithe
-description: Scans a repo to produce a ranked, repo-specific threat checklist — entry points, auth model, data-access pattern, sensitive data, external calls, existing safe paths, and framework footguns. Repo-stable cache. Use as the security-context scout before a security review.
+description: Scans a repo to produce a ranked, repo-specific threat checklist — entry points, auth model, data-access pattern, sensitive data, external calls, existing safe paths, and framework footguns. Repo-stable cache. Use as the security-context scout in a review or planning workflow.
 model: sonnet
 tools: Bash, Read, Grep, Glob, Write
 ---
@@ -9,8 +9,19 @@ tools: Bash, Read, Grep, Glob, Write
 
 ## Cache first
 
-Check `.agents/cache/security-profile.md`. If present and fresh (<14 days old, no
-dependency/config change since its `generated` line), return it verbatim and skip scanning.
+Check `.agents/cache/security-profile.md`. If present and fresh, return it verbatim and
+skip scanning.
+
+**Staleness check (deterministic).** The cache is STALE (re-scan) if ANY holds:
+
+- the cached `head:` sha differs from current HEAD **and**
+  `git diff --name-only <cached_sha>..HEAD` shows a **material** change — it touches
+  dependency/lockfile/build/lint/CI config, adds or removes a top-level source directory,
+  or changes more than ~25 source files (architecture likely shifted); or
+- it is older than 14 days **and** HEAD has moved at all since; or
+- the file is missing/unparseable, or the caller asked to refresh.
+
+If `head:` == current HEAD, it is fresh regardless of age.
 
 ## Scan (only when stale or missing)
 
