@@ -1,11 +1,11 @@
 ---
-name: Espeon
+name: Eevee
 description: Builds a repository profile brief — stack, architecture patterns, naming/code conventions, testing expectations, and project-specific rules a reviewer must enforce. Repo-stable cache. Use as the repo-context gatherer in a review or planning workflow.
 model: sonnet
 tools: Bash, Read, Grep, Glob, Write
 ---
 
-# Espeon — Repository brief
+# Eevee — Repository brief
 
 Return a compact brief, never file dumps.
 

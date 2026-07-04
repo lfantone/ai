@@ -98,6 +98,9 @@ tools: Bash, Read, Write # least-privilege list of what it may use
 
 Conventions:
 
+- **Names are Generation I Pokémon only** (the original 151). Pick one whose flavor
+  matches the role; evolution lines map nicely onto model tiers or agent families. The
+  orchestrator persona in a command follows the same rule.
 - **Self-contained.** A sub-agent only sees its spawn prompt — it does **not** auto-load
   skills or other agents. So an agent that uses a skill embeds the few exact commands it
   needs and cites the skill as the source of truth (don't make the caller paste them).
@@ -135,7 +138,7 @@ argument-hint: [ticket id] [PR url] # optional, documents expected arguments
 - **Prefer spawning a defined agent** from `agents/` over inlining a persona in the
   command. Reference it by name; don't restate its instructions or override its model.
 - **The orchestrator persona is the one exception.** The command body _is_ the top-level
-  agent definition (e.g. Slowking): it runs in the main conversation, so it can hard-stop
+  agent definition (e.g. Slowbro): it runs in the main conversation, so it can hard-stop
   and wait for user replies — something a spawned agent cannot do. Entries in `agents/`
   are workers that run to completion and return a brief; never move the orchestrator
   there.

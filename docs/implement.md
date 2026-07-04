@@ -5,7 +5,8 @@ Because the [plan](./plan.md) specifies every step down to exact files, verbatim
 and ready-to-apply edits, the default executor is **Haiku** — the plan is the
 intelligence, the executors are the hands.
 
-This is **step 2 of the Plan → Implement flow**. Run `/plan-orchestrator` first.
+This is **step 2 of the Plan → Implement → Verify flow**. Run `/plan-orchestrator` first;
+follow with [`/verify-orchestrator`](./verify.md) for end-to-end QA.
 
 ## Usage
 
@@ -66,10 +67,10 @@ verification results).
 
 | Agent      | Model  | Job                                              |
 | ---------- | ------ | ------------------------------------------------ |
-| `Porygon2` | Sonnet | Re-verifies plan anchors if the repo moved       |
-| `Pichu`    | Haiku  | Default step executor — mechanical, fails fast   |
-| `Pikachu`  | Sonnet | Retry executor — tolerates anchor drift          |
-| `Raichu`   | Opus   | Last resort — judgment within the step's scope   |
+| `Magneton` | Sonnet | Re-verifies plan anchors if the repo moved       |
+| `Machop`   | Haiku  | Default step executor — mechanical, fails fast   |
+| `Machoke`  | Sonnet | Retry executor — tolerates anchor drift          |
+| `Machamp`  | Opus   | Last resort — judgment within the step's scope   |
 | `Mew`      | Opus   | Hot-fix: re-specifies one wrongly-specified step |
 
 ## Requirements

@@ -5,10 +5,11 @@ repo and the requirement in parallel, you refine intent in a short interview, an
 heavyweight author produces a standardized, verifiable implementation plan grounded in the
 repo's own patterns.
 
-This is **step 1 of a Plan → Implement flow**: the output is a plan artifact, not code
-changes. The [Implement step](./implement.md) executes the saved plan — and because every
-step is specified down to exact, anchored edits, execution runs on small (Haiku-level)
-models.
+This is **step 1 of a Plan → Implement → Verify flow**: the output is a plan artifact, not
+code changes. The [Implement step](./implement.md) executes the saved plan — and because
+every step is specified down to exact, anchored edits, execution runs on small
+(Haiku-level) models. The [Verify step](./verify.md) then QAs the result end-to-end
+against the plan's acceptance criteria.
 
 ## Usage
 
@@ -69,17 +70,17 @@ Implement step relies on them.
 
 ## What's under the hood
 
-The command is a thin orchestrator (**Slowking**). The work is done by agents in
+The command is a thin orchestrator (**Slowbro**). The work is done by agents in
 [`agents/`](../agents) — three shared with code review, three specific to planning:
 
 | Agent       | Model  | Job                                              |
 | ----------- | ------ | ------------------------------------------------ |
 | `Slowpoke`  | Haiku  | Requirement brief _(shared)_                     |
-| `Espeon`    | Sonnet | Repository conventions & patterns _(shared)_     |
+| `Eevee`     | Sonnet | Repository conventions & patterns _(shared)_     |
 | `Growlithe` | Sonnet | Security profile _(shared; only when stale)_     |
 | `Dugtrio`   | Sonnet | Code cartographer — where the change lands       |
 | `Mew`       | Opus   | Plan author                                      |
-| `Porygon2`  | Sonnet | Plan verifier — `file:symbol` + dependency graph |
+| `Magneton`  | Sonnet | Plan verifier — `file:symbol` + dependency graph |
 
 ## Caching
 
@@ -88,7 +89,7 @@ Installation section):
 
 | File                  | Holds                                    | Owner        |
 | --------------------- | ---------------------------------------- | ------------ |
-| `repo-profile.md`     | Stack & conventions _(shared)_           | `Espeon`     |
+| `repo-profile.md`     | Stack & conventions _(shared)_           | `Eevee`      |
 | `security-profile.md` | Threat surface _(shared)_                | `Growlithe`  |
 | `plan-<ticket>.md`    | The plan artifact (draft, then approved) | orchestrator |
 

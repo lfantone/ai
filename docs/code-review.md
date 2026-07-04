@@ -65,14 +65,14 @@ skips reposting comments that already exist.
 
 ## What's under the hood
 
-The command is a thin orchestrator (**Slowking**). The actual work is done by agents in
+The command is a thin orchestrator (**Slowbro**). The actual work is done by agents in
 [`agents/`](../agents), each pinned to the cheapest model that fits its job:
 
 | Agent       | Model  | Job                                    |
 | ----------- | ------ | -------------------------------------- |
 | `Slowpoke`  | Haiku  | Ticket brief                           |
 | `Kadabra`   | Sonnet | Implementation brief (what changed)    |
-| `Espeon`    | Sonnet | Repository profile (conventions)       |
+| `Eevee`     | Sonnet | Repository profile (conventions)       |
 | `Growlithe` | Sonnet | Security-surface scout                 |
 | `Mewtwo`    | Opus   | General reviewer                       |
 | `Alakazam`  | Opus   | Security reviewer                      |
@@ -90,7 +90,7 @@ Installation section):
 
 | File                          | Holds                                  | Owner        |
 | ----------------------------- | -------------------------------------- | ------------ |
-| `repo-profile.md`             | Stack & conventions                    | `Espeon`     |
+| `repo-profile.md`             | Stack & conventions                    | `Eevee`      |
 | `security-profile.md`         | Threat surface                         | `Growlithe`  |
 | `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`    |
 | `review-<index>.md`           | Review state for incremental re-review | orchestrator |
@@ -101,7 +101,7 @@ should ignore the whole `.agents/` directory.
 **Changing the location:** `.agents/cache/` is just the default path the command and
 agents use. To store caches elsewhere, replace `.agents/cache/` in
 [`commands/review-orchestrator.md`](../commands/review-orchestrator.md) and the agents that
-reference it (`Espeon`, `Growlithe`, `Kadabra`) with your preferred folder.
+reference it (`Eevee`, `Growlithe`, `Kadabra`) with your preferred folder.
 
 ## Requirements
 
