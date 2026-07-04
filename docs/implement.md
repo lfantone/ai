@@ -19,6 +19,11 @@ Pass the ticket whose plan to execute; with no argument it lists the plans in
 `/plan-orchestrator <ticket>` first — it never improvises a plan. Execution happens on the
 **current branch** — switch first if you want it elsewhere.
 
+If the plan's status is `verification-failed` (from
+[`/verify-orchestrator`](./verify.md)), it enters **fix mode**: instead of re-running the
+ticked checklist, it repairs the failures in the Verification log (diagnose → re-spec →
+execute) and then sends you back to re-verify.
+
 ## What it does
 
 1. **Loads the plan** from `.agents/cache/plan-<ticket>.md` and checks it's still

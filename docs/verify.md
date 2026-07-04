@@ -40,13 +40,25 @@ implemented and what behavior proves it works, and verifies against that.
 - **Scenario approval** — the checklist before any execution: `yes / adjust / no`.
 - **Posting the verdict** to the ticket — only on explicit yes.
 
-## On failure
+## On failure — you choose the route
 
-The report tells you where to go next: execution-level issues route back to
-[`/implement-orchestrator`](./implement.md) (hot-fix path, resumes from the failing
-step); design-level gaps route to a [`/plan-orchestrator`](./plan.md) revision. The
-`## Verification log` appended to the plan keeps the whole ticket's Plan → Implement →
-Verify record in one artifact.
+A `verified` status requires **your acceptance, not just green scenarios** — a PASS you
+contest is not a pass. Per failed (or contested) criterion, the command recommends one
+route and asks:
+
+| Route                   | When                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Fix now                 | The failure traces to an edit — diagnose → re-spec → execute → re-run only the failed scenarios                          |
+| Implement fix mode      | Skipped steps / deviations are the likely cause — [`/implement-orchestrator`](./implement.md) reads the Verification log |
+| Plan revision           | The design can't meet the criterion — [`/plan-orchestrator`](./plan.md)                                                  |
+| Strengthen the scenario | A contested PASS: the check was a weak proxy; it's re-derived and re-run                                                 |
+| Criterion is wrong      | A requirements gap — plan revision, never routed to an executor                                                          |
+
+Fix rounds are user-gated and re-verify **only what failed** (the Bruno collection makes
+API re-runs one `bru run`). After two failed rounds it stops and recommends a deeper
+route — repeated failure means the problem isn't a local edit. The `## Verification log`
+appended to the plan keeps the whole ticket's Plan → Implement → Verify record —
+including fix rounds — in one artifact.
 
 ## What's under the hood
 

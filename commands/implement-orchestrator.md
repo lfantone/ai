@@ -23,6 +23,8 @@ restate their instructions or override their model:
 - `Machamp` — last-resort executor _(Opus; only after Machoke fails + user approves)_
 - `Mew` — scoped step re-spec _(Opus; hot-fix path only — re-specifies ONE
   wrongly-specified step without a full replan)_
+- `Dugtrio` — diagnoses a failed verification scenario to its suspect step _(fix mode
+  only)_
 
 ## Token discipline (non-negotiable)
 
@@ -64,11 +66,12 @@ done.
 
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs:
 
-| Agent                            | Inject into its spawn prompt                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `Magneton`                       | the plan's **unchecked** steps (the ones still to execute)                                             |
-| `Machop` / `Machoke` / `Machamp` | ONE step block verbatim + the conventions excerpt from the repo profile + "no commits, current branch" |
-| `Mew`                            | scoped re-spec mode: the failing step block + the executor's failure reason + the conventions excerpt  |
+| Agent                            | Inject into its spawn prompt                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Magneton`                       | the plan's **unchecked** steps (the ones still to execute)                                              |
+| `Machop` / `Machoke` / `Machamp` | ONE step block verbatim + the conventions excerpt from the repo profile + "no commits, current branch"  |
+| `Mew`                            | scoped re-spec mode: the failing step block + the executor's failure reason + the conventions excerpt   |
+| `Dugtrio`                        | diagnosis mode: a failed scenario from the Verification log + the change map + execution-log deviations |
 
 ## Hot-fix path (scoped re-spec — no full replanning)
 
@@ -96,6 +99,13 @@ redesign the plan.
   ask the user whether to execute it anyway.
 - **Resume mode:** steps already checked `[x]` in the task checklist are done — skip them.
   Say so in the checkpoint.
+- **Fix mode:** if the plan's status is `verification-failed`, the work is NOT the
+  checklist (it's fully ticked) — it's the failures in the **`## Verification log`**.
+  Present them and offer to repair via the **hot-fix path**: `Dugtrio` diagnosis (failed
+  scenario → suspect step) when the log doesn't already name the cause, then Mew re-spec →
+  Magneton → Machop, recording each fix step in the artifact. After repairs, recommend
+  `/verify-orchestrator <ticket>` to re-run verification — never mark the plan `verified`
+  from here.
 - **Freshness:** compare the plan header's `head:` sha with current HEAD. If they differ,
   spawn `Magneton` on the unchecked steps. On anchor/phantom errors, triage: **local**
   mismatches on a few steps → offer the **hot-fix path** (above); **structural** mismatches

@@ -19,6 +19,9 @@ The sub-agents live in `agents/` and are spawned by name. Spawn them as-is:
 - `Ditto` — drives the web UI through a real browser _(Chrome DevTools MCP)_
 - `Magnemite` — API/CLI runtime verification _(Bruno collection via the `bruno-cli`
   skill; curl fallback)_
+- `Dugtrio` — diagnoses a failed scenario to its suspect step/files _(fix loop only)_
+- `Mew` / `Magneton` / `Machop` — re-spec, verify, and execute a fix step _(fix loop
+  only; the same hot-fix machinery as the implement command)_
 
 ## Token discipline (non-negotiable)
 
@@ -48,11 +51,13 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 
 ## Spawn context contract
 
-| Agent       | Inject into its spawn prompt                                                                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Abra`      | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                         |
-| `Ditto`     | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                              |
-| `Magnemite` | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/` |
+| Agent                         | Inject into its spawn prompt                                                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                         |
+| `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                              |
+| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/` |
+| `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                |
+| `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: the suspect step + Dugtrio's diagnosis → corrected fix step → ONE step block to execute                    |
 
 ---
 
@@ -118,26 +123,60 @@ happens once, and is reported as a retry.
 
 ---
 
-# Phase 4 — Report & ledger
+# Phase 4 — Report, route & ledger
 
 Deliver the verdict mapped back to the contract:
 
 - **Per acceptance criterion:** PASS / FAIL (from its scenarios), with one-line evidence;
-  failures include the screenshot path or request/response excerpt.
+  failures include the screenshot path or the failing assert's error.
 - **Warnings** — console errors, failed requests, degraded coverage — even when
   everything passed.
 - **Verdict:** `verified` (all criteria pass) or `verification-failed` (any FAIL).
 
-Update the plan artifact: append **`## Verification log`** (date, environment,
-per-scenario verdicts, warnings) and set `status: verified` or `verification-failed`.
+**`verified` requires the user's acceptance, not just green scenarios** — a PASS the user
+contests is NOT a pass. Present the report and, for every failed or contested criterion,
+**HARD STOP**: recommend ONE route explicitly and ask:
 
-On failures, recommend the next move explicitly: a local spec/execution issue →
-`/implement-orchestrator <ticket>` (its hot-fix path resumes from the failing step); a
-design-level gap → `/plan-orchestrator <ticket>` revision.
+- **(a) Fix now** — the failure traces to an edit → run the **fix loop** (below).
+- **(b) Implement fix mode** — the Execution log shows skipped steps or deviations as the
+  likely cause → `/implement-orchestrator <ticket>` (it reads the Verification log).
+- **(c) Plan revision** — the design cannot meet the criterion →
+  `/plan-orchestrator <ticket>`.
+- **(d) Strengthen the scenario** — a contested PASS (the scenario was a weak proxy for
+  the criterion): re-spawn `Abra` with the user's clarification for that criterion and
+  re-run the strengthened scenario; if it now fails, route via (a)/(b)/(c).
+- **(e) Criterion is wrong/incomplete** — a requirements gap, not a code bug →
+  `/plan-orchestrator <ticket>` revision of §1 (plus, optionally, the gated ticket
+  comment). Never route a spec problem to an executor.
+
+Then update the plan artifact: append **`## Verification log`** (date, environment,
+per-scenario verdicts, warnings, fix rounds, collection path) and set `status: verified`
+(only with user acceptance) or `status: verification-failed`.
 
 **Optional, gated (outward-facing):** offer to post the verdict to the ticket (Jira MCP
 `addCommentToJiraIssue`, or the forge CLI) — **wait for explicit yes**. Never post
 automatically.
+
+---
+
+# Fix loop (route (a): diagnose → repair → re-verify)
+
+Every round is user-gated — nothing here runs without the route-(a) choice above.
+
+1. **Diagnose** — spawn `Dugtrio` in diagnosis mode (failed scenario + evidence + change
+   map + Execution-log deviations). It returns the suspect step, file(s), and a one-line
+   cause hypothesis. If it reports the cause lies **outside the plan's changed files**,
+   stop — that's route (c), not a fix.
+2. **Repair via the hot-fix machinery** (same as the implement command): `Mew` re-specs
+   the suspect step as a fix step (e.g. `S7.f1`), `Magneton` verifies its anchors,
+   `Machop` executes it. Record the fix step in the plan artifact.
+3. **Re-verify only what failed** — `bru run` on the persisted collection for API
+   scenarios; `Ditto` with just the failed web scenarios. Cheap by design.
+4. Green → back to Phase 4 reporting. **Still failing after two rounds → stop** and
+   recommend route (b) or (c): repeated failure means the problem is not a local edit.
+
+Track each round in the to-do list (`Fix round N — <criterion>`) and record it in the
+Verification log.
 
 ---
 
