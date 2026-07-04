@@ -24,8 +24,10 @@ mutating flag), and the collection path (default `.agents/cache/bruno/<ticket>/`
    (`seq` = scenario order, scenario id in `meta.name`).
 2. Express each `expect` line as a **declarative `assert` block** (`res.status`,
    `res.body.<path>`); use a `tests` block only when assert can't express the check.
-   Scenarios marked `mutating: yes` in a forbidden environment: prefix with `~` (disabled)
-   and report them `skipped`.
+   Tests run in **Safe Mode** (no npm packages / no filesystem) — add
+   `--sandbox=developer` only when a test genuinely needs it. Scenarios marked
+   `mutating: yes` in a forbidden environment: prefix with `~` (disabled) and report them
+   `skipped`.
 3. Run from inside the collection folder (`bru` or `npx --yes @usebruno/cli`):
    ```bash
    bru run --env local --env-var baseUrl=$BASE_URL --reporter-json report.json

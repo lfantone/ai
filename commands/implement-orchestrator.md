@@ -25,6 +25,7 @@ restate their instructions or override their model:
   wrongly-specified step without a full replan)_
 - `Dugtrio` — diagnoses a failed verification scenario to its suspect step _(fix mode
   only)_
+- `Eevee` — regenerates the repo profile _(only if the cache is missing)_
 
 ## Token discipline (non-negotiable)
 
@@ -66,12 +67,13 @@ done.
 
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs:
 
-| Agent                            | Inject into its spawn prompt                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `Magneton`                       | the plan's **unchecked** steps (the ones still to execute)                                              |
-| `Machop` / `Machoke` / `Machamp` | ONE step block verbatim + the conventions excerpt from the repo profile + "no commits, current branch"  |
-| `Mew`                            | scoped re-spec mode: the failing step block + the executor's failure reason + the conventions excerpt   |
-| `Dugtrio`                        | diagnosis mode: a failed scenario from the Verification log + the change map + execution-log deviations |
+| Agent                            | Inject into its spawn prompt                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `Magneton`                       | the **full plan** with the unchecked steps flagged (anchors verified for flagged steps only; ticked steps count as satisfied deps) |
+| `Machop` / `Machoke` / `Machamp` | ONE step block verbatim + the conventions excerpt from the repo profile + "no commits, current branch"                             |
+| `Mew`                            | scoped re-spec mode: the failing step block + the executor's failure reason + the conventions excerpt                              |
+| `Dugtrio`                        | diagnosis mode: a failed scenario from the Verification log + the change map + execution-log deviations                            |
+| `Eevee`                          | nothing — it profiles the local working repo                                                                                       |
 
 ## Hot-fix path (scoped re-spec — no full replanning)
 
@@ -82,7 +84,8 @@ step's **Files**, dependencies, and waves don't change; and no acceptance criter
 affected. Then:
 
 1. Spawn `Mew` in **scoped re-spec mode** with the failing step + the failure reason. It
-   returns the corrected step block only.
+   returns the corrected step block only (id per its scoped re-spec rules: original id if
+   the step never applied; `S<N>.f<M>` if it already executed).
 2. Verify it with `Magneton` (anchor applicability on just that step).
 3. Patch the step in the plan artifact, add a one-line revision note under the header, and
    re-run `Machop` on the corrected step.
@@ -95,24 +98,31 @@ redesign the plan.
 
 # Phase 0 — Load plan & freshness
 
-- Read `.agents/cache/plan-<ticket>.md`. Require `status: approved`; if it is `draft`,
-  ask the user whether to execute it anyway.
+- Read `.agents/cache/plan-<ticket>.md` and **branch on `status`** (handle every value):
+  - `approved` → normal flow.
+  - `draft` → ask the user whether to execute it anyway.
+  - `partially-implemented` → **resume mode**.
+  - `verification-failed` → **fix mode**; if unchecked steps ALSO remain (a partial
+    implementation was verified anyway), execute those first (resume), then run the
+    fix-mode repairs.
+  - `implemented` / `verified` → nothing to execute; say so and stop (suggest
+    `/verify-orchestrator <ticket>` if not yet verified).
 - **Resume mode:** steps already checked `[x]` in the task checklist are done — skip them.
   Say so in the checkpoint.
-- **Fix mode:** if the plan's status is `verification-failed`, the work is NOT the
-  checklist (it's fully ticked) — it's the failures in the **`## Verification log`**.
-  Present them and offer to repair via the **hot-fix path**: `Dugtrio` diagnosis (failed
-  scenario → suspect step) when the log doesn't already name the cause, then Mew re-spec →
-  Magneton → Machop, recording each fix step in the artifact. After repairs, recommend
-  `/verify-orchestrator <ticket>` to re-run verification — never mark the plan `verified`
-  from here.
+- **Fix mode:** the work is NOT the checklist — it's the failures in the
+  **`## Verification log`**. Present them and offer to repair via the **hot-fix path**:
+  `Dugtrio` diagnosis (failed scenario → suspect step) when the log doesn't already name
+  the cause, then Mew re-spec → Magneton → Machop, recording each fix step in the
+  artifact. **A fix-mode run never changes `status`** — the plan stays
+  `verification-failed` until `/verify-orchestrator` re-runs; Phase 4 only appends the fix
+  entries to the ledger. Never mark the plan `verified` from here.
 - **Freshness:** compare the plan header's `head:` sha with current HEAD. If they differ,
   spawn `Magneton` on the unchecked steps. On anchor/phantom errors, triage: **local**
   mismatches on a few steps → offer the **hot-fix path** (above); **structural** mismatches
   (design gap, dependency changes, many steps invalid) → **HARD STOP**: recommend a
   `/plan-orchestrator` revision. Never improvise fixes yourself.
-- Load the conventions excerpt from `.agents/cache/repo-profile.md` (cache only — no
-  re-scouting).
+- Load the conventions excerpt from `.agents/cache/repo-profile.md`. If it's missing,
+  spawn `Eevee` once (it owns the cache) — don't scout yourself.
 
 ---
 

@@ -138,9 +138,17 @@ For each step:
 
 ## Scoped re-spec mode (hot-fix)
 
-When spawned with a **single failing step** (its block + the executor's failure reason)
-instead of the full gathering set: re-specify ONLY that step. Read just enough of the
-current code around the target to fix the anchor/edit. Keep the step's id, **Files**,
-dependencies, and Done-when intent unchanged, and return the corrected step block in the
-exact §7 format — nothing else. If a correct fix would change scope, dependencies, or the
-design, do not force it — return `needs full replan: <why>` instead.
+When spawned with a **single failing step** (its block + the failure reason + the
+conventions excerpt) instead of the full gathering set: re-specify ONLY that step. Read
+just enough of the current code around the target to fix the anchor/edit. Keep the step's
+**Files**, dependencies, and Done-when intent unchanged, and return the corrected step
+block in the exact §7 format — nothing else.
+
+**Step id:**
+
+- Correcting a **mis-specified step whose edits never applied** → keep its original id.
+- Fixing an **already-executed step** (a verification failure) → mint a fix-step id
+  `S<N>.f<M>` (e.g. `S7.f1`), so the original step's ledger history stays intact.
+
+If a correct fix would change scope, dependencies, or the design, do not force it —
+return `needs full replan: <why>` instead.

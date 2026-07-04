@@ -29,6 +29,14 @@ Spawn them as-is — do not restate their instructions or override their model:
 - Every sub-agent returns a compact brief (≤ ~300 words) — ignore raw dumps.
 - Do not narrate your plan. Act, then report.
 
+## Workflow tracking (do this FIRST)
+
+Create a to-do list (TaskCreate) with one item per phase: Re-review detection (Phase 0),
+Gather context (Phase 1), Context checkpoint (Phase 1.5), Refinement (Phase 2), Review
+(Phase 3), Verify anchors (Phase 4), Final assembly, Publish (Phase 5). Mark items
+`in_progress`/`completed` as you go — exactly one in progress at a time; complete phases
+that don't run (e.g. Phase 2 when the user picks (b)) with a "skipped" note.
+
 ## Inputs
 
 - TARGET = `$ARGUMENTS` — a ticket description, a ticket reference (e.g. IE-1234), and/or a
@@ -72,15 +80,15 @@ A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste br
 **verbatim** (never pre-summarize them; the reviewers need the detail), but never expand a
 raw diff into your own context: pass COORDS and let the agent fetch it.
 
-| Agent       | Inject into its spawn prompt                                                                                                    |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `Slowpoke`  | the ticket ref and/or the raw description                                                                                       |
-| `Kadabra`   | COORDS — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                        |
-| `Eevee`     | nothing — it profiles the local working repo                                                                                    |
-| `Growlithe` | nothing — it scans the local working repo                                                                                       |
-| `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses. |
-| `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings.                 |
-| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                        |
+| Agent       | Inject into its spawn prompt                                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Slowpoke`  | the ticket ref and/or the raw description                                                                                                                          |
+| `Kadabra`   | COORDS — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                                                           |
+| `Eevee`     | nothing — it profiles the local working repo                                                                                                                       |
+| `Growlithe` | nothing — it scans the local working repo                                                                                                                          |
+| `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses + Kadabra's incremental diff brief. |
+| `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings + statuses + Kadabra's incremental diff brief.      |
+| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                                                           |
 
 Gatherers (`Eevee`, `Growlithe`) profile the repo the command runs in; if the PR is
 remote, make sure it's checked out first (`tea pr checkout <index>` /
@@ -95,12 +103,17 @@ Before spawning anything, decide **fresh** vs **re-review**:
 - Read the head SHA per `COORDS.forge` (the `head_sha` commands above).
 - If `.agents/cache/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
   `head:` value if `reviewed_sha` is absent) that differs from the current head →
-  **RE-REVIEW MODE (incremental)**. Otherwise → fresh review (normal flow).
+  **RE-REVIEW MODE (incremental)**.
+- If `reviewed_sha` **equals** the current head → nothing changed: do NOT re-run the
+  pipeline. Replay the cached findings/report from `review-<index>.md` and offer only the
+  Phase 5 actions (publish / resolve).
+- Otherwise → fresh review (normal flow).
 
 In re-review mode the whole point is to spend tokens only on what changed:
 
 - **Reuse from cache** — repo profile (skip `Eevee`), security profile (skip `Growlithe`),
-  and the cached ticket brief (skip `Slowpoke`) unless the underlying source changed.
+  and the ticket brief stored in `review-<index>.md` (skip `Slowpoke`) unless the ticket
+  itself changed.
 - **Recompute the delta** — spawn `Kadabra` in incremental mode (pass `<reviewed_sha>` and
   the current head; it diffs only the newly pushed changes and reports which prior-finding
   anchors the delta touches). Load prior findings from `.agents/cache/review-<index>.md`
@@ -205,6 +218,13 @@ Security findings in their own section, same severity ordering and format.
 - **Any must-fix security finding forces request-changes.**
 - Top blocker, if any.
 
+**Persist state NOW — before the publish gate.** Write/update
+`.agents/cache/review-<index>.md`: `reviewed_sha` = the head just reviewed, the ticket
+brief, and every finding (stable id, anchor text, file, severity, `status: open`). The
+cache must survive a "no" at the publish gate — otherwise the next run cannot re-review
+incrementally. After publishing, update it again with `forge_comment_id`s and the publish
+mode (`inline` / `summary-only` / `none`).
+
 ---
 
 # Phase 5 — Publish to PR (optional · gated)
@@ -267,9 +287,14 @@ for the freshness guard.
 - **Implementation brief** (`impl-brief-<index>-<sha>.md`) — **SHA-keyed**; owned by
   `Kadabra`. Reused only when the head SHA matches, so it never serves stale code.
 - **Prior findings** (`review-<index>.md`) — **orchestrator-owned**; the state that drives
-  incremental re-review (Phase 0). First line records `generated: <date>` and
+  incremental re-review (Phase 0). Written at Final assembly (BEFORE the publish gate) and
+  updated after publishing. First line records `generated: <date>` and
   `reviewed_sha: <sha>` (older caches may only have `head: <sha>`, accepted as a fallback).
-  Then one entry per finding: a stable id, **anchor text** (the match key — survives line
+  It also stores the **ticket brief** (reused on re-review) and the **publish mode**
+  (`inline` / `summary-only` / `none` — with `summary-only`/`none` there are no per-finding
+  comment ids, so re-review posts findings as new rather than replying to threads). Then
+  one entry per finding: a stable id, **anchor text** (the match key — survives line
   shifts), file, severity, `status` (open / resolved / partially-addressed),
-  `last_seen_sha`, and `forge_comment_id`. On every run, update statuses and `reviewed_sha`
-  to the head just reviewed. Never re-raise an entry already marked resolved.
+  `last_seen_sha`, and `forge_comment_id` (when published inline). On every run, update
+  statuses and `reviewed_sha` to the head just reviewed. Never re-raise an entry already
+  marked resolved.

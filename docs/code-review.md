@@ -61,7 +61,9 @@ Each finding has a severity (`must-fix` / `recommended` / `cosmetic`) and a past
 
 Run it again after a new push and it spends tokens only on what changed: it reuses cached
 context, reviews just the new commits, tells you which prior findings are now resolved, and
-skips reposting comments that already exist.
+skips reposting comments that already exist. Review state is saved even if you choose not
+to publish — and re-running on the same commit replays the cached report instead of
+re-reviewing.
 
 ## What's under the hood
 

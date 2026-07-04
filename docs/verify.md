@@ -54,11 +54,14 @@ route and asks:
 | Strengthen the scenario | A contested PASS: the check was a weak proxy; it's re-derived and re-run                                                 |
 | Criterion is wrong      | A requirements gap — plan revision, never routed to an executor                                                          |
 
-Fix rounds are user-gated and re-verify **only what failed** (the Bruno collection makes
-API re-runs one `bru run`). After two failed rounds it stops and recommends a deeper
-route — repeated failure means the problem isn't a local edit. The `## Verification log`
-appended to the plan keeps the whole ticket's Plan → Implement → Verify record —
-including fix rounds — in one artifact.
+Fix rounds are user-gated and **local-only** (fixes edit the local tree — on a remote
+environment, fix and redeploy first). After a fix, the failed scenarios re-run first;
+once green, the repo's own gates and the **full scenario set** re-run to guard against
+regressions — a fix that breaks something else is a FAIL. After two failed rounds it
+stops and recommends a deeper route. If coverage was impossible rather than failing
+(e.g. the Chrome MCP is missing), the run reports `verification-blocked` and leaves the
+plan status untouched. The `## Verification log` appended to the plan keeps the whole
+ticket's Plan → Implement → Verify record — including fix rounds — in one artifact.
 
 ## What's under the hood
 

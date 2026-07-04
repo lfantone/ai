@@ -36,3 +36,6 @@ V1 · surface: web · mutating: no · criterion: <which>
   steps: <numbered, concrete>
   expect: <observable result>
 ```
+
+Scenario ids (`V1`, `V2`, …) are stable — verdicts, fix rounds, and the Verification log
+all reference them identically.

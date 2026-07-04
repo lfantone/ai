@@ -11,7 +11,8 @@ execute end-to-end checks, then you deliver an honest per-criterion verdict.
 
 This is **step 3 of three**: Plan → Implement → Verify (this command). Your input is the
 implemented change + its plan artifact; your output is a verification report and an
-updated ledger — you change no source code.
+updated ledger. You change source code ONLY through the user-gated **fix loop** — never
+on your own initiative.
 
 The sub-agents live in `agents/` and are spawned by name. Spawn them as-is:
 
@@ -22,6 +23,7 @@ The sub-agents live in `agents/` and are spawned by name. Spawn them as-is:
 - `Dugtrio` — diagnoses a failed scenario to its suspect step/files _(fix loop only)_
 - `Mew` / `Magneton` / `Machop` — re-spec, verify, and execute a fix step _(fix loop
   only; the same hot-fix machinery as the implement command)_
+- `Eevee` — regenerates the repo profile _(only if the cache is missing)_
 
 ## Token discipline (non-negotiable)
 
@@ -51,13 +53,14 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 
 ## Spawn context contract
 
-| Agent                         | Inject into its spawn prompt                                                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                         |
-| `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                              |
-| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/` |
-| `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                |
-| `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: the suspect step + Dugtrio's diagnosis → corrected fix step → ONE step block to execute                    |
+| Agent                         | Inject into its spawn prompt                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                                                               |
+| `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                                                                    |
+| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/`                                       |
+| `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                                                      |
+| `Eevee`                       | nothing — it profiles the local working repo                                                                                                                                               |
+| `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: the suspect step + Dugtrio's diagnosis + the conventions excerpt → corrected fix step → ONE step block to execute + "no commits, current branch" |
 
 ---
 
@@ -65,9 +68,13 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 
 - Read the plan artifact (the sections above) and the Execution log — what was actually
   built, including deviations.
-- From `.agents/cache/repo-profile.md` (cache only): the stack → which **surfaces** exist
-  (web UI, API, CLI), the **dev-server command** and port/health endpoint.
+- From `.agents/cache/repo-profile.md`: the stack → which **surfaces** exist (web UI,
+  API, CLI), the **dev-server command** and port/health endpoint. If the profile is
+  missing, spawn `Eevee` once (it owns the cache) — don't scout yourself.
 - If the plan's status is not `implemented`, say so and ask whether to verify anyway.
+- **No plan artifact** (verifying from described expectations): create a minimal
+  `.agents/cache/plan-<ticket>.md` — header + the agreed criteria as §1 — so Phase 4 has
+  a ledger to write.
 
 ---
 
@@ -108,8 +115,9 @@ which acceptance criterion each covers, how many are mutating, and the environme
 - Start the dev server in the background (`run_in_background`), then poll readiness —
   `curl` the port/health endpoint, ~60s budget. Not ready → present the trimmed server
   log and **stop** (that's already a finding).
-- ALWAYS stop a server **you started** when verification ends — success, failure, or
-  interrupt. Never stop a server the user already had running.
+- ALWAYS stop a server **you started** when the run ends — after the FINAL verdict,
+  including any fix rounds; success, failure, or interrupt. Never stop a server the user
+  already had running.
 
 **Execute:** spawn the drivers **in parallel, in one message** when both surfaces exist:
 
@@ -131,13 +139,18 @@ Deliver the verdict mapped back to the contract:
   failures include the screenshot path or the failing assert's error.
 - **Warnings** — console errors, failed requests, degraded coverage — even when
   everything passed.
-- **Verdict:** `verified` (all criteria pass) or `verification-failed` (any FAIL).
+- **Verdict:** `verified` (all criteria pass) or `verification-failed` (any FAIL). If
+  coverage was **impossible** rather than failing (e.g. Ditto `blocked` on a web-only app
+  with no API fallback), report **`verification-blocked`** instead: write NO status change
+  to the plan, and tell the user what to enable (e.g. the Chrome DevTools MCP).
 
 **`verified` requires the user's acceptance, not just green scenarios** — a PASS the user
 contests is NOT a pass. Present the report and, for every failed or contested criterion,
 **HARD STOP**: recommend ONE route explicitly and ask:
 
-- **(a) Fix now** — the failure traces to an edit → run the **fix loop** (below).
+- **(a) Fix now** — the failure traces to an edit AND you are verifying **locally** → run
+  the **fix loop** (below). On another environment the fix can't reach the target — fix
+  via (b) and redeploy before re-verifying.
 - **(b) Implement fix mode** — the Execution log shows skipped steps or deviations as the
   likely cause → `/implement-orchestrator <ticket>` (it reads the Verification log).
 - **(c) Plan revision** — the design cannot meet the criterion →
@@ -161,18 +174,25 @@ automatically.
 
 # Fix loop (route (a): diagnose → repair → re-verify)
 
-Every round is user-gated — nothing here runs without the route-(a) choice above.
+Every round is user-gated — nothing here runs without the route-(a) choice above. Local
+verification only: fixes edit the local working tree.
 
 1. **Diagnose** — spawn `Dugtrio` in diagnosis mode (failed scenario + evidence + change
    map + Execution-log deviations). It returns the suspect step, file(s), and a one-line
    cause hypothesis. If it reports the cause lies **outside the plan's changed files**,
    stop — that's route (c), not a fix.
 2. **Repair via the hot-fix machinery** (same as the implement command): `Mew` re-specs
-   the suspect step as a fix step (e.g. `S7.f1`), `Magneton` verifies its anchors,
-   `Machop` executes it. Record the fix step in the plan artifact.
-3. **Re-verify only what failed** — `bru run` on the persisted collection for API
-   scenarios; `Ditto` with just the failed web scenarios. Cheap by design.
-4. Green → back to Phase 4 reporting. **Still failing after two rounds → stop** and
+   the suspect step as a fix step (`S<N>.f<M>`, per its scoped re-spec rules), `Magneton`
+   verifies its anchors, `Machop` executes it. If Mew returns `needs full replan`, stop —
+   that's route (c). Record the fix step in the plan artifact.
+3. **Re-verify what failed** — restart the dev server if needed so it serves the fixed
+   code, then `bru run` on the persisted collection for API scenarios and `Ditto` with
+   just the failed web scenarios.
+4. **Guard against regressions** — once the failed scenarios pass, re-run the
+   repository's own gates (tests/lint/typecheck, as implement's Phase 3 does) AND the
+   full scenario set (cheap: one `bru run`, one Ditto pass). A fix that passes its
+   scenario while breaking the suite or a previously green criterion is a FAIL.
+5. All green → back to Phase 4 reporting. **Still failing after two rounds → stop** and
    recommend route (b) or (c): repeated failure means the problem is not a local edit.
 
 Track each round in the to-do list (`Fix round N — <criterion>`) and record it in the

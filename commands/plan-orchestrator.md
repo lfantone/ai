@@ -75,14 +75,14 @@ user requests another round in Phase 3.5, re-open items 5–7 for that iteration
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste briefs
 **verbatim** (never pre-summarize them; the author needs the detail):
 
-| Agent       | Inject into its spawn prompt                                                                                         |
-| ----------- | -------------------------------------------------------------------------------------------------------------------- |
-| `Slowpoke`  | the ticket ref and/or the raw description                                                                            |
-| `Eevee`     | nothing — it profiles the local working repo (reuses/refreshes the repo-profile cache)                               |
-| `Growlithe` | nothing — it scans the local working repo (spawn only if the security profile is stale)                              |
-| `Dugtrio`   | the requirement (TARGET: ticket ref/description) so it knows what change to map                                      |
-| `Mew`       | the requirement brief + conventions brief + cartographer brief + security profile + interview answers (all verbatim) |
-| `Magneton`  | the authored plan                                                                                                    |
+| Agent       | Inject into its spawn prompt                                                                                                                                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Slowpoke`  | the ticket ref and/or the raw description                                                                                                                                                           |
+| `Eevee`     | nothing — it profiles the local working repo (reuses/refreshes the repo-profile cache)                                                                                                              |
+| `Growlithe` | nothing — it scans the local working repo (spawn only if the security profile is stale)                                                                                                             |
+| `Dugtrio`   | the requirement (TARGET: ticket ref/description) so it knows what change to map                                                                                                                     |
+| `Mew`       | the requirement brief + conventions brief + cartographer brief + security profile + interview answers (all verbatim); on a revision: also the existing plan artifact with its logs and ticked steps |
+| `Magneton`  | the authored plan                                                                                                                                                                                   |
 
 ---
 
@@ -104,6 +104,13 @@ Before spawning, wire up reuse so planning is cheap:
 - **Existing plan?** If `.agents/cache/plan-<ticket>.md` already exists, this is a
   **revision**: load it, and treat the interview as "what changed / what to refine" rather
   than starting cold. Otherwise it's a fresh plan.
+
+  **Revising an already-(partially-)implemented plan:** the artifact is also a ledger —
+  never discard it. Carry the Execution and Verification logs forward; keep steps that
+  already executed and remain unchanged **ticked**, with their ids stable; and have Mew
+  plan the new/changed work against the CURRENT working tree — executed edits are the new
+  baseline, so their pre-implementation anchors no longer exist. Magneton verifies only
+  the new/changed steps.
 
 ---
 

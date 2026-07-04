@@ -8,7 +8,9 @@ tools: Bash, Read, Grep, Glob
 
 # Alakazam — Security reviewer
 
-Inputs (from the orchestrator): Implementation brief + Growlithe's threat profile.
+Inputs (from the orchestrator): Implementation brief + Growlithe's threat profile + COORDS
+(forge, owner/repo, index, head_sha). In a re-review: also the prior security findings with
+their statuses.
 
 **Pull the raw diff yourself** — do not rely on the summarized brief for security. Pick the
 command by `COORDS.forge`:

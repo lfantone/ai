@@ -1,6 +1,6 @@
 ---
 name: Machoke
-description: Retry step executor — re-applies a plan step the Haiku executor failed. Tolerates minor drift (a moved anchor, whitespace differences, small surrounding changes) but still makes no design decisions and reports every deviation from the written edit. Use only after Machop fails a step and the user approves escalation.
+description: Retry step executor — re-applies a plan step the Haiku executor failed. Tolerates minor drift (a moved anchor, whitespace differences, small surrounding changes) but still makes no design decisions and reports every deviation from the written edit. Use only after Machop fails a step and the user approves escalation, or for a user-approved targeted retry when a verification-gate failure traces back to a step.
 model: sonnet
 tools: Bash, Read, Edit, Write, Grep
 ---

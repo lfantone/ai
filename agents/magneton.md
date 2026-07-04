@@ -10,6 +10,14 @@ tools: Bash, Read, Grep, Glob
 Make the plan trustworthy before it's saved. Mechanical accuracy only — you do not
 redesign; you flag what's wrong and fix what's mechanically fixable.
 
+## Input
+
+The **full plan** (checklist, waves, DAG, step details) — even when only a subset needs
+re-checking (e.g. the unchecked steps at implement time), with the target steps flagged.
+Verify anchors/completeness only for the flagged steps, but run the dependency checks
+against the whole plan, treating already-executed (ticked) steps as **satisfied
+dependencies** — never flag a dep on a ticked step as an error.
+
 ## Checks
 
 - **`file:symbol` existence.** Every `file:symbol` cited as _existing_ must exist at HEAD —

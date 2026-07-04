@@ -22,7 +22,8 @@ R="repos/{owner}/{repo}"
 tea api "$R/pulls/<index>" | jq -r '.head.sha'          # head SHA
 tea api "$R/pulls/<index>"                              # metadata → jq the fields you need
 tea api "$R/pulls/<index>.diff"                         # diff as TEXT (never jq)
-tea api "$R/pulls/<index>/reviews" | jq -r '.[].id'     # existing review threads
+tea api "$R/pulls/<index>/reviews" | jq -r '.[].id'     # review ids…
+tea api "$R/pulls/<index>/reviews/<review_id>/comments" # …then each review's thread comments
 
 # GitHub (gh)
 gh api "$R/pulls/<index>" --jq '.head.sha'              # head SHA
@@ -50,9 +51,10 @@ briefs (no stable key).
 
 ## Incremental mode (orchestrator asks for a re-review)
 
-Diff only the newly pushed changes: `git diff <reviewed_sha>..<head_sha>` (or
-`git range-diff` for rebases). If `<reviewed_sha>` is not an ancestor of `<head_sha>`
-(force-push/rebase), fall back to the full PR diff. Return the delta hunks and which
+Run `git fetch origin` first — both SHAs must exist locally. Then diff only the newly
+pushed changes: `git diff <reviewed_sha>..<head_sha>` (or `git range-diff` for rebases).
+If `<reviewed_sha>` is not an ancestor of `<head_sha>` (force-push/rebase), or either SHA
+is still unreachable after the fetch, fall back to the full PR diff. Return the delta hunks and which
 prior-finding anchors the delta touches.
 
 ## Return
