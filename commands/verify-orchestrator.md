@@ -17,7 +17,8 @@ The sub-agents live in `agents/` and are spawned by name. Spawn them as-is:
 
 - `Abra` — designs the verification scenarios from the acceptance criteria
 - `Ditto` — drives the web UI through a real browser _(Chrome DevTools MCP)_
-- `Magnemite` — probes the API / CLI at runtime _(curl + jq)_
+- `Magnemite` — API/CLI runtime verification _(Bruno collection via the `bruno-cli`
+  skill; curl fallback)_
 
 ## Token discipline (non-negotiable)
 
@@ -47,11 +48,11 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 
 ## Spawn context contract
 
-| Agent       | Inject into its spawn prompt                                                                   |
-| ----------- | ---------------------------------------------------------------------------------------------- |
-| `Abra`      | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type   |
-| `Ditto`     | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                        |
-| `Magnemite` | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed |
+| Agent       | Inject into its spawn prompt                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Abra`      | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                         |
+| `Ditto`     | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                              |
+| `Magnemite` | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/` |
 
 ---
 
@@ -145,5 +146,9 @@ automatically.
 - **Plan artifact** (`.agents/cache/plan-<ticket>.md`) — read for criteria; extended with
   the `## Verification log` and final status. This closes the ticket's Plan → Implement →
   Verify record in one file.
+- **Bruno collection** (`.agents/cache/bruno/<ticket>/`) — the API scenarios as a
+  persistent, re-runnable artifact (owned by Magnemite; format in the `bruno-cli` skill).
+  A re-verification reuses it — one `bru run`, no re-authoring. Record the path in the
+  Verification log; offer to move it into the repo if the user wants it in CI.
 - **Repo profile** (`.agents/cache/repo-profile.md`) — read-only (surfaces + dev-server
   command).

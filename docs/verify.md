@@ -50,15 +50,22 @@ Verify record in one artifact.
 
 ## What's under the hood
 
-| Agent       | Model  | Job                                                     |
-| ----------- | ------ | ------------------------------------------------------- |
-| `Abra`      | Sonnet | Turns acceptance criteria into executable scenarios     |
-| `Ditto`     | Sonnet | Web E2E — drives a real browser via Chrome DevTools MCP |
-| `Magnemite` | Sonnet | API/CLI runtime probes — curl + jq assertions           |
+| Agent       | Model  | Job                                                                                               |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------- |
+| `Abra`      | Sonnet | Turns acceptance criteria into executable scenarios                                               |
+| `Ditto`     | Sonnet | Web E2E — drives a real browser via Chrome DevTools MCP                                           |
+| `Magnemite` | Sonnet | API E2E — authors and runs a [Bruno](https://usebruno.com) collection (curl fallback); CLI probes |
+
+API scenarios are written as a **Bruno collection** at `.agents/cache/bruno/<ticket>/`
+(via the [`bruno-cli`](../skills/bruno-cli) skill) — a persistent, git-friendly artifact
+with declarative assertions. Re-running verification is then one `bru run` instead of a
+re-authoring, and the collection can be promoted into the repo for CI.
 
 ## Requirements
 
 - The implemented change (usually via [`/implement-orchestrator`](./implement.md)) and
   its plan in `.agents/cache/`.
 - For web verification: the **Chrome DevTools MCP** server available to your harness.
+- For API verification: the [`bru` CLI](../skills/bruno-cli) (`@usebruno/cli`, used via
+  `npx` if not installed) — falls back to curl without it.
 - A runnable dev server (local mode) or a reachable environment URL.
