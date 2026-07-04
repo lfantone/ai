@@ -15,13 +15,13 @@ own model (the intelligence ladder: **Haiku** extraction → **Sonnet** gatherin
 **Opus** reasoning) and carries its own instructions, cache rules, and forge commands.
 Spawn them as-is — do not restate their instructions or override their model:
 
-- `slowpoke` — ticket brief
-- `kadabra` — implementation brief
-- `espeon` — repository profile
-- `growlithe` — security-profile scout
-- `mewtwo` — general reviewer
-- `alakazam` — security reviewer
-- `porygon` — line-anchor verifier
+- `Slowpoke` — ticket brief
+- `Kadabra` — implementation brief
+- `Espeon` — repository profile
+- `Growlithe` — security-profile scout
+- `Mewtwo` — general reviewer
+- `Alakazam` — security reviewer
+- `Porygon` — line-anchor verifier
 
 ## Token discipline (non-negotiable)
 
@@ -74,15 +74,15 @@ raw diff into your own context: pass COORDS and let the agent fetch it.
 
 | Agent       | Inject into its spawn prompt                                                                                                    |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `slowpoke`  | the ticket ref and/or the raw description                                                                                       |
-| `kadabra`   | COORDS — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                        |
-| `espeon`    | nothing — it profiles the local working repo                                                                                    |
-| `growlithe` | nothing — it scans the local working repo                                                                                       |
-| `mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses. |
-| `alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings.                 |
-| `porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                        |
+| `Slowpoke`  | the ticket ref and/or the raw description                                                                                       |
+| `Kadabra`   | COORDS — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                        |
+| `Espeon`    | nothing — it profiles the local working repo                                                                                    |
+| `Growlithe` | nothing — it scans the local working repo                                                                                       |
+| `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses. |
+| `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings.                 |
+| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                        |
 
-Gatherers (`espeon`, `growlithe`) profile the repo the command runs in; if the PR is
+Gatherers (`Espeon`, `Growlithe`) profile the repo the command runs in; if the PR is
 remote, make sure it's checked out first (`tea pr checkout <index>` /
 `gh pr checkout <index>`).
 
@@ -99,16 +99,16 @@ Before spawning anything, decide **fresh** vs **re-review**:
 
 In re-review mode the whole point is to spend tokens only on what changed:
 
-- **Reuse from cache** — repo profile (skip `espeon`), security profile (skip `growlithe`),
-  and the cached ticket brief (skip `slowpoke`) unless the underlying source changed.
-- **Recompute the delta** — spawn `kadabra` in incremental mode (pass `<reviewed_sha>` and
+- **Reuse from cache** — repo profile (skip `Espeon`), security profile (skip `Growlithe`),
+  and the cached ticket brief (skip `Slowpoke`) unless the underlying source changed.
+- **Recompute the delta** — spawn `Kadabra` in incremental mode (pass `<reviewed_sha>` and
   the current head; it diffs only the newly pushed changes and reports which prior-finding
   anchors the delta touches). Load prior findings from `.agents/cache/review-<index>.md`
   (tracked by **anchor text**, not line number, so they survive line shifts).
-- **Reviewers triage + delta-only** — pass `mewtwo`/`alakazam` the prior findings + statuses
+- **Reviewers triage + delta-only** — pass `Mewtwo`/`Alakazam` the prior findings + statuses
   and the incremental diff; they triage each prior finding (`resolved` /
   `still-outstanding` / `partially-addressed`) and review only the delta for new issues.
-- **Re-anchor** — `porygon` re-anchors every still-outstanding and new finding against the
+- **Re-anchor** — `Porygon` re-anchors every still-outstanding and new finding against the
   new head.
 - **Assembly** — three groups: **Resolved since last review** (one-line list, no
   suggestions), **Still outstanding** (refreshed anchors + suggestions), **New in this
@@ -122,10 +122,10 @@ In re-review mode the whole point is to spend tokens only on what changed:
 Spawn these as concurrent sub-agents **in a single message** (they are independent); each
 returns only its brief. Inject each one's inputs per the **Spawn context contract** above:
 
-- **slowpoke** — the ticket reference and/or description.
-- **kadabra** — COORDS (or "review the local diff" if no PR).
-- **espeon** — repository profile (no extra input).
-- **growlithe** — security-profile scout (no extra input).
+- **Slowpoke** — the ticket reference and/or description.
+- **Kadabra** — COORDS (or "review the local diff" if no PR).
+- **Espeon** — repository profile (no extra input).
+- **Growlithe** — security-profile scout (no extra input).
 
 ---
 
@@ -170,8 +170,8 @@ Spawn both reviewers **in parallel, in a single message**, injecting their input
 code). Each already owns its finding-format contract and line-number rules — assemble their
 output as-is:
 
-- **mewtwo** — Ticket + Implementation + Repository briefs + COORDS.
-- **alakazam** — Implementation brief + Growlithe's threat profile + COORDS.
+- **Mewtwo** — Ticket + Implementation + Repository briefs + COORDS.
+- **Alakazam** — Implementation brief + Growlithe's threat profile + COORDS.
 
 If a reviewer returns a collapsed list instead of per-finding blocks, reject it and
 re-spawn that reviewer with the format requirement restated.
@@ -180,7 +180,7 @@ re-spawn that reviewer with the format requirement restated.
 
 # Phase 4 — Verify line anchors
 
-Spawn **porygon** with all findings from both reviewers **+ COORDS** (it needs `head_sha`
+Spawn **Porygon** with all findings from both reviewers **+ COORDS** (it needs `head_sha`
 for its `?ref=<sha>` fetch). Use its corrected `<file>:<line(s)>` for assembly and
 publishing — never the pre-verification numbers.
 
@@ -260,12 +260,12 @@ Caches live under `.agents/cache/` and start with a `generated: <date>, head: <s
 for the freshness guard.
 
 - **Repo profile** (`repo-profile.md`) and **security profile** (`security-profile.md`) —
-  repo-stable; owned by `espeon` and `growlithe`, and **shared with the plan-orchestrator**.
+  repo-stable; owned by `Espeon` and `Growlithe`, and **shared with the plan-orchestrator**.
   The owning agents carry the canonical staleness check (fresh if cached `head:` == HEAD;
   stale on a material change since the cached sha, or >14 days + HEAD moved) — they
   self-check on spawn, so just spawn them.
 - **Implementation brief** (`impl-brief-<index>-<sha>.md`) — **SHA-keyed**; owned by
-  `kadabra`. Reused only when the head SHA matches, so it never serves stale code.
+  `Kadabra`. Reused only when the head SHA matches, so it never serves stale code.
 - **Prior findings** (`review-<index>.md`) — **orchestrator-owned**; the state that drives
   incremental re-review (Phase 0). First line records `generated: <date>` and
   `reviewed_sha: <sha>` (older caches may only have `head: <sha>`, accepted as a fallback).

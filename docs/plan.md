@@ -6,7 +6,9 @@ heavyweight author produces a standardized, verifiable implementation plan groun
 repo's own patterns.
 
 This is **step 1 of a Plan → Implement flow**: the output is a plan artifact, not code
-changes. The Implement step (later) consumes the saved plan.
+changes. The [Implement step](./implement.md) executes the saved plan — and because every
+step is specified down to exact, anchored edits, execution runs on small (Haiku-level)
+models.
 
 ## Usage
 
@@ -35,11 +37,12 @@ the run becomes a **revision** of it rather than starting cold.
    most change the design. **Mandatory by default**; say "skip the interview" to opt out.
 4. **Confirms the direction** — presents the learnings and the intended shape of the
    solution, and waits for your approval before the expensive authoring pass.
-5. **Authors the plan** — an Opus agent writes the standardized plan: concrete
-   `file:symbol` targets, repo-idiom sketches, trade-offs, and steps decomposed into
-   parallel **waves** with an explicit dependency graph.
-6. **Verifies it** — a mechanical pass checks every cited `file:symbol` actually exists and
-   the dependency graph is sound (acyclic, consistent ids, valid waves).
+5. **Authors the plan** — an Opus agent writes the standardized plan: exact files, verbatim
+   anchors, ready-to-apply before→after edits (no design decisions left), trade-offs, and
+   steps decomposed into parallel **waves** with an explicit dependency graph.
+6. **Verifies it** — a mechanical pass checks every cited `file:symbol` exists, every edit
+   anchor matches exactly once, and the dependency graph is sound (acyclic, consistent ids,
+   file-disjoint waves).
 7. **Iterates until you approve** — review the plan, request revisions round after round,
    then the approved artifact is saved.
 
@@ -57,8 +60,9 @@ The command pauses and waits for you at these points — it never proceeds on it
 A standardized plan saved to `.agents/cache/plan-<ticket>.md` (`status: draft` during
 iteration, `approved` when finalized). It always contains, in order: objective, context &
 constraints, design overview with trade-offs, a change map, a task checklist, an execution
-plan (parallel waves + dependency DAG + critical path), detailed steps with sketches,
-data/schema changes, testing plan, rollout, future-proofing, and risks/open questions.
+plan (parallel waves + dependency DAG + critical path), detailed steps with exact anchored
+edits, data/schema changes, testing plan, rollout, future-proofing, and risks/open
+questions.
 
 Step ids (`S1`, `S2`, …) are stable across the checklist, waves, and step details — the
 Implement step relies on them.
@@ -70,12 +74,12 @@ The command is a thin orchestrator (**Slowking**). The work is done by agents in
 
 | Agent       | Model  | Job                                              |
 | ----------- | ------ | ------------------------------------------------ |
-| `slowpoke`  | Haiku  | Requirement brief _(shared)_                     |
-| `espeon`    | Sonnet | Repository conventions & patterns _(shared)_     |
-| `growlithe` | Sonnet | Security profile _(shared; only when stale)_     |
-| `dugtrio`   | Sonnet | Code cartographer — where the change lands       |
-| `mew`       | Opus   | Plan author                                      |
-| `porygon2`  | Sonnet | Plan verifier — `file:symbol` + dependency graph |
+| `Slowpoke`  | Haiku  | Requirement brief _(shared)_                     |
+| `Espeon`    | Sonnet | Repository conventions & patterns _(shared)_     |
+| `Growlithe` | Sonnet | Security profile _(shared; only when stale)_     |
+| `Dugtrio`   | Sonnet | Code cartographer — where the change lands       |
+| `Mew`       | Opus   | Plan author                                      |
+| `Porygon2`  | Sonnet | Plan verifier — `file:symbol` + dependency graph |
 
 ## Caching
 
@@ -84,8 +88,8 @@ Installation section):
 
 | File                  | Holds                                    | Owner        |
 | --------------------- | ---------------------------------------- | ------------ |
-| `repo-profile.md`     | Stack & conventions _(shared)_           | `espeon`     |
-| `security-profile.md` | Threat surface _(shared)_                | `growlithe`  |
+| `repo-profile.md`     | Stack & conventions _(shared)_           | `Espeon`     |
+| `security-profile.md` | Threat surface _(shared)_                | `Growlithe`  |
 | `plan-<ticket>.md`    | The plan artifact (draft, then approved) | orchestrator |
 
 The profiles are shared with the review orchestrator — whichever command refreshes them,

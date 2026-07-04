@@ -84,6 +84,7 @@ token-efficiency practices.
 
 - [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
 - [Implementation planning](./docs/plan.md) — the `/plan-orchestrator` command.
+- [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
 
 ## Development
 

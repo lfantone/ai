@@ -1,5 +1,5 @@
 ---
-name: slowpoke
+name: Slowpoke
 description: Extracts a compact ticket brief (goal, acceptance criteria, scope, out-of-scope, constraints) from a Jira ticket reference or a raw description. Use as the ticket-context gatherer in a review or planning workflow. Cheap and fast — Haiku tier.
 model: haiku
 tools: getJiraIssue, Read

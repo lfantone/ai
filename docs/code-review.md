@@ -70,13 +70,13 @@ The command is a thin orchestrator (**Slowking**). The actual work is done by ag
 
 | Agent       | Model  | Job                                    |
 | ----------- | ------ | -------------------------------------- |
-| `slowpoke`  | Haiku  | Ticket brief                           |
-| `kadabra`   | Sonnet | Implementation brief (what changed)    |
-| `espeon`    | Sonnet | Repository profile (conventions)       |
-| `growlithe` | Sonnet | Security-surface scout                 |
-| `mewtwo`    | Opus   | General reviewer                       |
-| `alakazam`  | Opus   | Security reviewer                      |
-| `porygon`   | Haiku  | Verifies each suggestion's line number |
+| `Slowpoke`  | Haiku  | Ticket brief                           |
+| `Kadabra`   | Sonnet | Implementation brief (what changed)    |
+| `Espeon`    | Sonnet | Repository profile (conventions)       |
+| `Growlithe` | Sonnet | Security-surface scout                 |
+| `Mewtwo`    | Opus   | General reviewer                       |
+| `Alakazam`  | Opus   | Security reviewer                      |
+| `Porygon`   | Haiku  | Verifies each suggestion's line number |
 
 Forge access goes through the [`tea-cli`](../skills/tea-cli) (Gitea) or
 [`gh-cli`](../skills/gh-cli) (GitHub) skill — the orchestrator detects the forge from the
@@ -90,9 +90,9 @@ Installation section):
 
 | File                          | Holds                                  | Owner        |
 | ----------------------------- | -------------------------------------- | ------------ |
-| `repo-profile.md`             | Stack & conventions                    | `espeon`     |
-| `security-profile.md`         | Threat surface                         | `growlithe`  |
-| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `kadabra`    |
+| `repo-profile.md`             | Stack & conventions                    | `Espeon`     |
+| `security-profile.md`         | Threat surface                         | `Growlithe`  |
+| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`    |
 | `review-<index>.md`           | Review state for incremental re-review | orchestrator |
 
 These are generated files. The catalog ignores `cache/` itself, and the target project
@@ -101,7 +101,7 @@ should ignore the whole `.agents/` directory.
 **Changing the location:** `.agents/cache/` is just the default path the command and
 agents use. To store caches elsewhere, replace `.agents/cache/` in
 [`commands/review-orchestrator.md`](../commands/review-orchestrator.md) and the agents that
-reference it (`espeon`, `growlithe`, `kadabra`) with your preferred folder.
+reference it (`Espeon`, `Growlithe`, `Kadabra`) with your preferred folder.
 
 ## Requirements
 

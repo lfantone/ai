@@ -1,5 +1,5 @@
 ---
-name: dugtrio
+name: Dugtrio
 description: Code cartographer — maps where a change will land in the codebase: insertion points (file:symbol), prior art to mirror, seams/extension points, and collisions. Use as the "where & how" gatherer when planning an implementation.
 model: sonnet
 tools: Bash, Read, Grep, Glob

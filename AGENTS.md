@@ -86,7 +86,7 @@ agent's system prompt:
 
 ```markdown
 ---
-name: kadabra # spawnable name (== filename without .md)
+name: Kadabra # spawnable display name (file: kadabra.md — lowercase filename)
 description: What the agent produces and when to spawn it. # how the orchestrator picks it
 model: haiku | sonnet | opus # pin the model deliberately — the intelligence tier is a design choice
 reasoning: low | medium | high # optional thinking-effort hint (add a `# escalate to xhigh …` note where it applies)
