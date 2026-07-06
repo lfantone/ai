@@ -1,6 +1,6 @@
 ---
-description: Orchestrated execution of an approved implementation plan. Loads the plan artifact, verifies it is still applicable, then executes steps wave-by-wave with small parallel executors — escalating models only with user consent — and finishes with the repository's own verification gates. Step 2 of a Plan → Implement → Verify flow.
-argument-hint: [ticket id]
+description: Orchestrated execution of an approved implementation plan — or of a completed review's findings (review mode converts them into a fix plan). Loads the artifact, verifies it is still applicable, then executes steps wave-by-wave with small parallel executors — escalating models only with user consent — and finishes with the repository's own verification gates. Step 2 of a Plan → Implement → Verify flow.
+argument-hint: [ticket id | PR index]
 ---
 
 # Role — Slowbro (Implement Orchestrator)
@@ -58,10 +58,14 @@ done.
 - TARGET = `$ARGUMENTS` — the ticket ref whose plan to execute.
 - The plan artifact: `$CACHE/plan-<ticket>.md`. If TARGET is missing, list the
   `plan-*.md` files in `$CACHE/` and ask which to execute.
-- **No plan for TARGET (or no plans at all)?** **HARD STOP** — there is nothing safe to
-  execute. Tell the user to create one first: _"No plan found for `<ticket>`. Run
-  `/plan-orchestrator <ticket>` to author and approve one, then re-run this command."_
-  Do NOT improvise a plan or start editing from the ticket alone.
+- **Review mode:** if TARGET is a PR index/URL and `$CACHE/review-<index>.md` exists (a
+  completed `/review-orchestrator` run), implement the review's **findings** instead of a
+  ticket plan — see **Review mode** below.
+- **No plan AND no review for TARGET?** **HARD STOP** — there is nothing safe to execute.
+  Tell the user to create one first: _"No plan found for `<ticket>`. Run
+  `/plan-orchestrator <ticket>` to author and approve one (or `/review-orchestrator` for a
+  PR whose findings you want applied), then re-run this command."_ Do NOT improvise a plan
+  or start editing from the ticket alone.
 
 ## Cache location (resolve once)
 
@@ -104,6 +108,30 @@ affected. Then:
 If Mew returns `needs full replan` — or the fix would change scope, dependencies, or
 design — stop and recommend `/plan-orchestrator <ticket>`; a hot-fix must never quietly
 redesign the plan.
+
+## Review mode (a review is a plan someone already specced)
+
+Review findings already carry what a step needs — the file, a verbatim **anchor**, and a
+paste-ready `suggestion` block (exact replacement) — so they convert **mechanically** into
+a fix plan. No authoring pass for the ordinary case.
+
+1. **Checkout first.** Findings were anchored to the PR head — make sure it's checked out
+   (`tea pr checkout <index>` / `gh pr checkout <index>`). Magneton re-verifying anchors
+   is the safety net, not the plan.
+2. **Select (HARD STOP):** present the review's `open` findings grouped by severity and
+   ask which to apply — `all / must-fix + recommended / must-fix only / pick`.
+3. **Convert (you, mechanically — no sub-agent):** one step per FILE, so steps are
+   file-disjoint by construction → one fully parallel wave. Each selected finding becomes
+   one Edit in its file's step: Where = file + the finding's anchor · Before→After = the
+   `suggestion` content · What = the finding's title. Order same-file edits top-to-bottom
+   (anchors are text-matched, so line shifts don't matter). Done when = every anchor
+   replaced and the file passes the repo's lint/typecheck.
+4. **Sketch findings** (`not inline — sketch`) have no exact edit: ask per finding —
+   spawn `Mew` (scoped re-spec mode) to spec it into a real step, or leave it for
+   `/plan-orchestrator`. **Never let an executor improvise from a sketch.**
+5. Save the result as `$CACHE/plan-review-<index>.md` (`status: approved`, `head:` =
+   current HEAD) and run the NORMAL flow from Phase 0 on it — Magneton verifies, the
+   Machop ladder applies, gates run, the ledger ticks. All the usual stops apply.
 
 ---
 
@@ -207,6 +235,10 @@ back to planning, or leave as-is. Never silently fix.
 - Report to the user: steps done/skipped, escalations, deviations (plan-feedback
   candidates), verification summary. Suggest running `/verify-orchestrator <ticket>` for
   end-to-end QA against the acceptance criteria.
+- **Review mode:** applied findings stay `open` in `$CACHE/review-<index>.md` — applied is
+  not resolved. After the gated commit, suggest pushing and re-running
+  `/review-orchestrator <index>`: its triage confirms the fixes and auto-resolves the PR
+  threads.
 - **Distill learnings** (per the `repo-learnings` skill): recurring deviation patterns,
   hot-fix root causes, and gate quirks from this run — dedupe, then append.
 - **Optional, gated (outward-facing):** offer to commit the work (Conventional Commit,
@@ -220,6 +252,8 @@ back to planning, or leave as-is. Never silently fix.
 - **Plan artifact** (`$CACHE/plan-<ticket>.md`) — the input AND the ledger: step
   checkboxes are ticked as executed, `status` and `## Execution log` updated at the end.
   Interrupt-safe: re-running this command resumes from the unchecked steps.
+- **Review fix plan** (`$CACHE/plan-review-<index>.md`) — generated by review mode from
+  `review-<index>.md`; same lifecycle and ledger as any plan.
 - **Repo profile** (`$CACHE/repo-profile.md`) — read-only here (conventions excerpt
   for executors + the verification gates).
 - **Learnings** (`$CACHE/learnings.md`) — cross-ticket, repo-specific memory shared

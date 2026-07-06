@@ -269,6 +269,11 @@ On confirmation, post via the detected forge's CLI (payload details in the `tea-
 `forge_comment_id` against its finding in `$CACHE/review-<index>.md`; that id links
 the thread for auto-resolution later.
 
+**Want the fixes applied, not just posted?** Mention in the final report that
+`/implement-orchestrator <index>` runs in **review mode**: it converts this review's
+cached findings (the anchors + suggestions are already step-shaped) into an executable
+fix plan and applies it with the executor ladder.
+
 ## Auto-resolve fixed threads (re-review only)
 
 After triage identifies findings the new push **resolved**, close their Gitea threads:

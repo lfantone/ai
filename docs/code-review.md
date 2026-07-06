@@ -65,6 +65,14 @@ skips reposting comments that already exist. Review state is saved even if you c
 to publish — and re-running on the same commit replays the cached report instead of
 re-reviewing.
 
+## Applying the findings
+
+Findings aren't just comments — they're executable.
+[`/implement-orchestrator <index>`](./implement.md#from-a-review-instead-of-a-plan) runs
+in **review mode**: it converts the review's findings (anchor + exact suggestion) into a
+fix plan and applies your selection with the executor ladder. Push, re-review, and the
+fixed threads auto-resolve.
+
 ## What's under the hood
 
 The command is a thin orchestrator (**Slowbro**). The actual work is done by agents in
