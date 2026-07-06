@@ -87,14 +87,17 @@ The command is a thin orchestrator (**Slowbro**). The work is done by agents in
 Plans and profiles live in `.agents/cache/` inside the target project (see the README's
 Installation section):
 
-| File                  | Holds                                    | Owner        |
-| --------------------- | ---------------------------------------- | ------------ |
-| `repo-profile.md`     | Stack & conventions _(shared)_           | `Eevee`      |
-| `security-profile.md` | Threat surface _(shared)_                | `Growlithe`  |
-| `plan-<ticket>.md`    | The plan artifact (draft, then approved) | orchestrator |
+| File                  | Holds                                    | Owner         |
+| --------------------- | ---------------------------------------- | ------------- |
+| `repo-profile.md`     | Stack & conventions _(shared)_           | `Eevee`       |
+| `security-profile.md` | Threat surface _(shared)_                | `Growlithe`   |
+| `plan-<ticket>.md`    | The plan artifact (draft, then approved) | orchestrator  |
+| `learnings.md`        | Cross-ticket repo learnings _(shared)_   | orchestrators |
 
 The profiles are shared with the review orchestrator — whichever command refreshes them,
 the other benefits. Re-running the command for the same ticket revises the existing plan.
+`learnings.md` is the append-only, cross-ticket memory every flow reads and feeds (see the
+`repo-learnings` skill) — ticket N's hard-won gotchas make ticket N+1 cheaper.
 
 ## Requirements
 

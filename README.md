@@ -82,6 +82,8 @@ token-efficiency practices.
 
 ## Documentation
 
+- [**The workflow**](./docs/workflow.md) — how the commands fit together and the
+  recommended cycle. **Start here.**
 - [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
 - [Implementation planning](./docs/plan.md) — the `/plan-orchestrator` command.
 - [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.

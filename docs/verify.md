@@ -76,6 +76,10 @@ API scenarios are written as a **Bruno collection** at `.agents/cache/bruno/<tic
 with declarative assertions. Re-running verification is then one `bru run` instead of a
 re-authoring, and the collection can be promoted into the repo for CI.
 
+Environment gotchas and fix-round root causes are distilled into
+`.agents/cache/learnings.md` (the `repo-learnings` skill) — cross-ticket memory every
+flow reads, so the next verification doesn't rediscover them.
+
 ## Requirements
 
 - The implemented change (usually via [`/implement-orchestrator`](./implement.md)) and

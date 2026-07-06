@@ -123,6 +123,9 @@ redesign the plan.
   `/plan-orchestrator` revision. Never improvise fixes yourself.
 - Load the conventions excerpt from `.agents/cache/repo-profile.md`. If it's missing,
   spawn `Eevee` once (it owns the cache) — don't scout yourself.
+- Read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**, if present) and
+  bundle the execution-relevant entries with the conventions excerpt injected into
+  executors.
 
 ---
 
@@ -193,6 +196,8 @@ back to planning, or leave as-is. Never silently fix.
 - Report to the user: steps done/skipped, escalations, deviations (plan-feedback
   candidates), verification summary. Suggest running `/verify-orchestrator <ticket>` for
   end-to-end QA against the acceptance criteria.
+- **Distill learnings** (per the `repo-learnings` skill): recurring deviation patterns,
+  hot-fix root causes, and gate quirks from this run — dedupe, then append.
 - **Optional, gated (outward-facing):** offer to commit the work (Conventional Commit,
   e.g. `feat(<scope>): <ticket summary>`) — **wait for explicit yes**. Never push or open
   a PR without a separate explicit yes.
@@ -206,3 +211,6 @@ back to planning, or leave as-is. Never silently fix.
   Interrupt-safe: re-running this command resumes from the unchecked steps.
 - **Repo profile** (`.agents/cache/repo-profile.md`) — read-only here (conventions excerpt
   for executors + the verification gates).
+- **Learnings** (`.agents/cache/learnings.md`) — cross-ticket, repo-specific memory shared
+  by ALL orchestrators; read at Phase 0, appended at Phase 4 (see the `repo-learnings`
+  skill).

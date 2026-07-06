@@ -112,6 +112,10 @@ Before spawning, wire up reuse so planning is cheap:
   baseline, so their pre-implementation anchors no longer exist. Magneton verifies only
   the new/changed steps.
 
+- **Learnings** — read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**,
+  if the file exists): inject the planning-relevant entries into Mew's spawn, and use
+  confirmed constraints to sharpen the interview instead of re-asking them.
+
 ---
 
 # Phase 1 — Parallel context gathering
@@ -209,6 +213,9 @@ saving.
   **`.agents/cache/plan-<ticket>.md`** — this is the cached artifact the Implement step
   reads. Use the ticket ref as `<ticket>`, or a slugified title when planning from a
   free-text description.
+- **Distill learnings** (per the `repo-learnings` skill): durable constraints the
+  interview revealed and planning gotchas discovered this run — dedupe against the file,
+  then append.
 - **Optional, gated (outward-facing):** offer to post a summary to the ticket —
   _"Post this plan summary to <ticket>? (yes / no)"_ — and **wait for explicit yes** before
   using the Jira MCP (`addCommentToJiraIssue`) or the forge CLI (gitea: `tea comment` ·
@@ -223,3 +230,6 @@ saving.
 head: <sha>` freshness guard (>14 days or dependency/config change ⇒ stale).
 - **Plan artifact** (`.agents/cache/plan-<ticket>.md`): the standardized plan; the Implement
   step's input, and the base for later revisions.
+- **Learnings** (`.agents/cache/learnings.md`): cross-ticket, repo-specific memory shared
+  by ALL orchestrators — read at Phase 0, appended at Phase 4; format, admission test, and
+  prune rules in the `repo-learnings` skill. Never regenerated.

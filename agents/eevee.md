@@ -38,3 +38,7 @@ README, AGENTS.md / CLAUDE.md, docs/, contributing guides, lint/test config.
 
 Write it to `.agents/cache/repo-profile.md` with a first line
 `generated: <date>, head: <sha>` for the freshness guard.
+
+Runtime learnings do NOT belong in the profile — they live in
+`.agents/cache/learnings.md` (see the `repo-learnings` skill) and would be lost when the
+profile regenerates. Keep the two disjoint.

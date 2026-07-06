@@ -90,12 +90,13 @@ To keep re-reviews cheap, the agents cache context in `.agents/cache/` — i.e. 
 deployed catalog at the root of the **project being reviewed** (see the README's
 Installation section):
 
-| File                          | Holds                                  | Owner        |
-| ----------------------------- | -------------------------------------- | ------------ |
-| `repo-profile.md`             | Stack & conventions                    | `Eevee`      |
-| `security-profile.md`         | Threat surface                         | `Growlithe`  |
-| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`    |
-| `review-<index>.md`           | Review state for incremental re-review | orchestrator |
+| File                          | Holds                                  | Owner         |
+| ----------------------------- | -------------------------------------- | ------------- |
+| `repo-profile.md`             | Stack & conventions                    | `Eevee`       |
+| `security-profile.md`         | Threat surface                         | `Growlithe`   |
+| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`     |
+| `review-<index>.md`           | Review state for incremental re-review | orchestrator  |
+| `learnings.md`                | Cross-ticket repo learnings (shared)   | orchestrators |
 
 These are generated files. The catalog ignores `cache/` itself, and the target project
 should ignore the whole `.agents/` directory.

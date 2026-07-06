@@ -75,6 +75,9 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 - **No plan artifact** (verifying from described expectations): create a minimal
   `.agents/cache/plan-<ticket>.md` — header + the agreed criteria as §1 — so Phase 4 has
   a ledger to write.
+- Read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**, if present):
+  environment/server entries guide Phase 3 (startup quirks, flaky endpoints);
+  scenario-design entries go into Abra's spawn.
 
 ---
 
@@ -166,6 +169,10 @@ Then update the plan artifact: append **`## Verification log`** (date, environme
 per-scenario verdicts, warnings, fix rounds, collection path) and set `status: verified`
 (only with user acceptance) or `status: verification-failed`.
 
+**Distill learnings** (per the `repo-learnings` skill): environment/server gotchas,
+weak-proxy scenario lessons, and fix-round root causes from this run — dedupe, then
+append.
+
 **Optional, gated (outward-facing):** offer to post the verdict to the ticket (Jira MCP
 `addCommentToJiraIssue`, or the forge CLI) — **wait for explicit yes**. Never post
 automatically.
@@ -211,3 +218,6 @@ Verification log.
   Verification log; offer to move it into the repo if the user wants it in CI.
 - **Repo profile** (`.agents/cache/repo-profile.md`) — read-only (surfaces + dev-server
   command).
+- **Learnings** (`.agents/cache/learnings.md`) — cross-ticket, repo-specific memory shared
+  by ALL orchestrators; read at Phase 0, appended at Phase 4 (see the `repo-learnings`
+  skill).
