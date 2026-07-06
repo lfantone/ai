@@ -24,6 +24,22 @@ If the plan's status is `verification-failed` (from
 ticked checklist, it repairs the failures in the Verification log (diagnose → re-spec →
 execute) and then sends you back to re-verify.
 
+## From a review instead of a plan
+
+```
+/implement-orchestrator 87        # 87 = a PR reviewed by /review-orchestrator
+```
+
+**Review mode** applies a completed review's findings — no planning round needed, because
+findings already carry a verbatim anchor and an exact `suggestion` replacement (they're
+step-shaped by construction). You pick which findings to apply (`all` / `must-fix +
+recommended` / `must-fix only` / pick), they convert mechanically into a fix plan (one
+step per file — one fully parallel wave), and the normal pipeline runs: anchors verified,
+executor ladder, repo gates, ledger. Sketch findings (no exact edit) are never
+improvised — each is either specced properly by the plan author or deferred to
+`/plan-orchestrator`. Afterwards, push and re-run the review: its triage confirms the
+fixes and auto-resolves the PR threads.
+
 ## What it does
 
 1. **Loads the plan** from `<cache>/plan-<ticket>.md` and checks it's still
