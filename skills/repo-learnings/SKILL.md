@@ -1,11 +1,13 @@
 ---
 name: repo-learnings
-description: Read and curate the repository's cross-ticket learnings file (.agents/cache/learnings.md) — hard-won, repo-specific facts agents would otherwise get wrong (gotchas, deviation patterns, environment quirks, durable constraints). Use at the start of an orchestrated flow to inject relevant entries into spawns, and at wrap-up to distill new learnings from deviations, diagnoses, and fix rounds. Append-only memory — never regenerated, unlike the repo profile.
+description: Read and curate the repository's cross-ticket learnings file ($CACHE/learnings.md) — hard-won, repo-specific facts agents would otherwise get wrong (gotchas, deviation patterns, environment quirks, durable constraints). Use at the start of an orchestrated flow to inject relevant entries into spawns, and at wrap-up to distill new learnings from deviations, diagnoses, and fix rounds. Append-only memory — never regenerated, unlike the repo profile.
 ---
 
 # Repo learnings — cross-ticket memory
 
-`.agents/cache/learnings.md` accumulates what the flows **discovered the hard way** in
+`$CACHE` = the harness cache dir the orchestrator resolves (an existing cache wins; else `.opencode/cache` → `.claude/cache` → `.agents/cache`).
+
+`$CACHE/learnings.md` accumulates what the flows **discovered the hard way** in
 THIS repository, so ticket N's pain makes ticket N+1 cheaper. It complements the repo
 profile with a different lifecycle:
 

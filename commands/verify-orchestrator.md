@@ -47,9 +47,20 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 ## Inputs
 
 - TARGET = `$ARGUMENTS` — the ticket whose implementation to verify.
-- Primary source: `.agents/cache/plan-<ticket>.md` (acceptance criteria are the contract).
+- Primary source: `$CACHE/plan-<ticket>.md` (acceptance criteria are the contract).
 - **No plan artifact?** Verification can still run: ask the user what was implemented and
   what behavior proves it works, then treat those as the acceptance criteria.
+
+## Cache location (resolve once)
+
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context contract
 
@@ -57,9 +68,9 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                                                               |
 | `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                                                                    |
-| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `.agents/cache/bruno/<ticket>/`                                       |
+| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `$CACHE/bruno/<ticket>/`                                              |
 | `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                                                      |
-| `Eevee`                       | nothing — it profiles the local working repo                                                                                                                                               |
+| `Eevee`                       | `$CACHE` — it profiles the local working repo                                                                                                                                              |
 | `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: the suspect step + Dugtrio's diagnosis + the conventions excerpt → corrected fix step → ONE step block to execute + "no commits, current branch" |
 
 ---
@@ -68,14 +79,14 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 
 - Read the plan artifact (the sections above) and the Execution log — what was actually
   built, including deviations.
-- From `.agents/cache/repo-profile.md`: the stack → which **surfaces** exist (web UI,
+- From `$CACHE/repo-profile.md`: the stack → which **surfaces** exist (web UI,
   API, CLI), the **dev-server command** and port/health endpoint. If the profile is
   missing, spawn `Eevee` once (it owns the cache) — don't scout yourself.
 - If the plan's status is not `implemented`, say so and ask whether to verify anyway.
 - **No plan artifact** (verifying from described expectations): create a minimal
-  `.agents/cache/plan-<ticket>.md` — header + the agreed criteria as §1 — so Phase 4 has
+  `$CACHE/plan-<ticket>.md` — header + the agreed criteria as §1 — so Phase 4 has
   a ledger to write.
-- Read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**, if present):
+- Read `$CACHE/learnings.md` (per the **`repo-learnings` skill**, if present):
   environment/server entries guide Phase 3 (startup quirks, flaky endpoints);
   scenario-design entries go into Abra's spawn.
 
@@ -209,15 +220,15 @@ Verification log.
 
 # Caches
 
-- **Plan artifact** (`.agents/cache/plan-<ticket>.md`) — read for criteria; extended with
+- **Plan artifact** (`$CACHE/plan-<ticket>.md`) — read for criteria; extended with
   the `## Verification log` and final status. This closes the ticket's Plan → Implement →
   Verify record in one file.
-- **Bruno collection** (`.agents/cache/bruno/<ticket>/`) — the API scenarios as a
+- **Bruno collection** (`$CACHE/bruno/<ticket>/`) — the API scenarios as a
   persistent, re-runnable artifact (owned by Magnemite; format in the `bruno-cli` skill).
   A re-verification reuses it — one `bru run`, no re-authoring. Record the path in the
   Verification log; offer to move it into the repo if the user wants it in CI.
-- **Repo profile** (`.agents/cache/repo-profile.md`) — read-only (surfaces + dev-server
+- **Repo profile** (`$CACHE/repo-profile.md`) — read-only (surfaces + dev-server
   command).
-- **Learnings** (`.agents/cache/learnings.md`) — cross-ticket, repo-specific memory shared
+- **Learnings** (`$CACHE/learnings.md`) — cross-ticket, repo-specific memory shared
   by ALL orchestrators; read at Phase 0, appended at Phase 4 (see the `repo-learnings`
   skill).

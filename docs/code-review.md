@@ -86,9 +86,9 @@ PR URL or the git remote and picks the right one.
 
 ## Caching
 
-To keep re-reviews cheap, the agents cache context in `.agents/cache/` — i.e. inside the
-deployed catalog at the root of the **project being reviewed** (see the README's
-Installation section):
+To keep re-reviews cheap, the agents cache context in the reviewed project's **cache
+dir** — auto-detected per harness: `.opencode/cache/` (OpenCode), `.claude/cache/`
+(Claude Code), else `.agents/cache/`; an existing cache always wins:
 
 | File                          | Holds                                  | Owner         |
 | ----------------------------- | -------------------------------------- | ------------- |
@@ -101,10 +101,9 @@ Installation section):
 These are generated files. The catalog ignores `cache/` itself, and the target project
 should ignore the whole `.agents/` directory.
 
-**Changing the location:** `.agents/cache/` is just the default path the command and
-agents use. To store caches elsewhere, replace `.agents/cache/` in
-[`commands/review-orchestrator.md`](../commands/review-orchestrator.md) and the agents that
-reference it (`Eevee`, `Growlithe`, `Kadabra`) with your preferred folder.
+**Location:** resolved automatically by each command (see the "Cache location" section
+in the command files) — no configuration needed. The detection prefers an existing
+cache, so adding a new harness dir later never forks accumulated state.
 
 ## Requirements
 

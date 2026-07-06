@@ -14,7 +14,8 @@ so re-verification later costs one `bru run` instead of re-authoring.
 ## Input
 
 `BASE_URL` (API) or the CLI context, the api/cli scenarios (id, pre, steps, expect,
-mutating flag), and the collection path (default `.agents/cache/bruno/<ticket>/`).
+mutating flag), and the collection path (default `$CACHE/bruno/<ticket>/`).
+`$CACHE` is the harness cache dir injected by the orchestrator (standalone fallback: `.agents/cache`).
 
 ## API scenarios — Bruno first (source of truth: the `bruno-cli` skill)
 

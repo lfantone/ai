@@ -56,12 +56,23 @@ done.
 ## Inputs
 
 - TARGET = `$ARGUMENTS` — the ticket ref whose plan to execute.
-- The plan artifact: `.agents/cache/plan-<ticket>.md`. If TARGET is missing, list the
-  `plan-*.md` files in `.agents/cache/` and ask which to execute.
+- The plan artifact: `$CACHE/plan-<ticket>.md`. If TARGET is missing, list the
+  `plan-*.md` files in `$CACHE/` and ask which to execute.
 - **No plan for TARGET (or no plans at all)?** **HARD STOP** — there is nothing safe to
   execute. Tell the user to create one first: _"No plan found for `<ticket>`. Run
   `/plan-orchestrator <ticket>` to author and approve one, then re-run this command."_
   Do NOT improvise a plan or start editing from the ticket alone.
+
+## Cache location (resolve once)
+
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context contract
 
@@ -73,7 +84,7 @@ A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs:
 | `Machop` / `Machoke` / `Machamp` | ONE step block verbatim + the conventions excerpt from the repo profile + "no commits, current branch"                             |
 | `Mew`                            | scoped re-spec mode: the failing step block + the executor's failure reason + the conventions excerpt                              |
 | `Dugtrio`                        | diagnosis mode: a failed scenario from the Verification log + the change map + execution-log deviations                            |
-| `Eevee`                          | nothing — it profiles the local working repo                                                                                       |
+| `Eevee`                          | `$CACHE` — it profiles the local working repo                                                                                      |
 
 ## Hot-fix path (scoped re-spec — no full replanning)
 
@@ -98,7 +109,7 @@ redesign the plan.
 
 # Phase 0 — Load plan & freshness
 
-- Read `.agents/cache/plan-<ticket>.md` and **branch on `status`** (handle every value):
+- Read `$CACHE/plan-<ticket>.md` and **branch on `status`** (handle every value):
   - `approved` → normal flow.
   - `draft` → ask the user whether to execute it anyway.
   - `partially-implemented` → **resume mode**.
@@ -121,9 +132,9 @@ redesign the plan.
   mismatches on a few steps → offer the **hot-fix path** (above); **structural** mismatches
   (design gap, dependency changes, many steps invalid) → **HARD STOP**: recommend a
   `/plan-orchestrator` revision. Never improvise fixes yourself.
-- Load the conventions excerpt from `.agents/cache/repo-profile.md`. If it's missing,
+- Load the conventions excerpt from `$CACHE/repo-profile.md`. If it's missing,
   spawn `Eevee` once (it owns the cache) — don't scout yourself.
-- Read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**, if present) and
+- Read `$CACHE/learnings.md` (per the **`repo-learnings` skill**, if present) and
   bundle the execution-relevant entries with the conventions excerpt injected into
   executors.
 
@@ -206,11 +217,11 @@ back to planning, or leave as-is. Never silently fix.
 
 # Caches
 
-- **Plan artifact** (`.agents/cache/plan-<ticket>.md`) — the input AND the ledger: step
+- **Plan artifact** (`$CACHE/plan-<ticket>.md`) — the input AND the ledger: step
   checkboxes are ticked as executed, `status` and `## Execution log` updated at the end.
   Interrupt-safe: re-running this command resumes from the unchecked steps.
-- **Repo profile** (`.agents/cache/repo-profile.md`) — read-only here (conventions excerpt
+- **Repo profile** (`$CACHE/repo-profile.md`) — read-only here (conventions excerpt
   for executors + the verification gates).
-- **Learnings** (`.agents/cache/learnings.md`) — cross-ticket, repo-specific memory shared
+- **Learnings** (`$CACHE/learnings.md`) — cross-ticket, repo-specific memory shared
   by ALL orchestrators; read at Phase 0, appended at Phase 4 (see the `repo-learnings`
   skill).

@@ -70,6 +70,17 @@ user requests another round in Phase 3.5, re-open items 5–7 for that iteration
 - **Jira** (ticket details): the Jira MCP (`getJiraIssue`). If Jira isn't authorized in this
   session, say so and fall back to asking the user to paste the ticket text.
 
+## Cache location (resolve once)
+
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
+
 ## Spawn context contract
 
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste briefs
@@ -78,8 +89,8 @@ A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste br
 | Agent       | Inject into its spawn prompt                                                                                                                                                                        |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Slowpoke`  | the ticket ref and/or the raw description                                                                                                                                                           |
-| `Eevee`     | nothing — it profiles the local working repo (reuses/refreshes the repo-profile cache)                                                                                                              |
-| `Growlithe` | nothing — it scans the local working repo (spawn only if the security profile is stale)                                                                                                             |
+| `Eevee`     | `$CACHE` — it profiles the local working repo (reuses/refreshes the repo-profile cache)                                                                                                             |
+| `Growlithe` | `$CACHE` — it scans the local working repo (spawn only if the security profile is stale)                                                                                                            |
 | `Dugtrio`   | the requirement (TARGET: ticket ref/description) so it knows what change to map                                                                                                                     |
 | `Mew`       | the requirement brief + conventions brief + cartographer brief + security profile + interview answers (all verbatim); on a revision: also the existing plan artifact with its logs and ticked steps |
 | `Magneton`  | the authored plan                                                                                                                                                                                   |
@@ -90,8 +101,8 @@ A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste br
 
 Before spawning, wire up reuse so planning is cheap:
 
-- **Repo profile** (`.agents/cache/repo-profile.md`) and **security profile**
-  (`.agents/cache/security-profile.md`) are shared with the review-orchestrator and owned by
+- **Repo profile** (`$CACHE/repo-profile.md`) and **security profile**
+  (`$CACHE/security-profile.md`) are shared with the review-orchestrator and owned by
   `Eevee` / `Growlithe`, which carry the **canonical staleness check** (fresh if cached
   `head:` == HEAD; stale on a material change since the cached sha, or >14 days + HEAD
   moved) and self-check on spawn. `Eevee` is spawned every run — it returns the cache
@@ -101,7 +112,7 @@ Before spawning, wire up reuse so planning is cheap:
   plan's "where" is never stale — only the conventions layer could drift, which the check
   guards.
 
-- **Existing plan?** If `.agents/cache/plan-<ticket>.md` already exists, this is a
+- **Existing plan?** If `$CACHE/plan-<ticket>.md` already exists, this is a
   **revision**: load it, and treat the interview as "what changed / what to refine" rather
   than starting cold. Otherwise it's a fresh plan.
 
@@ -112,7 +123,7 @@ Before spawning, wire up reuse so planning is cheap:
   baseline, so their pre-implementation anchors no longer exist. Magneton verifies only
   the new/changed steps.
 
-- **Learnings** — read `.agents/cache/learnings.md` (per the **`repo-learnings` skill**,
+- **Learnings** — read `$CACHE/learnings.md` (per the **`repo-learnings` skill**,
   if the file exists): inject the planning-relevant entries into Mew's spawn, and use
   confirmed constraints to sharpen the interview instead of re-asking them.
 
@@ -195,7 +206,7 @@ saving.
 # Phase 3.5 — Plan review & iteration (Slowbro)
 
 - Present the verified plan to the user, and save it as a **draft** to
-  `.agents/cache/plan-<ticket>.md` (`status: draft`) so nothing is lost between rounds.
+  `$CACHE/plan-<ticket>.md` (`status: draft`) so nothing is lost between rounds.
 - **HARD STOP — acceptance gate.** Ask _"Is this plan good, or would you like another round?
   (approve / revise: <what to change> / no)"_ and **wait for an explicit reply.**
 - On **revise**: capture the requested changes, then loop — re-spawn **Mew** (Phase 2) with
@@ -210,7 +221,7 @@ saving.
 # Phase 4 — Finalize & save
 
 - Set the plan's header to `status: approved` and save the final version to
-  **`.agents/cache/plan-<ticket>.md`** — this is the cached artifact the Implement step
+  **`$CACHE/plan-<ticket>.md`** — this is the cached artifact the Implement step
   reads. Use the ticket ref as `<ticket>`, or a slugified title when planning from a
   free-text description.
 - **Distill learnings** (per the `repo-learnings` skill): durable constraints the
@@ -225,11 +236,11 @@ saving.
 
 # Caches
 
-- **Repo profile / security profile** (`.agents/cache/*.md`): shared with the
+- **Repo profile / security profile** (`$CACHE/*.md`): shared with the
   review-orchestrator; reuse when fresh, refresh when stale. Same `generated: <date>,
 head: <sha>` freshness guard (>14 days or dependency/config change ⇒ stale).
-- **Plan artifact** (`.agents/cache/plan-<ticket>.md`): the standardized plan; the Implement
+- **Plan artifact** (`$CACHE/plan-<ticket>.md`): the standardized plan; the Implement
   step's input, and the base for later revisions.
-- **Learnings** (`.agents/cache/learnings.md`): cross-ticket, repo-specific memory shared
+- **Learnings** (`$CACHE/learnings.md`): cross-ticket, repo-specific memory shared
   by ALL orchestrators — read at Phase 0, appended at Phase 4; format, admission test, and
   prune rules in the `repo-learnings` skill. Never regenerated.

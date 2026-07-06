@@ -15,7 +15,7 @@ follow with [`/verify-orchestrator`](./verify.md) for end-to-end QA.
 ```
 
 Pass the ticket whose plan to execute; with no argument it lists the plans in
-`.agents/cache/` and asks. If no plan exists for the ticket, it stops and asks you to run
+the cache dir and asks. If no plan exists for the ticket, it stops and asks you to run
 `/plan-orchestrator <ticket>` first — it never improvises a plan. Execution happens on the
 **current branch** — switch first if you want it elsewhere.
 
@@ -26,7 +26,7 @@ execute) and then sends you back to re-verify.
 
 ## What it does
 
-1. **Loads the plan** from `.agents/cache/plan-<ticket>.md` and checks it's still
+1. **Loads the plan** from `<cache>/plan-<ticket>.md` and checks it's still
    applicable — if the repo moved since planning, a mechanical pass re-verifies every
    anchor before anything is edited.
 2. **Checkpoint** — shows the branch, the steps/waves/files, and the verification gates it
@@ -80,6 +80,6 @@ verification results).
 
 ## Requirements
 
-- An approved plan in `.agents/cache/plan-<ticket>.md` (from
+- An approved plan in `<cache>/plan-<ticket>.md` (from
   [`/plan-orchestrator`](./plan.md)).
 - The agents installed where your harness can find them (see [AGENTS.md](../AGENTS.md)).

@@ -9,7 +9,9 @@ tools: Bash, Read, Grep, Glob, Write
 
 ## Cache first
 
-Check `.agents/cache/security-profile.md`. If present and fresh, return it verbatim and
+`$CACHE` is the harness cache dir injected by the orchestrator (standalone fallback: `.agents/cache`).
+
+Check `$CACHE/security-profile.md`. If present and fresh, return it verbatim and
 skip scanning.
 
 **Staleness check (deterministic).** The cache is STALE (re-scan) if ANY holds:
@@ -38,5 +40,5 @@ Map, for THIS repo:
 ## Return
 
 A ranked, repo-specific **threat checklist** — the lens the security reviewer applies.
-Write it to `.agents/cache/security-profile.md` with a first line
+Write it to `$CACHE/security-profile.md` with a first line
 `generated: <date>, head: <sha>` for the freshness guard.

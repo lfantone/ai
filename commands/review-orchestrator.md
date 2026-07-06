@@ -74,6 +74,17 @@ these up front and inject them into every such agent's spawn prompt. Call this b
   github: `gh api repos/{owner}/{repo}/pulls/<index> --jq '.head.sha'`.
 - `base_ref` — the PR base branch.
 
+## Cache location (resolve once)
+
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
+
 ## Spawn context contract
 
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste briefs
@@ -83,9 +94,9 @@ raw diff into your own context: pass COORDS and let the agent fetch it.
 | Agent       | Inject into its spawn prompt                                                                                                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Slowpoke`  | the ticket ref and/or the raw description                                                                                                                          |
-| `Kadabra`   | COORDS — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                                                           |
-| `Eevee`     | nothing — it profiles the local working repo                                                                                                                       |
-| `Growlithe` | nothing — it scans the local working repo                                                                                                                          |
+| `Kadabra`   | COORDS + `$CACHE` — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                                                |
+| `Eevee`     | `$CACHE` — it profiles the local working repo                                                                                                                      |
+| `Growlithe` | `$CACHE` — it scans the local working repo                                                                                                                         |
 | `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses + Kadabra's incremental diff brief. |
 | `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings + statuses + Kadabra's incremental diff brief.      |
 | `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                                                           |
@@ -101,7 +112,7 @@ remote, make sure it's checked out first (`tea pr checkout <index>` /
 Before spawning anything, decide **fresh** vs **re-review**:
 
 - Read the head SHA per `COORDS.forge` (the `head_sha` commands above).
-- If `.agents/cache/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
+- If `$CACHE/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
   `head:` value if `reviewed_sha` is absent) that differs from the current head →
   **RE-REVIEW MODE (incremental)**.
 - If `reviewed_sha` **equals** the current head → nothing changed: do NOT re-run the
@@ -116,7 +127,7 @@ In re-review mode the whole point is to spend tokens only on what changed:
   itself changed.
 - **Recompute the delta** — spawn `Kadabra` in incremental mode (pass `<reviewed_sha>` and
   the current head; it diffs only the newly pushed changes and reports which prior-finding
-  anchors the delta touches). Load prior findings from `.agents/cache/review-<index>.md`
+  anchors the delta touches). Load prior findings from `$CACHE/review-<index>.md`
   (tracked by **anchor text**, not line number, so they survive line shifts).
 - **Reviewers triage + delta-only** — pass `Mewtwo`/`Alakazam` the prior findings + statuses
   and the incremental diff; they triage each prior finding (`resolved` /
@@ -186,7 +197,7 @@ output as-is:
 - **Mewtwo** — Ticket + Implementation + Repository briefs + COORDS.
 - **Alakazam** — Implementation brief + Growlithe's threat profile + COORDS.
 
-Also inject the recurring-mistake entries from `.agents/cache/learnings.md` (per the
+Also inject the recurring-mistake entries from `$CACHE/learnings.md` (per the
 `repo-learnings` skill, if the file exists) into both reviewer spawns.
 
 If a reviewer returns a collapsed list instead of per-finding blocks, reject it and
@@ -222,13 +233,13 @@ Security findings in their own section, same severity ordering and format.
 - Top blocker, if any.
 
 **Persist state NOW — before the publish gate.** Write/update
-`.agents/cache/review-<index>.md`: `reviewed_sha` = the head just reviewed, the ticket
+`$CACHE/review-<index>.md`: `reviewed_sha` = the head just reviewed, the ticket
 brief, and every finding (stable id, anchor text, file, severity, `status: open`). The
 cache must survive a "no" at the publish gate — otherwise the next run cannot re-review
 incrementally. After publishing, update it again with `forge_comment_id`s and the publish
 mode (`inline` / `summary-only` / `none`). If a finding class has now **recurred across
 PRs** (same mistake pattern, different changes), distill it into
-`.agents/cache/learnings.md` per the `repo-learnings` skill.
+`$CACHE/learnings.md` per the `repo-learnings` skill.
 
 ---
 
@@ -255,7 +266,7 @@ On confirmation, post via the detected forge's CLI (payload details in the `tea-
   comment: gitea `tea comment <index> <body>` · github `gh pr comment <index> --body <body>`.
 
 **Capture comment ids.** The POST response returns each comment's id — store each
-`forge_comment_id` against its finding in `.agents/cache/review-<index>.md`; that id links
+`forge_comment_id` against its finding in `$CACHE/review-<index>.md`; that id links
 the thread for auto-resolution later.
 
 ## Auto-resolve fixed threads (re-review only)
@@ -274,14 +285,14 @@ After triage identifies findings the new push **resolved**, close their Gitea th
 - This runs under the same Phase 5 gate — include it in the confirmation prompt
   (_"...and resolve N fixed threads?"_) and only act on explicit yes.
 
-After posting, update `.agents/cache/review-<index>.md`: new/updated `forge_comment_id`s,
+After posting, update `$CACHE/review-<index>.md`: new/updated `forge_comment_id`s,
 per-finding `status`, and `reviewed_sha` = the head just reviewed.
 
 ---
 
 # Memoization
 
-Caches live under `.agents/cache/` and start with a `generated: <date>, head: <sha>` line
+Caches live under `$CACHE/` and start with a `generated: <date>, head: <sha>` line
 for the freshness guard.
 
 - **Repo profile** (`repo-profile.md`) and **security profile** (`security-profile.md`) —

@@ -13,7 +13,7 @@ This is **step 3 of the Plan → Implement → Verify flow**.
 /verify-orchestrator IE-1234
 ```
 
-It reads the plan from `.agents/cache/plan-<ticket>.md`. No plan? It asks what was
+It reads the plan from `<cache>/plan-<ticket>.md`. No plan? It asks what was
 implemented and what behavior proves it works, and verifies against that.
 
 ## What it does
@@ -71,19 +71,19 @@ ticket's Plan → Implement → Verify record — including fix rounds — in on
 | `Ditto`     | Sonnet | Web E2E — drives a real browser via Chrome DevTools MCP                                           |
 | `Magnemite` | Sonnet | API E2E — authors and runs a [Bruno](https://usebruno.com) collection (curl fallback); CLI probes |
 
-API scenarios are written as a **Bruno collection** at `.agents/cache/bruno/<ticket>/`
+API scenarios are written as a **Bruno collection** at `<cache>/bruno/<ticket>/`
 (via the [`bruno-cli`](../skills/bruno-cli) skill) — a persistent, git-friendly artifact
 with declarative assertions. Re-running verification is then one `bru run` instead of a
 re-authoring, and the collection can be promoted into the repo for CI.
 
 Environment gotchas and fix-round root causes are distilled into
-`.agents/cache/learnings.md` (the `repo-learnings` skill) — cross-ticket memory every
+`<cache>/learnings.md` (the `repo-learnings` skill) — cross-ticket memory every
 flow reads, so the next verification doesn't rediscover them.
 
 ## Requirements
 
 - The implemented change (usually via [`/implement-orchestrator`](./implement.md)) and
-  its plan in `.agents/cache/`.
+  its plan in the cache dir (auto-detected: `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/`).
 - For web verification: the **Chrome DevTools MCP** server available to your harness.
 - For API verification: the [`bru` CLI](../skills/bruno-cli) (`@usebruno/cli`, used via
   `npx` if not installed) — falls back to curl without it.
