@@ -58,7 +58,7 @@ The command pauses and waits for you at these points — it never proceeds on it
 
 ## Output
 
-A standardized plan saved to `.agents/cache/plan-<ticket>.md` (`status: draft` during
+A standardized plan saved to `<cache>/plan-<ticket>.md` (`status: draft` during
 iteration, `approved` when finalized). It always contains, in order: objective, context &
 constraints, design overview with trade-offs, a change map, a task checklist, an execution
 plan (parallel waves + dependency DAG + critical path), detailed steps with exact anchored
@@ -84,7 +84,7 @@ The command is a thin orchestrator (**Slowbro**). The work is done by agents in
 
 ## Caching
 
-Plans and profiles live in `.agents/cache/` inside the target project (see the README's
+Plans and profiles live in the project's auto-detected cache dir — `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/` — (see the README's
 Installation section):
 
 | File                  | Holds                                    | Owner         |

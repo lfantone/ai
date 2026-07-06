@@ -11,7 +11,9 @@ Return a compact brief, never file dumps.
 
 ## Repo-stable cache
 
-Check `.agents/cache/repo-profile.md`. If present and fresh, return it verbatim and skip
+`$CACHE` is the harness cache dir injected by the orchestrator (standalone fallback: `.agents/cache`).
+
+Check `$CACHE/repo-profile.md`. If present and fresh, return it verbatim and skip
 scouting.
 
 **Staleness check (deterministic).** The cache is STALE (re-scout) if ANY holds:
@@ -36,9 +38,9 @@ README, AGENTS.md / CLAUDE.md, docs/, contributing guides, lint/test config.
 - Durable repo facts worth remembering (key modules, established helpers) — curated, not a
   dump.
 
-Write it to `.agents/cache/repo-profile.md` with a first line
+Write it to `$CACHE/repo-profile.md` with a first line
 `generated: <date>, head: <sha>` for the freshness guard.
 
 Runtime learnings do NOT belong in the profile — they live in
-`.agents/cache/learnings.md` (see the `repo-learnings` skill) and would be lost when the
+`$CACHE/learnings.md` (see the `repo-learnings` skill) and would be lost when the
 profile regenerates. Keep the two disjoint.
