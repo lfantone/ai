@@ -45,12 +45,18 @@ matches, and load bundled files only as needed.
 
 ```
 AI/
-├── agents/     # One Markdown file per agent (spawnable definition)
+├── agents/     # One Markdown file per agent (spawnable definition) — canonical
 ├── skills/     # One directory per skill (Agent Skills format)
-├── commands/   # One Markdown file per command (invokable workflow)
+├── commands/   # One Markdown file per command (invokable workflow) — canonical
 ├── docs/       # Human-facing documentation
+├── .opencode/  # GENERATED: the catalog in OpenCode format (never edit by hand)
+├── scripts/    # Generators/installers (build-opencode.sh, deploy-opencode.sh)
 └── README.md
 ```
+
+`agents/` and `commands/` are the **canonical** definitions; per-harness configs like
+`.opencode/` are generated from them (the pre-push hook keeps them in sync). Skills need
+no translation — the Agent Skills format is consumed natively by compliant harnesses.
 
 ## Installation
 
@@ -64,8 +70,12 @@ ln -s ~/Workspace/ai <project>/.agents
 ```
 
 That gives the project `.agents/agents/`, `.agents/commands/`, `.agents/skills/`, and a
-runtime cache (auto-detected per harness: `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/` — see [Code review âº Caching](./docs/code-review.md#caching)).
+runtime cache (auto-detected per harness: `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/` — see [Code review › Caching](./docs/code-review.md#caching)).
 Add `.agents/` to the target project's `.gitignore`.
+
+Using **OpenCode**? Run `.agents/scripts/deploy-opencode.sh <project>` afterwards to link
+the generated config into the project's `.opencode/` — see
+[OpenCode setup](./docs/opencode.md).
 
 > Symlinking one clone into several projects makes them **share the runtime cache**, and the
 > repo-level caches (`repo-profile.md`, `security-profile.md`) are project-specific — clone
@@ -88,6 +98,7 @@ token-efficiency practices.
 - [Implementation planning](./docs/plan.md) — the `/plan-orchestrator` command.
 - [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
 - [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.
+- [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.
 
 ## Development
 
