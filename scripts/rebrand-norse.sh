@@ -52,25 +52,31 @@ perl -CSD -0777 -pi -e 's/- \*\*Names are Generation I Pok\x{e9}mon only\*\*.*?f
 # shellcheck disable=SC2086
 perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $FILES
 
-# --- 4. Bring the generated OpenCode config along ---------------------------------------
-if [ -x scripts/build-opencode.sh ]; then
-  # Preferred: regenerate from the renamed canonical files (correct by construction).
-  ./scripts/build-opencode.sh
-elif [ -d .opencode ]; then
-  # No translator in this tree — rename/rewrite the generated copies directly.
+# --- 4. Bring the generated harness configs along ----------------------------------------
+[ -x scripts/build-opencode.sh ] && ./scripts/build-opencode.sh
+[ -x scripts/build-copilot.sh ] && ./scripts/build-copilot.sh
+
+# Fallback for trees without the translators — rename/rewrite generated copies directly.
+rewrite_generated() {
+  local dir="$1" suffix="$2"
+  [ -d "$dir" ] || return 0
   for pair in "${MAP[@]}"; do
+    local old_l new_l
     old_l=$(lower "${pair%%:*}")
     new_l=$(lower "${pair##*:}")
-    [ -f ".opencode/agents/$old_l.md" ] && mv ".opencode/agents/$old_l.md" ".opencode/agents/$new_l.md"
+    [ -f "$dir/$old_l$suffix" ] && mv "$dir/$old_l$suffix" "$dir/$new_l$suffix"
   done
-  OC_FILES=$(ls .opencode/agents/*.md .opencode/commands/*.md 2>/dev/null || true)
-  if [ -n "$OC_FILES" ]; then
+  local gen_files
+  gen_files=$(find "$dir" -name '*.md' 2>/dev/null || true)
+  if [ -n "$gen_files" ]; then
     # shellcheck disable=SC2086
-    perl -pi -e "$subs" $OC_FILES
+    perl -pi -e "$subs" $gen_files
     # shellcheck disable=SC2086
-    perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $OC_FILES
+    perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $gen_files
   fi
-fi
+}
+[ -x scripts/build-opencode.sh ] || { rewrite_generated .opencode/agents .md; rewrite_generated .opencode/commands .md; }
+[ -x scripts/build-copilot.sh ] || { rewrite_generated .github/agents .agent.md; rewrite_generated .github/skills .md; }
 
 # --- 5. Format ---------------------------------------------------------------------------
 if [ -x node_modules/.bin/prettier ]; then
@@ -79,7 +85,7 @@ fi
 
 # --- 6. Self-verify: no old names may survive -------------------------------------------
 leftovers=$(grep -rniE 'slowbro|slowpoke|kadabra|eevee|growlithe|dugtrio|mewtwo|alakazam|porygon|magneton|magnemite|machop|machoke|machamp|pok(e|é)mon|\bmew\b|\babra\b|\bditto\b' \
-  agents commands docs skills README.md AGENTS.md .opencode 2>/dev/null || true)
+  agents commands docs skills README.md AGENTS.md .opencode .github/agents .github/skills 2>/dev/null || true)
 if [ -n "$leftovers" ]; then
   echo "REBRAND INCOMPLETE — old names remain:" >&2
   echo "$leftovers" >&2

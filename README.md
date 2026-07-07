@@ -50,13 +50,15 @@ AI/
 ├── commands/   # One Markdown file per command (invokable workflow) — canonical
 ├── docs/       # Human-facing documentation
 ├── .opencode/  # GENERATED: the catalog in OpenCode format (never edit by hand)
-├── scripts/    # Generators/installers (build-opencode.sh, deploy-opencode.sh)
+├── .github/    # GENERATED: the catalog as Copilot custom agents (never edit by hand)
+├── scripts/    # Generators/installers (build-*.sh, deploy-*.sh)
 └── README.md
 ```
 
-`agents/` and `commands/` are the **canonical** definitions; per-harness configs like
-`.opencode/` are generated from them (the pre-push hook keeps them in sync). Skills need
-no translation — the Agent Skills format is consumed natively by compliant harnesses.
+`agents/` and `commands/` are the **canonical** definitions; per-harness configs
+(`.opencode/`, `.github/agents/`) are generated from them (the pre-push hook keeps them
+in sync). Skills need no translation — the Agent Skills format is consumed natively by
+compliant harnesses.
 
 ## Installation
 
@@ -76,6 +78,10 @@ Add `.agents/` to the target project's `.gitignore`.
 Using **OpenCode**? Run `.agents/scripts/deploy-opencode.sh <project>` afterwards to link
 the generated config into the project's `.opencode/` — see
 [OpenCode setup](./docs/opencode.md).
+
+Using **GitHub Copilot** (CLI, VS Code, or the coding agent)? Run
+`.agents/scripts/deploy-copilot.sh <project>` to link the generated agents into the
+project's `.github/agents/` — see [Copilot setup](./docs/copilot.md).
 
 > Symlinking one clone into several projects makes them **share the runtime cache**, and the
 > repo-level caches (`repo-profile.md`, `security-profile.md`) are project-specific — clone
@@ -99,6 +105,7 @@ token-efficiency practices.
 - [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
 - [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.
 - [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.
+- [Copilot setup](./docs/copilot.md) — the generated `.github/agents/` config.
 
 ## Development
 
