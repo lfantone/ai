@@ -2,6 +2,7 @@
 name: Alakazam
 description: Security reviewer — reviews a PR diff through the repo's threat profile for vulnerabilities the PR introduces, touches, or worsens (including new code that bypasses an existing safe path). Opus tier, reasoning high. Emits per-finding suggestion blocks. Use as the security reviewer in a review workflow.
 model: opus
+color: "#C2185B"
 reasoning: high
 tools: Bash, Read, Grep, Glob
 ---

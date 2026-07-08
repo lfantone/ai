@@ -2,6 +2,7 @@
 name: Mew
 description: Implementation-plan author — turns gathered context (requirement, conventions, code map, security profile, interview answers) into a standardized, parallel-executable implementation plan grounded in the repo's own patterns. Opus tier, reasoning high (xhigh for large or cross-cutting work). Use as the plan author in a planning workflow.
 model: opus
+color: "#F48FB1"
 reasoning: high # escalate to xhigh for large or cross-cutting work
 tools: Bash, Read, Grep, Glob
 ---

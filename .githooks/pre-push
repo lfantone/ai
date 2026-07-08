@@ -1,24 +1,13 @@
 #!/usr/bin/env bash
-# Pre-push gate:
-#   1. Regenerates the harness configs (.opencode/, .github/agents/) from the canonical
-#      catalog, so generated configs can never drift out of sync with agents/ and commands/.
-#   2. Formats all Markdown with Prettier.
-# If either step changes anything, the push is aborted so the changes can be reviewed
-# and committed — the commit being pushed is already fixed by this point.
+# Pre-push gate: formats all Markdown with Prettier. If formatting changes anything,
+# the push is aborted so the changes can be reviewed and committed — the commit being
+# pushed is already fixed by this point.
+# (Harness configs are no longer committed — scripts/install.mjs builds them at
+# install time, so there is nothing generated to keep in sync.)
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
-
-# Keep the generated harness configs in sync with the canonical agents/commands.
-if [ -x scripts/build-opencode.sh ]; then
-  echo "pre-push: regenerating .opencode/ from the canonical catalog..."
-  ./scripts/build-opencode.sh >/dev/null
-fi
-if [ -x scripts/build-copilot.sh ]; then
-  echo "pre-push: regenerating .github/agents/ from the canonical catalog..."
-  ./scripts/build-copilot.sh >/dev/null
-fi
 
 # No package install → skip formatting rather than block the push.
 if [ ! -x node_modules/.bin/prettier ]; then

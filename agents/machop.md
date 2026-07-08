@@ -2,6 +2,8 @@
 name: Machop
 description: Small-model step executor — applies ONE fully-specified plan step mechanically: locates each edit by its verbatim anchor, applies the exact before→after change, writes new files from given contents, then checks the step's "Done when". Fails fast instead of improvising. Use as the default executor in an implement workflow.
 model: haiku
+temperature: 0.1
+color: "#E57373"
 reasoning: low
 tools: Bash, Read, Edit, Write
 ---

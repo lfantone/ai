@@ -49,43 +49,40 @@ AI/
 ├── skills/     # One directory per skill (Agent Skills format)
 ├── commands/   # One Markdown file per command (invokable workflow) — canonical
 ├── docs/       # Human-facing documentation
-├── .opencode/  # GENERATED: the catalog in OpenCode format (never edit by hand)
-├── .github/    # GENERATED: the catalog as Copilot custom agents (never edit by hand)
-├── scripts/    # Generators/installers (build-*.sh, deploy-*.sh)
+├── scripts/    # install.mjs (harness installer) + rebrand-norse.sh (for the non-Pokémon fans)
 └── README.md
 ```
 
-`agents/` and `commands/` are the **canonical** definitions; per-harness configs
-(`.opencode/`, `.github/agents/`) are generated from them (the pre-push hook keeps them
-in sync). Skills need no translation — the Agent Skills format is consumed natively by
-compliant harnesses.
+`agents/` and `commands/` are the **canonical** definitions. Nothing generated is
+committed: `scripts/install.mjs` builds the config for your harness at install time, so
+drift between canonical and installed is impossible by construction. Skills need no
+translation — the Agent Skills format is consumed natively by compliant harnesses.
 
 ## Installation
 
-This repository is designed to be deployed as the **`.agents/`** directory of a target
-project — clone or symlink it there:
+One installer covers every harness, project-wise or globally, with either naming set:
 
 ```bash
-git clone git@github.com:lfantone/ai.git <project>/.agents
-# or symlink a single local clone:
-ln -s ~/Workspace/ai <project>/.agents
+git clone git@github.com:lfantone/ai.git && cd ai
+
+./scripts/install.mjs --harness claude   --project ~/work/my-app   # → .claude/
+./scripts/install.mjs --harness opencode --project ~/work/my-app   # → .opencode/
+./scripts/install.mjs --harness github   --project ~/work/my-app   # → .github/
+
+./scripts/install.mjs --harness claude --global                    # → ~/.claude/
+./scripts/install.mjs --harness opencode --global --names norse    # Norse-named roster
+
+./scripts/install.mjs --harness github --project . --dry-run       # preview only
 ```
 
-That gives the project `.agents/agents/`, `.agents/commands/`, `.agents/skills/`, and a
-runtime cache (auto-detected per harness: `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/` — see [Code review › Caching](./docs/code-review.md#caching)).
-Add `.agents/` to the target project's `.gitignore`.
+The installer **builds at install time** from the canonical catalog: per-harness
+frontmatter (models, permissions/tools, colors, reasoning effort), commands adapted to
+each harness's invocation style (OpenCode commands, Copilot command-skills, Claude
+commands), and skills copied as-is. Re-run it after pulling catalog updates. Runtime
+caches are created by the flows in the harness's own config dir (see
+[Code review › Caching](./docs/code-review.md#caching)).
 
-Using **OpenCode**? Run `.agents/scripts/deploy-opencode.sh <project>` afterwards to link
-the generated config into the project's `.opencode/` — see
-[OpenCode setup](./docs/opencode.md).
-
-Using **GitHub Copilot** (CLI, VS Code, or the coding agent)? Run
-`.agents/scripts/deploy-copilot.sh <project>` to link the generated agents into the
-project's `.github/agents/` — see [Copilot setup](./docs/copilot.md).
-
-> Symlinking one clone into several projects makes them **share the runtime cache**, and the
-> repo-level caches (`repo-profile.md`, `security-profile.md`) are project-specific — clone
-> per project if you don't want them to collide.
+Harness details: [OpenCode](./docs/opencode.md) · [Copilot](./docs/copilot.md).
 
 ## Conventions
 
