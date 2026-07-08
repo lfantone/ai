@@ -3,6 +3,7 @@ description: Retry step executor — re-applies a plan step the Haiku executor f
 mode: subagent
 model: github-copilot/claude-sonnet-5
 temperature: 0.1
+color: "#C03028"
 permission:
   edit: allow
   bash: allow

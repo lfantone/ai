@@ -3,6 +3,7 @@ description: Plan verifier — mechanically checks an implementation plan agains
 mode: subagent
 model: github-copilot/claude-sonnet-5
 temperature: 0.1
+color: "#B8B8D0"
 permission:
   edit: deny
   bash: allow

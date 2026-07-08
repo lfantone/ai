@@ -2,6 +2,8 @@
 description: Implementation-plan author — turns gathered context (requirement, conventions, code map, security profile, interview answers) into a standardized, parallel-executable implementation plan grounded in the repo's own patterns. Opus tier, reasoning high (xhigh for large or cross-cutting work). Use as the plan author in a planning workflow.
 mode: subagent
 model: github-copilot/claude-opus-4.8
+reasoningEffort: high
+color: "#F48FB1"
 permission:
   edit: deny
   bash: allow

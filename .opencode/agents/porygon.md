@@ -3,6 +3,8 @@ description: Mechanically verifies every review finding's location against the P
 mode: subagent
 model: github-copilot/claude-haiku-4.5
 temperature: 0.1
+reasoningEffort: low
+color: "#5DADE2"
 permission:
   edit: deny
   bash: allow

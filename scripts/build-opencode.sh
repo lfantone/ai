@@ -15,6 +15,30 @@ map_model() {
   esac
 }
 
+# --- Color mapping: Pokémon type color, shaded by evolution stage/tier so every agent
+# is visually distinct in the TUI. Norse aliases included so the map survives a rebrand.
+map_color() {
+  case "$1" in
+    slowpoke | ratatoskr) echo "#6890F0" ;;   # Water blue
+    abra | skadi) echo "#FFB3C6" ;;           # Psychic, first stage (light)
+    kadabra | huginn) echo "#F85888" ;;       # Psychic, base
+    alakazam | tyr) echo "#C2185B" ;;         # Psychic, final stage (deep)
+    mew | bragi) echo "#F48FB1" ;;            # Psychic, mythical pink
+    mewtwo | mimir) echo "#8E4585" ;;         # Psychic, dark purple
+    eevee | muninn) echo "#A8A878" ;;         # Normal
+    growlithe | heimdall) echo "#F08030" ;;   # Fire
+    dugtrio | kraken) echo "#E0C068" ;;       # Ground
+    porygon | urd) echo "#5DADE2" ;;          # its cyan-blue body
+    magnemite | verdandi) echo "#F8D030" ;;   # Electric side of the dual type
+    magneton | skuld) echo "#B8B8D0" ;;       # Steel side of the dual type
+    machop | brokkr) echo "#E57373" ;;        # Fighting, light — the ladder darkens
+    machoke | sindri) echo "#C03028" ;;       # Fighting, base
+    machamp | volund) echo "#8E1B12" ;;       # Fighting, dark — last resort
+    ditto | loki) echo "#BA68C8" ;;           # its purple blob
+    *) echo "#888888" ;;
+  esac
+}
+
 rm -rf .opencode/agents .opencode/commands
 mkdir -p .opencode/agents .opencode/commands
 
@@ -32,10 +56,16 @@ for f in agents/*.md; do
   case "$tools" in Bash* | *" Bash"*) bash_perm=allow ;; esac
 
   # deterministic verifiers/executors get a pinned low temperature
+  # (norse aliases included so the map survives a rebrand)
   temp=""
   case "$name" in
-    machop | machoke | porygon | magneton | magnemite) temp="temperature: 0.1" ;;
+    machop | machoke | porygon | magneton | magnemite | brokkr | sindri | urd | skuld | verdandi)
+      temp="temperature: 0.1"
+      ;;
   esac
+
+  # canonical `reasoning:` rides through as the provider option reasoningEffort
+  reasoning=$(sed -n 's/^reasoning: \([a-z]*\).*/\1/p' "$f" | head -1)
 
   {
     echo "---"
@@ -43,6 +73,8 @@ for f in agents/*.md; do
     echo "mode: subagent"
     echo "model: $(map_model "$tier")"
     [ -n "$temp" ] && echo "$temp"
+    [ -n "$reasoning" ] && echo "reasoningEffort: $reasoning"
+    echo "color: \"$(map_color "$name")\""
     echo "permission:"
     echo "  edit: $edit"
     echo "  bash: $bash_perm"

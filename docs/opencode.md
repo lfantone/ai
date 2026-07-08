@@ -31,6 +31,26 @@ retarget):
 Deterministic verifiers/executors (Machop, Machoke, Porygon, Magneton, Magnemite) are
 pinned to `temperature: 0.1`.
 
+## Agent properties
+
+Beyond `mode`/`model`/`permission`, the generated agents carry:
+
+- **`color`** — a hex per agent so the TUI shows at a glance who's working. The scheme is
+  the Pokémon **type color, shaded by evolution stage/tier**: the Fighting executor
+  ladder literally darkens as it escalates (`#E57373` Machop → `#C03028` Machoke →
+  `#8E1B12` Machamp), the five Psychics get distinct shades (light Abra → dark Mewtwo),
+  and the Magnemite/Magneton pair splits its Electric/Steel dual type. All 16 are unique.
+  The map (`map_color` in the script) includes the Norse aliases so it survives a
+  rebrand.
+- **`reasoningEffort`** — the canonical `reasoning:` field rides through as a provider
+  pass-through option (e.g. Mewtwo/Alakazam `high`, Porygon/Machop `low`).
+
+Considered and deliberately **unset**: `top_p` (don't tune it and `temperature`
+together), `hidden` (workers are `mode: subagent` already — keeping them `@`-able helps
+debugging), `textVerbosity` (provider-specific; the compact-brief discipline lives in the
+agent prompts, where it's portable). Any other frontmatter key passes through to the
+provider as a model option if you need one later.
+
 ## Regenerating
 
 After any change to the canonical `agents/` or `commands/` (e.g. a rebase from `main`):

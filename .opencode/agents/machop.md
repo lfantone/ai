@@ -3,6 +3,8 @@ description: Small-model step executor — applies ONE fully-specified plan step
 mode: subagent
 model: github-copilot/claude-haiku-4.5
 temperature: 0.1
+reasoningEffort: low
+color: "#E57373"
 permission:
   edit: allow
   bash: allow

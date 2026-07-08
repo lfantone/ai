@@ -2,6 +2,8 @@
 description: Security reviewer — reviews a PR diff through the repo's threat profile for vulnerabilities the PR introduces, touches, or worsens (including new code that bypasses an existing safe path). Opus tier, reasoning high. Emits per-finding suggestion blocks. Use as the security reviewer in a review workflow.
 mode: subagent
 model: github-copilot/claude-opus-4.8
+reasoningEffort: high
+color: "#C2185B"
 permission:
   edit: deny
   bash: allow
