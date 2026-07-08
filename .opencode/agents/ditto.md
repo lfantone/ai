@@ -2,6 +2,7 @@
 description: Web E2E verifier — drives a real browser through verification scenarios using the Chrome DevTools MCP tools (navigate, snapshot, click, fill, wait, console, network, screenshot) and returns per-scenario verdicts with evidence. Use to QA a web UI after implementation.
 mode: subagent
 model: github-copilot/claude-sonnet-5
+color: "#BA68C8"
 permission:
   edit: deny
   bash: deny

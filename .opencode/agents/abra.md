@@ -2,6 +2,7 @@
 description: Verification-scenario designer — turns a plan's acceptance criteria, change map, and testing notes into an executable QA checklist: concrete scenarios with steps, expected observable results, surface (web / api / cli), and a mutating flag. Use before end-to-end verification.
 mode: subagent
 model: github-copilot/claude-sonnet-5
+color: "#FFB3C6"
 permission:
   edit: deny
   bash: deny

@@ -2,6 +2,8 @@
 description: General code reviewer — compares a PR diff against ticket intent, repo conventions, and correctness/quality, emitting per-finding suggestion blocks. Opus tier; run with reasoning high (xhigh for large or critical PRs). Use as the correctness/quality reviewer in a review workflow.
 mode: subagent
 model: github-copilot/claude-opus-4.8
+reasoningEffort: high
+color: "#8E4585"
 permission:
   edit: deny
   bash: allow

@@ -2,6 +2,7 @@
 description: Code cartographer — maps where a change will land in the codebase: insertion points (file:symbol), prior art to mirror, seams/extension points, and collisions. Also diagnoses which change caused a failed verification scenario. Use as the "where & how" gatherer when planning, or as the diagnostician in a verification fix loop.
 mode: subagent
 model: github-copilot/claude-sonnet-5
+color: "#E0C068"
 permission:
   edit: deny
   bash: allow

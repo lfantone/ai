@@ -2,6 +2,7 @@
 description: Scans a repo to produce a ranked, repo-specific threat checklist — entry points, auth model, data-access pattern, sensitive data, external calls, existing safe paths, and framework footguns. Repo-stable cache. Use as the security-context scout in a review or planning workflow.
 mode: subagent
 model: github-copilot/claude-sonnet-5
+color: "#F08030"
 permission:
   edit: allow
   bash: allow
