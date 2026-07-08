@@ -2,6 +2,7 @@
 name: Mewtwo
 description: General code reviewer — compares a PR diff against ticket intent, repo conventions, and correctness/quality, emitting per-finding suggestion blocks. Opus tier; run with reasoning high (xhigh for large or critical PRs). Use as the correctness/quality reviewer in a review workflow.
 model: opus
+color: "#8E4585"
 reasoning: high # escalate to xhigh for large or critical PRs
 tools: Bash, Read, Grep, Glob
 ---

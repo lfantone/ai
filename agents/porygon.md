@@ -2,6 +2,8 @@
 name: Porygon
 description: Mechanically verifies every review finding's location against the PR head — corrects line numbers from the anchor text and demotes unpostable findings to sketches. Use after the reviewers return, before assembling or publishing suggestions.
 model: haiku
+temperature: 0.1
+color: "#5DADE2"
 reasoning: low
 tools: Bash, Read
 ---

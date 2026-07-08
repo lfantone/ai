@@ -2,6 +2,8 @@
 name: Magnemite
 description: Runtime API/CLI verifier — turns API verification scenarios into a persistent Bruno collection and runs it via the `bru` CLI (declarative asserts, JSON report), falling back to curl + jq when Bruno is unavailable; CLI scenarios run as exact commands. Returns per-scenario verdicts with trimmed evidence. Use to QA an API or CLI after implementation.
 model: sonnet
+temperature: 0.1
+color: "#F8D030"
 tools: Bash, Read, Write
 ---
 

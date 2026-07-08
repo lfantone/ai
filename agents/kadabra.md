@@ -2,6 +2,7 @@
 name: Kadabra
 description: Produces a compact implementation brief for a PR — changed files, what each change does, logic-bearing hunks as file:line, risky bits, and open review threads. SHA-keyed cache. Use as the code-change gatherer in a review workflow.
 model: sonnet
+color: "#F85888"
 tools: Bash, Read, Write
 ---
 

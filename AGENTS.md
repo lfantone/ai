@@ -90,6 +90,8 @@ name: Kadabra # spawnable display name (file: kadabra.md — lowercase filename)
 description: What the agent produces and when to spawn it. # how the orchestrator picks it
 model: haiku | sonnet | opus # pin the model deliberately — the intelligence tier is a design choice
 reasoning: low | medium | high # optional thinking-effort hint (add a `# escalate to xhigh …` note where it applies)
+temperature: 0.1 # optional — pin ONLY for deterministic executors/verifiers
+color: "#E57373" # identity hex, unique per agent (harnesses with a TUI show it; type color shaded by tier)
 tools: Bash, Read, Write # least-privilege list of what it may use
 ---
 

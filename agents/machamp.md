@@ -2,6 +2,7 @@
 name: Machamp
 description: Last-resort step executor — completes a plan step whose spec is right but whose execution genuinely needs judgment (complex surrounding code, non-trivial adaptation). Stays within the step's file scope and logs every deviation for plan feedback. Use only after Machoke fails and the user approves escalation.
 model: opus
+color: "#8E1B12"
 reasoning: medium
 tools: Bash, Read, Edit, Write, Grep, Glob
 ---

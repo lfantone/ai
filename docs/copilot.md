@@ -1,11 +1,20 @@
 # GitHub Copilot setup
 
-The repo ships **`.github/agents/`** — the catalog translated to GitHub Copilot's custom
-agents format (`*.agent.md`), read by the **Copilot CLI**, **VS Code**, and the **coding
-agent** alike. Generated from the canonical `agents/` and `commands/` by a build script;
-the canonical files stay the source of truth — never edit `.github/agents/` by hand.
+Install the catalog for GitHub Copilot (**CLI**, **VS Code**, and the **coding agent**
+all read the same files) with the harness installer — it builds from the canonical
+`agents/` and `commands/` at install time, so there is nothing generated to drift:
 
-## What's generated
+```bash
+./scripts/install.mjs --harness github --project <project>   # → <project>/.github/
+./scripts/install.mjs --harness github --global              # → ~/.copilot/
+./scripts/install.mjs --harness github --project <p> --names norse
+```
+
+Re-run after pulling catalog updates. Add `--dry-run` to preview. Since `.github/` is
+usually committed in projects, gitignore the installed entries if you don't want them in
+the project's repo.
+
+## What's installed
 
 - **16 worker agents** (`.github/agents/*.agent.md`, `user-invocable: false`) —
   frontmatter converted: Copilot `model` id, a `tools` array derived from each agent's
@@ -15,20 +24,20 @@ the canonical files stay the source of truth — never edit `.github/agents/` by
   for it by name ("run the plan-orchestrator for IE-1234") or let the description
   trigger it; `$ARGUMENTS` is mapped to "the user's request". No model pin — they run on
   whatever model you've selected.
-- **Catalog skills** (tea-cli, gh-cli, bruno-cli, repo-learnings) — per-skill symlinks
-  inside `.github/skills/`; Copilot consumes the agentskills `SKILL.md` format natively
-  (manage with `/skills` in the CLI).
+- **Catalog skills** (tea-cli, gh-cli, bruno-cli, repo-learnings) — copied into
+  `.github/skills/`; Copilot consumes the agentskills format natively (manage with
+  `/skills` in the CLI).
 
 ## Model mapping
+
+Edit `MODEL_MAP.github` in `scripts/install.mjs` to retarget; your install's valid ids
+are listed under `model` in `copilot help config`.
 
 | Tier   | Copilot model      |
 | ------ | ------------------ |
 | haiku  | `claude-haiku-4.5` |
 | sonnet | `claude-sonnet-5`  |
 | opus   | `claude-opus-4.8`  |
-
-Edit `map_model` in `scripts/build-copilot.sh` to retarget; your install's valid ids are
-listed under `model` in `copilot help config`.
 
 ## Tools mapping
 
@@ -38,25 +47,9 @@ spec silently ignores unknown tool names, so one list serves every surface, and 
 canonical least-privilege split survives (executors get write access; reviewers and
 verifiers don't).
 
-## Regenerating
+## Notes
 
-```bash
-./scripts/build-copilot.sh
-```
-
-The **pre-push hook** runs it automatically and aborts the push on drift — same guarantee
-as the OpenCode config.
-
-## Deployment
-
-Same pattern as [OpenCode](./opencode.md) — never symlink the whole `.github/` (projects
-own it: workflows, templates); link per file:
-
-```bash
-<project>/.agents/scripts/deploy-copilot.sh <project>
-```
-
-Links the 16 worker agents into `<project>/.github/agents/` and every skill — the 4
-catalog skills plus the 4 orchestrator command-skills — into `<project>/.github/skills/`.
-Since `.github/` is usually committed, gitignore the symlinks if you don't want them in
-the project's repo.
+- Global installs land in `~/.copilot/agents` and `~/.copilot/skills` — verify your
+  Copilot surface picks up global skills; discovery varies by version.
+- MCP-dependent agents (Ditto → Chrome DevTools, Slowpoke → Jira) need those MCP servers
+  configured for your Copilot surface.

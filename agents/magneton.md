@@ -2,6 +2,8 @@
 name: Magneton
 description: Plan verifier — mechanically checks an implementation plan against the codebase: every cited file:symbol exists at HEAD, every edit anchor matches exactly once, steps are complete enough for small-model execution, and the dependency graph is acyclic with consistent ids, valid file-disjoint waves. Use after the plan is authored (or before executing a stale plan).
 model: sonnet
+temperature: 0.1
+color: "#B8B8D0"
 tools: Bash, Read, Grep, Glob
 ---
 

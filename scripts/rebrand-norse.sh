@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot rebrand: Pokémon roster → Norse mythology (for the private "octopus" repo).
+# One-shot rebrand: Pokémon roster → Norse mythology (for the non-Pokémon fans).
 # Renames agent files, rewrites every reference (both cases, word-boundary), updates the
 # AGENTS.md naming rule, regenerates .opencode/, formats, and self-verifies.
 # Run ONCE in a clone of the catalog, review the diff, commit. Then delete this script.
@@ -52,31 +52,9 @@ perl -CSD -0777 -pi -e 's/- \*\*Names are Generation I Pok\x{e9}mon only\*\*.*?f
 # shellcheck disable=SC2086
 perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $FILES
 
-# --- 4. Bring the generated harness configs along ----------------------------------------
-[ -x scripts/build-opencode.sh ] && ./scripts/build-opencode.sh
-[ -x scripts/build-copilot.sh ] && ./scripts/build-copilot.sh
-
-# Fallback for trees without the translators — rename/rewrite generated copies directly.
-rewrite_generated() {
-  local dir="$1" suffix="$2"
-  [ -d "$dir" ] || return 0
-  for pair in "${MAP[@]}"; do
-    local old_l new_l
-    old_l=$(lower "${pair%%:*}")
-    new_l=$(lower "${pair##*:}")
-    [ -f "$dir/$old_l$suffix" ] && mv "$dir/$old_l$suffix" "$dir/$new_l$suffix"
-  done
-  local gen_files
-  gen_files=$(find "$dir" -name '*.md' 2>/dev/null || true)
-  if [ -n "$gen_files" ]; then
-    # shellcheck disable=SC2086
-    perl -pi -e "$subs" $gen_files
-    # shellcheck disable=SC2086
-    perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $gen_files
-  fi
-}
-[ -x scripts/build-opencode.sh ] || { rewrite_generated .opencode/agents .md; rewrite_generated .opencode/commands .md; }
-[ -x scripts/build-copilot.sh ] || { rewrite_generated .github/agents .agent.md; rewrite_generated .github/skills .md; }
+# --- 4. Generated harness configs -------------------------------------------------------
+# Nothing to do: harness configs are built at install time by scripts/install.mjs (which
+# has its own --names norse mode). Update its NORSE map if you change the map above.
 
 # --- 5. Format ---------------------------------------------------------------------------
 if [ -x node_modules/.bin/prettier ]; then
@@ -85,12 +63,12 @@ fi
 
 # --- 6. Self-verify: no old names may survive -------------------------------------------
 leftovers=$(grep -rniE 'slowbro|slowpoke|kadabra|eevee|growlithe|dugtrio|mewtwo|alakazam|porygon|magneton|magnemite|machop|machoke|machamp|pok(e|é)mon|\bmew\b|\babra\b|\bditto\b' \
-  agents commands docs skills README.md AGENTS.md .opencode .github/agents .github/skills 2>/dev/null || true)
+  agents commands docs skills README.md AGENTS.md 2>/dev/null || true)
 if [ -n "$leftovers" ]; then
   echo "REBRAND INCOMPLETE — old names remain:" >&2
   echo "$leftovers" >&2
   exit 1
 fi
 
-echo "Rebrand complete: $(ls agents/*.md | wc -l | tr -d ' ') agents renamed, references rewritten, .opencode regenerated."
-echo "Manual follow-ups: README title/clone URL for the octopus repo, then delete this script."
+echo "Rebrand complete: $(ls agents/*.md | wc -l | tr -d ' ') agents renamed, references rewritten."
+echo "Manual follow-ups: adjust the README title/clone URL for your repo, then delete this script."
