@@ -32,6 +32,11 @@ files when HEAD is confirmed equal to the PR head SHA.
 
 ## Per finding
 
+Findings located `(not in diff — missing)` have no anchor by design (they report an
+omission, e.g. a missed acceptance criterion) — pass them through untouched with audit
+`skipped (missing-type)`. In repo-audit mode (`scope: repo`), anchors verify against the
+file at `head_sha` the same way — there is just no diff to be constrained by.
+
 1. Take the `**Anchor:**` text and the reported `<file>:<line(s)>`.
 2. **Locate the anchor mechanically.** Search the fetched file for the exact anchor text
    and let the tool report the line number — do not infer it:

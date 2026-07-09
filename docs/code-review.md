@@ -33,7 +33,17 @@ URL (or the command falls back to `--repo <owner>/<repo>`).
 2. **Checkpoint** — shows you what it understood and how confident it is, then **stops** so
    you can refine or continue.
 3. **Reviews** — two Opus agents review in parallel: one for correctness/quality against
-   ticket intent and conventions, one for security on the diff.
+   ticket intent and conventions, one for security. **Both are strictly scoped to the PR
+   delta** — unchanged code is context for judging the change, never a review target.
+   The one exception: **what the PR fails to do is always in scope** — every acceptance
+   criterion is mapped to `covered / partial / MISSING`, and a missing criterion is a
+   must-fix that forces request-changes.
+
+   Want a **full-repository audit** instead? Say so (in the request or at the
+   checkpoint) — `scope: repo` sweeps the whole codebase through the same lenses.
+   It's opt-in because it's noticeably more expensive; the default never widens
+   silently.
+
 4. **Verifies line numbers** — a mechanical pass confirms every suggestion lands on the
    right line.
 5. **Publishes (optional)** — after you approve, posts inline suggestions to the PR.
@@ -49,10 +59,13 @@ The command pauses and waits for you at two points — it never proceeds on its 
 
 A single report:
 
+- **Ticket coverage** — first thing: every acceptance criterion marked
+  `covered / partial / MISSING / descoped`.
 - **Code review** — correctness, conventions, reuse, missing tests, edge cases.
-- **Security** — issues the PR introduces, touches, or worsens.
-- **Verdict** — approve / approve-with-nits / request-changes (any must-fix security issue
-  forces request-changes).
+- **Security** — issues the PR introduces, touches, or worsens (plus controls the change
+  _should_ have added but didn't).
+- **Verdict** — approve / approve-with-nits / request-changes (any must-fix security
+  issue or MISSING criterion forces request-changes).
 
 Each finding has a severity (`must-fix` / `recommended` / `cosmetic`) and a paste-ready
 `suggestion` block.

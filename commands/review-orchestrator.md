@@ -29,6 +29,22 @@ Spawn them as-is — do not restate their instructions or override their model:
 - Every sub-agent returns a compact brief (≤ ~300 words) — ignore raw dumps.
 - Do not narrate your plan. Act, then report.
 
+## Review scope
+
+Two modes; **`delta` is the default** and is never widened silently:
+
+- **`delta`** — the review target is the PR's changes only. The repo and security
+  profiles are **lenses** the reviewers judge the changed lines through, not audit
+  checklists; no code finding outside the diff. The ONE exception: what the PR **fails
+  to do** (missed acceptance criteria, omitted security controls) is always in scope —
+  reported as `(not in diff — missing)` findings.
+- **`repo`** — a full-repository audit; the reviewers sweep the codebase through the
+  profiles, anchored at `head_sha`. Noticeably more expensive — say so when it's chosen.
+
+Selecting: `repo` only when the user asked for it (e.g. "full repo review" in TARGET) or
+picks it at the Phase 1.5 checkpoint, where you always state the active scope. If Kadabra
+reports an empty diff in delta mode, offer `repo` or stop — never widen on your own.
+
 ## Workflow tracking (do this FIRST)
 
 Create a to-do list (TaskCreate) with one item per phase: Re-review detection (Phase 0),
@@ -160,6 +176,8 @@ agents understand before any review runs. Keep it tight:
 
 - **What I'll review:** PR #`<index>` "`<title>`" against `<ticket ref/intent>` — N files;
   key change in one line.
+- **Scope:** `delta` (default) — note the user can switch to `repo` (full-repository
+  audit, noticeably more expensive) by saying so in their reply.
 - **What I understand:** 2–4 bullets distilled from the briefs (goal, main change, relevant
   conventions, top security-surface item).
 - **Confidence:** high / medium / low, plus the single biggest gap (if any).
@@ -194,8 +212,10 @@ Spawn both reviewers **in parallel, in a single message**, injecting their input
 code). Each already owns its finding-format contract and line-number rules — assemble their
 output as-is:
 
-- **Mewtwo** — Ticket + Implementation + Repository briefs + COORDS.
-- **Alakazam** — Implementation brief + Growlithe's threat profile + COORDS.
+- **Mewtwo** — Ticket + Implementation + Repository briefs + COORDS + the active scope
+  (`scope: delta` or `scope: repo`).
+- **Alakazam** — Implementation brief + Growlithe's threat profile + COORDS + the active
+  scope.
 
 Also inject the recurring-mistake entries from `$CACHE/learnings.md` (per the
 `repo-learnings` skill, if the file exists) into both reviewer spawns.
@@ -215,11 +235,17 @@ publishing — never the pre-verification numbers.
 
 # Final assembly (Slowbro)
 
-Produce one report with two parts:
+Produce one report:
+
+## Ticket coverage (Mewtwo)
+
+Lead with it — per acceptance criterion: `covered` / `partial` / `MISSING` / `descoped`.
+This is the first thing the PR author needs to know.
 
 ## Code review (Mewtwo)
 
-General findings, ordered by severity (must-fix → recommended → cosmetic).
+General findings, ordered by severity (must-fix → recommended → cosmetic). `(not in
+diff — missing)` findings — omitted criteria or controls — sit at the top of must-fix.
 
 ## Security (Alakazam)
 
@@ -229,7 +255,8 @@ Security findings in their own section, same severity ordering and format.
 
 - approve / approve-with-nits / request-changes
 - Count per severity (general + security).
-- **Any must-fix security finding forces request-changes.**
+- **Any must-fix security finding OR any MISSING acceptance criterion forces
+  request-changes.**
 - Top blocker, if any.
 
 **Persist state NOW — before the publish gate.** Write/update
@@ -249,6 +276,8 @@ Publishing is outward-facing. **HARD STOP:** after presenting the assembled repo
 _"Publish these N findings to PR #<index>? (all / must-fix only / summary-only / no)"_ and
 **wait for an explicit reply.** Never auto-publish. Only publish the Porygon-verified,
 postable findings (skip any marked `unpostable (sketch)` for inline posting).
+`(not in diff — missing)` findings and everything from a `repo`-scope audit have no diff
+line to attach to — they always go in the summary comment, never inline.
 
 On confirmation, post via the detected forge's CLI (payload details in the `tea-cli` /
 `gh-cli` skill):
