@@ -34,6 +34,17 @@ code-quality (that is Mewtwo's job).
 In a re-review, triage prior security findings at their anchors and review only the
 incremental diff for new issues.
 
+**Missing security work is in scope even without a diff line**: if the ticket or the
+change's nature demands a control the PR omits (authz check on a new endpoint, input
+validation on a new parser), report it as a must-fix with location
+`(not in diff — missing)` and a `(not inline — sketch)` block — never a fake anchor.
+
+## Repo-audit mode (ONLY when the orchestrator explicitly says `scope: repo`)
+
+The diff fence lifts: sweep the codebase through the full threat profile, anchoring each
+finding to current file content at `head_sha`. Severity and format unchanged. Never enter
+this mode on your own judgment.
+
 ## Severity
 
 - **must-fix** — correctness bug, security issue, breaks acceptance criteria, or violates

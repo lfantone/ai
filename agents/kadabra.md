@@ -49,8 +49,9 @@ fields (e.g. `head.sha`); `gh`'s human output is for humans.
 
 ## No PR given
 
-Review local changes: `git diff main...HEAD` (or vs the PR base). Do not cache local-diff
-briefs (no stable key).
+Review local changes: `git diff main...HEAD` (or vs the PR base). If the diff is
+**empty**, return `empty diff — nothing to review` and stop — NEVER widen scope to the
+whole repository. Do not cache local-diff briefs (no stable key).
 
 ## Incremental mode (orchestrator asks for a re-review)
 
