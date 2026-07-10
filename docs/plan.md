@@ -1,108 +1,114 @@
 # Implementation planning (`/plan-orchestrator`)
 
-An orchestrated, context-rich planning flow for a ticket or feature. Cheap agents map the
-repo and the requirement in parallel, you refine intent in a short interview, and a
-heavyweight author produces a standardized, verifiable implementation plan grounded in the
-repo's own patterns.
+Creates the artifact used by the Plan → Implement → Verify workflow. Planning has two modes:
 
-This is **step 1 of a Plan → Implement → Verify flow**: the output is a plan artifact, not
-code changes. The [Implement step](./implement.md) executes the saved plan — and because
-every step is specified down to exact, anchored edits, execution runs on small
-(Haiku-level) models. The [Verify step](./verify.md) then QAs the result end-to-end
-against the plan's acceptance criteria.
+- **Precise** (default): Opus authors exact execution contracts for Haiku/GPT-mini.
+- **Fast** (`--fast`): Sonnet authors a shorter plan that may contain guided contracts,
+  which implementation routes to Sonnet.
 
 ## Usage
 
-```
-/plan-orchestrator [ticket id/description]
-```
-
-Examples:
-
-```
+```text
 /plan-orchestrator IE-1234
+/plan-orchestrator --fast IE-1234
 /plan-orchestrator "add rate limiting to the login endpoint"
 ```
 
-If you pass nothing, it asks once what to plan. If a plan for the ticket already exists,
-the run becomes a **revision** of it rather than starting cold.
+Precise is the default so existing usage remains stable. Fast mode is explicit; the command
+does not add another question just to select it.
 
-## What it does
+## Flow
 
-1. **Checks what it can reuse** — repo and security profiles cached by earlier runs (shared
-   with [code review](./code-review.md)) are reused when fresh.
-2. **Gathers context in parallel** — cheap agents brief the requirement (goal, acceptance
-   criteria, constraints), the repo conventions, and the code map: where the change lands,
-   prior art to mirror, seams to plug into.
-3. **Interviews you** — shows what it understood, then asks the 3–7 questions that would
-   most change the design. **Mandatory by default**; say "skip the interview" to opt out.
-4. **Confirms the direction** — presents the learnings and the intended shape of the
-   solution, and waits for your approval before the expensive authoring pass.
-5. **Authors the plan** — an Opus agent writes the standardized plan: exact files, verbatim
-   anchors, ready-to-apply before→after edits (no design decisions left), trade-offs, and
-   steps decomposed into parallel **waves** with an explicit dependency graph.
-6. **Verifies it** — a mechanical pass checks every cited `file:symbol` exists, every edit
-   anchor matches exactly once, and the dependency graph is sound (acyclic, consistent ids,
-   file-disjoint waves).
-7. **Iterates until you approve** — review the plan, request revisions round after round,
-   then the approved artifact is saved.
+1. Reuse fresh repository/security profiles directly, refreshing only materially stale ones.
+2. Normalize the ticket with Slowpoke.
+3. Pass that full brief to Dugtrio so code mapping never runs from a bare ticket id.
+4. Present the understanding checkpoint. Precise mode interviews for decisions that affect
+   exact execution; fast mode asks only blocking questions.
+5. Author with Mew (precise) or Meowth (fast).
+6. Structurally verify ids, contracts, dependencies, and file-disjoint waves with Magneton.
+7. Present the complete plan for approval or revision.
 
-## The stops
+There is no separate direction-approval gate. Precise mode normally has two stops: the
+interview and final plan approval. Fast mode has only final approval unless a blocking question
+exists. Ticket posting remains separately gated.
 
-The command pauses and waits for you at these points — it never proceeds on its own:
+## Execution contracts
 
-- **Interview** — after context gathering (skippable only on explicit request).
-- **Direction approval** — before authoring: `yes / adjust / no`.
-- **Plan acceptance** — after verification: `approve / revise: <what> / no`.
-- **Posting to the ticket** — optional at the end, only on explicit `yes`.
+Every step is self-contained and declares an execution class:
 
-## Output
+- `exact`: complete preconditions and typed operations; runs on Machop/Haiku.
+- `guided`: bounded instructions and a concrete target state; runs on Machoke/Sonnet.
 
-A standardized plan saved to `<cache>/plan-<ticket>.md` (`status: draft` during
-iteration, `approved` when finalized). It always contains, in order: objective, context &
-constraints, design overview with trade-offs, a change map, a task checklist, an execution
-plan (parallel waves + dependency DAG + critical path), detailed steps with exact anchored
-edits, data/schema changes, testing plan, rollout, future-proofing, and risks/open
-questions.
+Precise plans contain only exact contracts. Fast plans may mix both. An exact contract uses a
+small operation vocabulary: `replace_exact`, `insert_before_exact`, `insert_after_exact`,
+`create_file`, and `delete_exact`.
 
-Step ids (`S1`, `S2`, …) are stable across the checklist, waves, and step details — the
-Implement step relies on them.
+````markdown
+### S3 — Add request validation
 
-## What's under the hood
+- **Execution class:** exact
+- **Files:** `src/routes/users.ts`
+- **Depends on:** S1
+- **Allowed context:** `src/routes/users.ts:createUser`
+- **Pattern:** `src/routes/projects.ts:createProject`
 
-The command is a thin orchestrator (**Slowbro**). The work is done by agents in
-[`agents/`](../agents) — three shared with code review, three specific to planning:
+#### Preconditions
 
-| Agent       | Model  | Job                                              |
-| ----------- | ------ | ------------------------------------------------ |
-| `Slowpoke`  | Haiku  | Requirement brief _(shared)_                     |
-| `Eevee`     | Sonnet | Repository conventions & patterns _(shared)_     |
-| `Growlithe` | Sonnet | Security profile _(shared; only when stale)_     |
-| `Dugtrio`   | Sonnet | Code cartographer — where the change lands       |
-| `Mew`       | Opus   | Plan author                                      |
-| `Magneton`  | Sonnet | Plan verifier — `file:symbol` + dependency graph |
+- The complete Before block occurs exactly once.
+- `validateCreateUser` is exported by the validation module.
 
-## Caching
+#### Operations
 
-Plans and profiles live in the project's auto-detected cache dir — `.opencode/cache/`, `.claude/cache/`, or `.agents/cache/` — (see the README's
-Installation section):
+1. **replace_exact** at `createUser`
 
-| File                  | Holds                                    | Owner         |
-| --------------------- | ---------------------------------------- | ------------- |
-| `repo-profile.md`     | Stack & conventions _(shared)_           | `Eevee`       |
-| `security-profile.md` | Threat surface _(shared)_                | `Growlithe`   |
-| `plan-<ticket>.md`    | The plan artifact (draft, then approved) | orchestrator  |
-| `learnings.md`        | Cross-ticket repo learnings _(shared)_   | orchestrators |
+**Before:**
 
-The profiles are shared with the review orchestrator — whichever command refreshes them,
-the other benefits. Re-running the command for the same ticket revises the existing plan.
-`learnings.md` is the append-only, cross-ticket memory every flow reads and feeds (see the
-`repo-learnings` skill) — ticket N's hard-won gotchas make ticket N+1 cheaper.
+```ts
+const user = await userService.create(req.body);
+```
 
-## Requirements
+**After:**
 
-- A Jira tool available (for ticket briefs by reference) — or paste the ticket text.
-- The forge CLI ([`tea`](../skills/tea-cli) for Gitea, [`gh`](../skills/gh-cli) for
-  GitHub), if related PRs/issues are referenced.
-- The agents and skill installed where your harness can find them (see
-  [AGENTS.md](../AGENTS.md)).
+```ts
+const input = validateCreateUser(req.body);
+const user = await userService.create(input);
+```
+
+#### Invariants
+
+- Preserve the response shape and error middleware path.
+
+#### Verification
+
+- Run: `npm test -- users-route`
+- Expect: exit code `0` and invalid input returns `400`.
+
+#### Failure policy
+
+Stop without editing and return `PRECONDITION_FAILED: <condition>`.
+````
+
+The complete Before/anchor content is the applicability check. Mew verifies it while
+authoring; the executor checks it again immediately before editing. Magneton does not perform
+a separate repository-anchor pass.
+
+## Agents
+
+| Agent     | Model  | Job                                      |
+| --------- | ------ | ---------------------------------------- |
+| Slowpoke  | Haiku  | Normalize requirements                   |
+| Eevee     | Sonnet | Refresh repository profile when stale    |
+| Growlithe | Sonnet | Refresh security profile when stale      |
+| Dugtrio   | Sonnet | Map normalized requirements to live code |
+| Mew       | Opus   | Author precise exact contracts           |
+| Meowth    | Sonnet | Author fast exact/guided contracts       |
+| Magneton  | Haiku  | Validate plan structure                  |
+
+## Artifacts and revisions
+
+The approved plan is saved to `<cache>/plan-<ticket>.md`. Revisions preserve stable ids,
+ticked contracts, and Execution/Verification logs. Related diffs used only during authoring
+are temporary and deleted after approval.
+
+Profiles and `learnings.md` remain shared with the other orchestrators. A fresh profile is
+read directly without spawning its owner.

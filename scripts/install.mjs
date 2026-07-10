@@ -43,6 +43,7 @@ const MODEL_MAP = {
 const NORSE = [
   ["Slowbro", "Odin"],
   ["Mewtwo", "Mimir"],
+  ["Meowth", "Hermod"],
   ["Mew", "Bragi"],
   ["Slowpoke", "Ratatoskr"],
   ["Kadabra", "Huginn"],
@@ -141,10 +142,18 @@ const writes = [];
 const emit = (file, content) => writes.push({ file, content });
 const emitDir = (src, dest) => writes.push({ dir: src, file: dest });
 
-const toolFlags = (tools) => ({
-  bash: /(^|[ ,])Bash\b/.test(tools),
-  write: /\b(Edit|Write)\b/.test(tools),
-});
+const PORTABLE_TOOLS = new Set(["Bash", "Read", "Grep", "Glob", "Edit", "Write"]);
+const toolFlags = (tools) => {
+  const names = tools
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
+  return {
+    bash: names.includes("Bash"),
+    write: names.some((name) => name === "Edit" || name === "Write"),
+    external: names.some((name) => !PORTABLE_TOOLS.has(name)),
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Builders
@@ -156,7 +165,7 @@ const skills = fs.readdirSync(path.join(ROOT, "skills"), { withFileTypes: true }
 for (const f of agents) {
   const name = f.replace(/\.md$/, "");
   const { fm, body } = parseDoc(path.join(ROOT, "agents", f));
-  const { bash, write } = toolFlags(fm.tools ?? "");
+  const { bash, write, external } = toolFlags(fm.tools ?? "");
   let out = "";
 
   if (harness === "claude") {
@@ -184,7 +193,10 @@ for (const f of agents) {
       `name: ${fm.name}`,
       `description: ${fm.description}`,
       `model: ${MODEL_MAP.github[fm.model] ?? MODEL_MAP.github.sonnet}`,
-      `tools: [${tools.join(", ")}]`,
+      // GitHub enables all configured tools when this property is omitted. External MCP
+      // server names are installation-specific, so a generated restrictive list would
+      // silently remove the Jira/browser tools these agents require.
+      ...(!external ? [`tools: [${tools.join(", ")}]`] : []),
       `user-invocable: false`,
     ];
     out = `---\n${lines.join("\n")}\n---\n${body}`;

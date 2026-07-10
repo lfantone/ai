@@ -21,7 +21,7 @@ The sub-agents live in `agents/` and are spawned by name. Spawn them as-is:
 - `Magnemite` — API/CLI runtime verification _(Bruno collection via the `bruno-cli`
   skill; curl fallback)_
 - `Dugtrio` — diagnoses a failed scenario to its suspect step/files _(fix loop only)_
-- `Mew` / `Magneton` / `Machop` — re-spec, verify, and execute a fix step _(fix loop
+- `Mew` / `Magneton` / `Machop` — re-spec, structurally verify, and execute a fix contract _(fix loop
   only; the same hot-fix machinery as the implement command)_
 - `Eevee` — regenerates the repo profile _(only if the cache is missing)_
 
@@ -64,14 +64,14 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context contract
 
-| Agent                         | Inject into its spawn prompt                                                                                                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                                                               |
-| `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                                                                    |
-| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `$CACHE/bruno/<ticket>/`                                              |
-| `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                                                      |
-| `Eevee`                       | `$CACHE` — it profiles the local working repo                                                                                                                                              |
-| `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: the suspect step + Dugtrio's diagnosis + the conventions excerpt → corrected fix step → ONE step block to execute + "no commits, current branch" |
+| Agent                         | Inject into its spawn prompt                                                                                                                                                           |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Abra`                        | acceptance criteria + change map + testing notes + surfaces (web/api/cli) + environment type                                                                                           |
+| `Ditto`                       | BASE_URL + the `web` scenarios + whether mutating scenarios are allowed                                                                                                                |
+| `Magnemite`                   | BASE_URL (or CLI context) + the `api`/`cli` scenarios + whether mutating scenarios are allowed + the collection path `$CACHE/bruno/<ticket>/`                                          |
+| `Dugtrio`                     | diagnosis mode: the failed scenario + its evidence + the plan's change map + execution-log deviations                                                                                  |
+| `Eevee`                       | `$CACHE` — it profiles the local working repo                                                                                                                                          |
+| `Mew` / `Magneton` / `Machop` | per the implement command's hot-fix path: suspect contract + Dugtrio diagnosis + conventions → corrected exact contract → structural check → execute with "no commits, current branch" |
 
 ---
 
@@ -82,10 +82,21 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 - From `$CACHE/repo-profile.md`: the stack → which **surfaces** exist (web UI,
   API, CLI), the **dev-server command** and port/health endpoint. If the profile is
   missing, spawn `Eevee` once (it owns the cache) — don't scout yourself.
-- If the plan's status is not `implemented`, say so and ask whether to verify anyway.
+- Branch on lifecycle status before designing scenarios:
+  - `implemented` → proceed.
+  - `verification-failed` → proceed in re-verification mode, using the prior Verification log
+    to prioritize previously failed scenarios before the full regression set.
+  - `implementation-failed` → **HARD STOP** by default: repository gates are unresolved, so
+    route to `/implement-orchestrator <ticket>` gate-remediation mode. Verify only if the
+    user explicitly accepts degraded, non-final coverage; never grant `verified` from it.
+  - `partially-implemented` / `approved` / `draft` → explain the incomplete state and ask
+    whether to run diagnostic verification; never grant `verified` while work is incomplete.
+  - `verified` → report that verification already completed unless the user requested a
+    re-check.
 - **No plan artifact** (verifying from described expectations): create a minimal
-  `$CACHE/plan-<ticket>.md` — header + the agreed criteria as §1 — so Phase 4 has
-  a ledger to write.
+  `$CACHE/plan-<ticket>.md` — mark it `verification-only: yes` and include a header + the
+  agreed criteria as §1 — so Phase 4 has a ledger to write. With no execution contracts or
+  change map, a failure must route to planning rather than the local fix loop.
 - Read `$CACHE/learnings.md` (per the **`repo-learnings` skill**, if present):
   environment/server entries guide Phase 3 (startup quirks, flaky endpoints);
   scenario-design entries go into Abra's spawn.
@@ -162,7 +173,8 @@ Deliver the verdict mapped back to the contract:
 contests is NOT a pass. Present the report and, for every failed or contested criterion,
 **HARD STOP**: recommend ONE route explicitly and ask:
 
-- **(a) Fix now** — the failure traces to an edit AND you are verifying **locally** → run
+- **(a) Fix now** — the failure traces to an execution contract, the artifact has its change
+  map, AND you are verifying **locally** → run
   the **fix loop** (below). On another environment the fix can't reach the target — fix
   via (b) and redeploy before re-verifying.
 - **(b) Implement fix mode** — the Execution log shows skipped steps or deviations as the
@@ -176,9 +188,11 @@ contests is NOT a pass. Present the report and, for every failed or contested cr
   `/plan-orchestrator <ticket>` revision of §1 (plus, optionally, the gated ticket
   comment). Never route a spec problem to an executor.
 
-Then update the plan artifact: append **`## Verification log`** (date, environment,
-per-scenario verdicts, warnings, fix rounds, collection path) and set `status: verified`
-(only with user acceptance) or `status: verification-failed`.
+Then append **`## Verification log`** (date, environment, per-scenario verdicts, warnings,
+fix rounds, collection path). A run that started as `implemented` or `verification-failed`
+sets `status: verified` (only with user acceptance) or `status: verification-failed`. A
+diagnostic run from `implementation-failed`, `partially-implemented`, `approved`, or `draft`
+preserves that original status regardless of scenario results.
 
 **Distill learnings** (per the `repo-learnings` skill): environment/server gotchas,
 weak-proxy scenario lessons, and fix-round root causes from this run — dedupe, then
@@ -200,8 +214,9 @@ verification only: fixes edit the local working tree.
    cause hypothesis. If it reports the cause lies **outside the plan's changed files**,
    stop — that's route (c), not a fix.
 2. **Repair via the hot-fix machinery** (same as the implement command): `Mew` re-specs
-   the suspect step as a fix step (`S<N>.f<M>`, per its scoped re-spec rules), `Magneton`
-   verifies its anchors, `Machop` executes it. If Mew returns `needs full replan`, stop —
+   the suspect contract as an exact fix contract (`S<N>.f<M>`), `Magneton` verifies plan
+   structure, and `Machop` validates complete preconditions before executing it. If Mew
+   returns `needs full replan`, stop —
    that's route (c). Record the fix step in the plan artifact.
 3. **Re-verify what failed** — restart the dev server if needed so it serves the fixed
    code, then `bru run` on the persisted collection for API scenarios and `Ditto` with

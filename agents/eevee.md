@@ -19,6 +19,8 @@ scouting.
 
 **Staleness check (deterministic).** The cache is STALE (re-scout) if ANY holds:
 
+- `git status --short` shows a material staged, unstaged, or untracked working-tree change
+  under the same categories below, even when cached `head:` equals HEAD; or
 - the cached `head:` sha differs from current HEAD **and**
   `git diff --name-only <cached_sha>..HEAD` shows a **material** change — it touches
   dependency/lockfile/build/lint/CI config, adds or removes a top-level source directory,
@@ -26,7 +28,8 @@ scouting.
 - it is older than 14 days **and** HEAD has moved at all since; or
 - the file is missing/unparseable, or the caller asked to refresh.
 
-If `head:` == current HEAD, it is fresh regardless of age.
+If `head:` == current HEAD and the working tree has no material change, it is fresh regardless
+of age.
 
 ## Scout (only when stale or missing)
 

@@ -13,7 +13,9 @@ compact brief — cite locations and name patterns, never paste full file bodies
 
 ## Input
 
-The requirement (ticket ref or description) — enough to know WHAT is being built.
+The normalized requirement brief from Slowpoke: goal, acceptance criteria, scope,
+out-of-scope items, and constraints. Never accept a bare ticket reference as sufficient
+context; return `missing normalized requirement` if that is all the caller provides.
 
 ## Map and return
 

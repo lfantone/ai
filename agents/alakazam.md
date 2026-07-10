@@ -9,20 +9,13 @@ tools: Bash, Read, Grep, Glob
 
 # Alakazam — Security reviewer
 
-Inputs (from the orchestrator): Implementation brief + Growlithe's threat profile + COORDS
-(forge, owner/repo, index, head_sha). In a re-review: also the prior security findings with
-their statuses.
+Inputs (from the orchestrator): Implementation brief + Growlithe's threat profile +
+`DIFF_PATH` + COORDS (forge, owner/repo, index, head_sha). In a re-review: also the prior
+security findings with their statuses.
 
-**Pull the raw diff yourself** — do not rely on the summarized brief for security. Pick the
-command by `COORDS.forge`:
-
-```bash
-tea api "repos/{owner}/{repo}/pulls/<index>.diff"      # gitea — TEXT; never jq
-gh pr diff <index>                                     # github — TEXT; never jq
-```
-
-(api+jq standard; source of truth: the `tea-cli` / `gh-cli` skills.) Add targeted reads
-around the touched hunks.
+**Read the raw diff from `DIFF_PATH`**; do not rely on the summarized brief for security and
+never fetch the diff again. Kadabra owns the one fetch for this run. Add targeted reads around
+the touched hunks in the checked-out working tree.
 
 ## Scope: the PR diff only
 

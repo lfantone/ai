@@ -1,101 +1,75 @@
 # Implementation execution (`/implement-orchestrator`)
 
-Executes an approved implementation plan, wave by wave, with small parallel executors.
-Because the [plan](./plan.md) specifies every step down to exact files, verbatim anchors,
-and ready-to-apply edits, the default executor is **Haiku** — the plan is the
-intelligence, the executors are the hands.
-
-This is **step 2 of the Plan → Implement → Verify flow**. Run `/plan-orchestrator` first;
-follow with [`/verify-orchestrator`](./verify.md) for end-to-end QA.
+Executes an approved plan wave by wave. The plan selects the cheapest capable executor per
+contract instead of applying one model tier to the whole change.
 
 ## Usage
 
-```
+```text
 /implement-orchestrator IE-1234
+/implement-orchestrator 87        # apply findings from review #87
 ```
 
-Pass the ticket whose plan to execute; with no argument it lists the plans in
-the cache dir and asks. If no plan exists for the ticket, it stops and asks you to run
-`/plan-orchestrator <ticket>` first — it never improvises a plan. Execution happens on the
-**current branch** — switch first if you want it elsewhere.
+Execution happens on the current branch and starts only after an explicit checkpoint.
 
-If the plan's status is `verification-failed` (from
-[`/verify-orchestrator`](./verify.md)), it enters **fix mode**: instead of re-running the
-ticked checklist, it repairs the failures in the Verification log (diagnose → re-spec →
-execute) and then sends you back to re-verify.
+## Routing
 
-## From a review instead of a plan
+| Contract                   | Executor         | Behavior                                                             |
+| -------------------------- | ---------------- | -------------------------------------------------------------------- |
+| `exact`                    | Machop / Haiku   | Validates complete preconditions, applies typed operations exactly   |
+| `guided`                   | Machoke / Sonnet | Follows bounded instructions and prior art to reach the target state |
+| failed, bounded adaptation | Machamp / Opus   | User-approved last resort                                            |
 
-```
-/implement-orchestrator 87        # 87 = a PR reviewed by /review-orchestrator
-```
+Guided execution is an expected cost of `--fast` planning, not an escalation. Exact retries,
+Machamp, re-specification, and replanning remain user-gated.
 
-**Review mode** applies a completed review's findings — no planning round needed, because
-findings already carry a verbatim anchor and an exact `suggestion` replacement (they're
-step-shaped by construction). You pick which findings to apply (`all` / `must-fix +
-recommended` / `must-fix only` / pick), they convert mechanically into a fix plan (one
-step per file — one fully parallel wave), and the normal pipeline runs: anchors verified,
-executor ladder, repo gates, ledger. Sketch findings (no exact edit) are never
-improvised — each is either specced properly by the plan author or deferred to
-`/plan-orchestrator`. Afterwards, push and re-run the review: its triage confirms the
-fixes and auto-resolves the PR threads.
+## Applicability and safety
 
-## What it does
+The plan header's `head` records provenance but is not the applicability decision. Before its
+first edit, each executor validates every current contract precondition against the working
+tree. Exact steps compare the complete Before/anchor block, never only its first line. If any
+precondition is absent or ambiguous, that contract edits nothing.
 
-1. **Loads the plan** from `<cache>/plan-<ticket>.md` and checks it's still
-   applicable — if the repo moved since planning, a mechanical pass re-verifies every
-   anchor before anything is edited.
-2. **Checkpoint** — shows the branch, the steps/waves/files, and the verification gates it
-   found, then **stops** for your go-ahead.
-3. **Executes wave by wave** — one Haiku executor per step, in parallel within a wave
-   (waves touch disjoint files by construction). Each step is ticked off in the plan — and
-   in a live task list — **only when it succeeds**.
-4. **Verifies** — runs the repository's own gates (tests, lint, typecheck, build).
-5. **Wraps up** — updates the plan into an execution ledger and, only on explicit yes,
-   commits.
+This handles committed drift, dirty worktrees, and interrupted runs without a separate
+Magneton anchor pass. Magneton is used only to keep the plan structurally consistent after a
+contract is re-specified.
 
-## Escalation — you stay in control
+## Execution flow
 
-Executors never improvise: a step that doesn't apply cleanly **fails fast** with a precise
-reason, and the command **asks you** what to do — it never auto-escalates:
+1. Load lifecycle state and skip ticked contracts.
+2. Show branch, plan mode, exact/guided counts, waves, files, and repository gates.
+3. Run file-disjoint contracts concurrently within each wave, capped at five.
+4. Tick each contract only after its own verification succeeds.
+5. Run repository tests, lint, typecheck, and build.
+6. Save the execution log and lifecycle status.
 
-| Choice            | When                                                                                                  |
-| ----------------- | ----------------------------------------------------------------------------------------------------- |
-| Retry with Sonnet | Mechanical failure — anchor drift, formatting                                                         |
-| Escalate to Opus  | The spec is right but execution needs judgment                                                        |
-| Hot-fix the spec  | The spec is wrong but **locally** — one step is re-specified in place and re-verified, no full replan |
-| Back to planning  | The spec is wrong **structurally** — no executor or hot-fix can rescue a bad design                   |
-| Skip              | Leave the step (dependents are blocked and reported)                                                  |
+## Lifecycle statuses
 
-Sonnet/Opus retries report every **deviation** from the written edit, and hot-fixes leave
-a revision note in the plan — both feed the next plan revision.
+| Status                  | Meaning                                                 |
+| ----------------------- | ------------------------------------------------------- |
+| `implemented`           | All contracts and repository gates passed               |
+| `partially-implemented` | One or more contracts were skipped or unresolved        |
+| `implementation-failed` | Contracts completed but a repository gate failed        |
+| `verification-failed`   | Runtime QA failed; Verify still owns final adjudication |
 
-## The stops
+`implementation-failed` re-enters gate-remediation mode on the next run. Verify refuses to
+grant `verified` until implementation gates pass.
 
-- **Execution checkpoint** — before any edit: `yes / no`.
-- **Every escalation** — per failed step, your choice.
-- **Verification failures** — fix via targeted retry, back to planning, or leave as-is.
-- **Commit / push / PR** — each only on a separate explicit yes.
+## Review mode
 
-## Resumability
+Review findings with exact anchors and suggestion replacements convert into exact contracts,
+grouped by file in one parallel wave. Sketch findings must be re-specified by Mew or returned
+to planning. Applied findings remain open until a new review confirms and resolves them.
 
-The plan's task checklist is the ledger: steps are ticked `[x]` as they complete, so an
-interrupted run resumes from the unchecked steps. At the end the artifact gets
-`status: implemented` and an `## Execution log` (executor used, retries, deviations,
-verification results).
+## Failure routing
 
-## What's under the hood
+| Failure                          | Route                                                 |
+| -------------------------------- | ----------------------------------------------------- |
+| Exact precondition drift         | User-approved Machoke retry                           |
+| Locally wrong contract           | Mew exact re-spec → Magneton structure check → Machop |
+| Guided instructions insufficient | Precise re-spec or full planning                      |
+| Bounded judgment required        | User-approved Machamp                                 |
+| Design/scope/dependency gap      | Plan revision                                         |
 
-| Agent      | Model  | Job                                              |
-| ---------- | ------ | ------------------------------------------------ |
-| `Magneton` | Sonnet | Re-verifies plan anchors if the repo moved       |
-| `Machop`   | Haiku  | Default step executor — mechanical, fails fast   |
-| `Machoke`  | Sonnet | Retry executor — tolerates anchor drift          |
-| `Machamp`  | Opus   | Last resort — judgment within the step's scope   |
-| `Mew`      | Opus   | Hot-fix: re-specifies one wrongly-specified step |
-
-## Requirements
-
-- An approved plan in `<cache>/plan-<ticket>.md` (from
-  [`/plan-orchestrator`](./plan.md)).
-- The agents installed where your harness can find them (see [AGENTS.md](../AGENTS.md)).
+The plan checklist and Execution log make interrupted runs resumable. Commit, push, and PR
+creation remain separately gated.

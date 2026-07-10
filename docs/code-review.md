@@ -27,9 +27,10 @@ URL (or the command falls back to `--repo <owner>/<repo>`).
 
 ## What it does
 
-1. **Gathers context in parallel** — four cheap agents each return a short brief: the
-   ticket goal, the implementation (changed files + risky hunks), the repo conventions, and
-   the security surface.
+1. **Gathers context** — the ticket and implementation briefs are produced every run;
+   repository/security profiles are reused directly unless a material-change check marks
+   them stale. Kadabra fetches the active PR diff once into a temporary file shared by both
+   reviewers.
 2. **Checkpoint** — shows you what it understood and how confident it is, then **stops** so
    you can refine or continue.
 3. **Reviews** — two Opus agents review in parallel: one for correctness/quality against
@@ -72,19 +73,17 @@ Each finding has a severity (`must-fix` / `recommended` / `cosmetic`) and a past
 
 ## Re-reviews are incremental
 
-Run it again after a new push and it spends tokens only on what changed: it reuses cached
-context, reviews just the new commits, tells you which prior findings are now resolved, and
-skips reposting comments that already exist. Review state is saved even if you choose not
-to publish — and re-running on the same commit replays the cached report instead of
-re-reviewing.
+Run it again after a new push and it spends tokens only on what changed: it validates profile
+freshness, reviews just the new commits, tells you which prior findings are now resolved, and
+skips reposting comments that already exist. Review state is saved even if you choose not to
+publish; the same commit replays the cached report.
 
 ## Applying the findings
 
 Findings aren't just comments — they're executable.
-[`/implement-orchestrator <index>`](./implement.md#from-a-review-instead-of-a-plan) runs
-in **review mode**: it converts the review's findings (anchor + exact suggestion) into a
-fix plan and applies your selection with the executor ladder. Push, re-review, and the
-fixed threads auto-resolve.
+[`/implement-orchestrator <index>`](./implement.md#review-mode) runs in **review mode**: it
+converts each anchor + exact suggestion into an exact execution contract. Push, re-review,
+and the fixed threads auto-resolve.
 
 ## What's under the hood
 
@@ -118,6 +117,10 @@ dir** — auto-detected per harness: `.opencode/cache/` (OpenCode), `.claude/cac
 | `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`     |
 | `review-<index>.md`           | Review state for incremental re-review | orchestrator  |
 | `learnings.md`                | Cross-ticket repo learnings (shared)   | orchestrators |
+
+During an active run, `$CACHE/tmp/review-<index>-<head_sha>.diff` holds the single shared
+full/incremental diff. It is deleted immediately after `review-<index>.md` is persisted;
+abandoned temp diffs are cleaned at the start of the next run.
 
 These are generated files. The catalog ignores `cache/` itself, and the target project
 should ignore the whole `.agents/` directory.

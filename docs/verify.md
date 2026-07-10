@@ -13,8 +13,13 @@ This is **step 3 of the Plan → Implement → Verify flow**.
 /verify-orchestrator IE-1234
 ```
 
-It reads the plan from `<cache>/plan-<ticket>.md`. No plan? It asks what was
-implemented and what behavior proves it works, and verifies against that.
+It reads the plan from `<cache>/plan-<ticket>.md`. No plan? It asks what was implemented and
+what behavior proves it works. An `implementation-failed` plan returns to implementation
+gate remediation by default; runtime QA cannot promote code whose repository gates failed.
+A `verification-failed` plan can be rerun after fixes, prioritizing failed scenarios before
+the full regression set. Diagnostic runs from incomplete states never change lifecycle status.
+Description-only verification writes a verification-only ledger; failures without execution
+contracts/change-map evidence route to planning rather than the local fix loop.
 
 ## What it does
 

@@ -16,7 +16,7 @@ the project's repo.
 
 ## What's installed
 
-- **16 worker agents** (`.github/agents/*.agent.md`, `user-invocable: false`) —
+- **17 worker agents** (`.github/agents/*.agent.md`, `user-invocable: false`) —
   frontmatter converted: Copilot `model` id, a `tools` array derived from each agent's
   canonical tools list, body verbatim.
 - **4 orchestrator command-skills** (`.github/skills/<name>/SKILL.md`) — VS Code/Copilot
@@ -41,15 +41,17 @@ are listed under `model` in `copilot help config`.
 
 ## Tools mapping
 
-The `tools` array uses a **dual vocabulary** — CLI names (`shell`, `write`) and VS Code
-aliases (`runCommands`, `editFiles`) side by side. That's deliberate: the custom-agents
-spec silently ignores unknown tool names, so one list serves every surface, and the
-canonical least-privilege split survives (executors get write access; reviewers and
-verifiers don't).
+Agents that use only portable built-ins receive a least-privilege dual-vocabulary `tools`
+array (CLI `shell`/`write` plus VS Code `runCommands`/`editFiles`). Agents that require
+installation-specific MCP tools, currently Slowpoke and Ditto, omit `tools`; GitHub then
+enables all tools configured for that surface. A restrictive generated list cannot safely
+name Jira/Chrome servers because users choose those server names. See GitHub's
+[custom-agent tools reference](https://docs.github.com/en/copilot/reference/custom-agents-configuration#tools).
 
 ## Notes
 
 - Global installs land in `~/.copilot/agents` and `~/.copilot/skills` — verify your
   Copilot surface picks up global skills; discovery varies by version.
 - MCP-dependent agents (Ditto → Chrome DevTools, Slowpoke → Jira) need those MCP servers
-  configured for your Copilot surface.
+  configured for your Copilot surface. Their prompts constrain behavior because their
+  generated profiles intentionally cannot enforce a portable MCP allowlist.
