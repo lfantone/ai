@@ -95,10 +95,10 @@ token-efficiency practices.
 
 ## Documentation
 
-- [**The workflow**](./docs/workflow.md) — how the commands fit together and the
-  recommended cycle. **Start here.**
+- [**The workflow**](./docs/workflow.md) — how precise/fast planning, contract-routed
+  implementation, verification, and review fit together. **Start here.**
 - [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
-- [Implementation planning](./docs/plan.md) — the `/plan-orchestrator` command.
+- [Implementation planning](./docs/plan.md) — precise (default) and `--fast` planning.
 - [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
 - [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.
 - [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.

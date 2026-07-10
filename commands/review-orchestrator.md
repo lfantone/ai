@@ -73,8 +73,8 @@ skill: `gh-cli`). Detect the forge FIRST and record it in COORDS:
 
 Both skills encode the same api+jq standard; the detected forge's skill is the source of
 truth for every payload. Your direct CLI use is limited to head-SHA reads (Phase 0) and
-posting/resolving (Phase 5). The gatherer and reviewer agents carry both forges' commands
-and pick by `COORDS.forge` — you don't paste commands, just pass COORDS.
+posting/resolving (Phase 5). Kadabra performs the run's single diff fetch; reviewers receive
+its local DIFF_PATH rather than calling the forge again.
 
 ## PR coordinates (resolve once, reuse everywhere)
 
@@ -105,27 +105,40 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 
 A sub-agent sees ONLY its spawn prompt. Inject exactly these inputs — paste briefs
 **verbatim** (never pre-summarize them; the reviewers need the detail), but never expand a
-raw diff into your own context: pass COORDS and let the agent fetch it.
+raw diff into your own context: pass Kadabra's DIFF_PATH to both reviewers.
 
-| Agent       | Inject into its spawn prompt                                                                                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Slowpoke`  | the ticket ref and/or the raw description                                                                                                                          |
-| `Kadabra`   | COORDS + `$CACHE` — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental).                                                |
-| `Eevee`     | `$CACHE` — it profiles the local working repo                                                                                                                      |
-| `Growlithe` | `$CACHE` — it scans the local working repo                                                                                                                         |
-| `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses + Kadabra's incremental diff brief. |
-| `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + COORDS. Re-review: also prior security findings + statuses + Kadabra's incremental diff brief.      |
-| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                                                           |
+| Agent       | Inject into its spawn prompt                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Slowpoke`  | the ticket ref and/or the raw description                                                                                                   |
+| `Kadabra`   | COORDS + `$CACHE` — or "review the local diff" if no PR. Re-review: also `reviewed_sha` + `head_sha` (incremental). It returns DIFF_PATH.   |
+| `Eevee`     | `$CACHE` — it profiles the local working repo                                                                                               |
+| `Growlithe` | `$CACHE` — it scans the local working repo                                                                                                  |
+| `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + DIFF_PATH + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses. |
+| `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + DIFF_PATH + COORDS. Re-review: also prior security findings + statuses.      |
+| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                                    |
 
-Gatherers (`Eevee`, `Growlithe`) profile the repo the command runs in; if the PR is
-remote, make sure it's checked out first (`tea pr checkout <index>` /
-`gh pr checkout <index>`).
+Gatherers and reviewers read the local working tree. For a remote PR, verify current HEAD
+equals `head_sha`; otherwise hard-stop and ask to check it out (`tea pr checkout <index>` /
+`gh pr checkout <index>`). Never combine a remote diff with profiles/context from another
+checkout.
 
 ---
 
 # Phase 0 — Re-review detection
 
 Before spawning anything, decide **fresh** vs **re-review**:
+
+- Delete abandoned temporary diff files matching
+  `$CACHE/tmp/review-<index>-*.diff` from an earlier interrupted run. These files are owned
+  by this workflow and contain no durable state. For a local review, match
+  `$CACHE/tmp/review-local-*.diff`.
+- Evaluate both profile caches before deciding which gatherers to spawn. A profile has a
+  **material change** and is stale when HEAD moved and the diff since its cached `head:`
+  touches dependency/lock/build/lint/CI configuration, changes top-level source layout, or
+  changes more than ~25 source files. Apply the same categories to staged, unstaged, and
+  untracked working-tree changes even when HEAD is unchanged. It is also stale when
+  missing/unparseable, or older than 14 days with a moved HEAD. Read fresh profiles directly;
+  mark only stale profiles for regeneration.
 
 - Read the head SHA per `COORDS.forge` (the `head_sha` commands above).
 - If `$CACHE/review-<index>.md` exists with a **`reviewed_sha`** (accept a legacy
@@ -138,9 +151,9 @@ Before spawning anything, decide **fresh** vs **re-review**:
 
 In re-review mode the whole point is to spend tokens only on what changed:
 
-- **Reuse from cache** — repo profile (skip `Eevee`), security profile (skip `Growlithe`),
-  and the ticket brief stored in `review-<index>.md` (skip `Slowpoke`) unless the ticket
-  itself changed.
+- **Reuse from cache** — use each fresh repo/security profile directly; spawn its owner in
+  Phase 1 only when the material-change check marked it stale. Reuse the ticket brief stored
+  in `review-<index>.md` (skip `Slowpoke`) unless the ticket itself changed.
 - **Recompute the delta** — spawn `Kadabra` in incremental mode (pass `<reviewed_sha>` and
   the current head; it diffs only the newly pushed changes and reports which prior-finding
   anchors the delta touches). Load prior findings from `$CACHE/review-<index>.md`
@@ -159,13 +172,15 @@ In re-review mode the whole point is to spend tokens only on what changed:
 
 # Phase 1 — Parallel context gathering
 
-Spawn these as concurrent sub-agents **in a single message** (they are independent); each
-returns only its brief. Inject each one's inputs per the **Spawn context contract** above:
+Spawn the required agents concurrently **in a single message**; each returns only its brief.
+Inject inputs per the **Spawn context contract**:
 
-- **Slowpoke** — the ticket reference and/or description.
+- **Slowpoke** — on a fresh review or when ticket intent changed; otherwise reuse the stored
+  ticket brief.
 - **Kadabra** — COORDS (or "review the local diff" if no PR).
-- **Eevee** — repository profile (no extra input).
-- **Growlithe** — security-profile scout (no extra input).
+- **Eevee** — only when the repo profile is stale/missing; otherwise use the cache directly.
+- **Growlithe** — only when the security profile is stale/missing; otherwise use the cache
+  directly.
 
 ---
 
@@ -208,14 +223,12 @@ entirely if the user chose (b).
 # Phase 3 — Review
 
 Spawn both reviewers **in parallel, in a single message**, injecting their inputs per the
-**Spawn context contract** (briefs verbatim + COORDS so each can read/fetch the changed
-code). Each already owns its finding-format contract and line-number rules — assemble their
-output as-is:
+**Spawn context contract**. Pass briefs verbatim plus Kadabra's DIFF_PATH and COORDS. Each
+reads the same temporary diff; neither may fetch it. Assemble their output as-is:
 
-- **Mewtwo** — Ticket + Implementation + Repository briefs + COORDS + the active scope
+- **Mewtwo** — Ticket + Implementation + Repository briefs + DIFF_PATH + COORDS + active scope
   (`scope: delta` or `scope: repo`).
-- **Alakazam** — Implementation brief + Growlithe's threat profile + COORDS + the active
-  scope.
+- **Alakazam** — Implementation brief + threat profile + DIFF_PATH + COORDS + active scope.
 
 Also inject the recurring-mistake entries from `$CACHE/learnings.md` (per the
 `repo-learnings` skill, if the file exists) into both reviewer spawns.
@@ -267,6 +280,10 @@ incrementally. After publishing, update it again with `forge_comment_id`s and th
 mode (`inline` / `summary-only` / `none`). If a finding class has now **recurred across
 PRs** (same mistake pattern, different changes), distill it into
 `$CACHE/learnings.md` per the `repo-learnings` skill.
+
+After that durable state write succeeds, delete the temporary diff at DIFF_PATH. Publishing,
+same-SHA replay, and future incremental review use `review-<index>.md`, not the raw diff. If
+the run is interrupted earlier, Phase 0 cleans the abandoned file next time.
 
 ---
 
@@ -332,10 +349,15 @@ for the freshness guard.
 - **Repo profile** (`repo-profile.md`) and **security profile** (`security-profile.md`) —
   repo-stable; owned by `Eevee` and `Growlithe`, and **shared with the plan-orchestrator**.
   The owning agents carry the canonical staleness check (fresh if cached `head:` == HEAD;
-  stale on a material change since the cached sha, or >14 days + HEAD moved) — they
-  self-check on spawn, so just spawn them.
+  stale on material committed or working-tree changes, or >14 days + HEAD moved). The
+  orchestrator applies this check and reads fresh files directly; spawn owners only when
+  stale.
 - **Implementation brief** (`impl-brief-<index>-<sha>.md`) — **SHA-keyed**; owned by
-  `Kadabra`. Reused only when the head SHA matches, so it never serves stale code.
+  `Kadabra`. Reused only when the head SHA matches. Its DIFF_PATH may be recreated when the
+  ephemeral file has already been deleted.
+- **Active diff** (`$CACHE/tmp/review-<index>-<head_sha>.diff`) — fetched once by Kadabra,
+  shared by both reviewers, and deleted immediately after durable review state is written.
+  Local reviews use `review-local-<head_sha>.diff`.
 - **Prior findings** (`review-<index>.md`) — **orchestrator-owned**; the state that drives
   incremental re-review (Phase 0). Written at Final assembly (BEFORE the publish gate) and
   updated after publishing. First line records `generated: <date>` and

@@ -14,7 +14,7 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## What's installed
 
-- **`agents/*.md`** — the 16 agents with OpenCode frontmatter: `mode: subagent`, a GitHub
+- **`agents/*.md`** — the 17 agents with OpenCode frontmatter: `mode: subagent`, a GitHub
   Copilot `model`, and a `permission` object derived from each agent's canonical `tools`
   list (least-privilege: `edit: allow` only for executors and cache-writers).
 - **`commands/*.md`** — the 4 orchestrators (`$ARGUMENTS` works as-is); harness terms are

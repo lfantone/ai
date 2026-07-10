@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 MAP=(
   "Slowbro:Odin"
   "Mewtwo:Mimir"
+  "Meowth:Hermod"
   "Mew:Bragi"
   "Slowpoke:Ratatoskr"
   "Kadabra:Huginn"
@@ -62,7 +63,7 @@ if [ -x node_modules/.bin/prettier ]; then
 fi
 
 # --- 6. Self-verify: no old names may survive -------------------------------------------
-leftovers=$(grep -rniE 'slowbro|slowpoke|kadabra|eevee|growlithe|dugtrio|mewtwo|alakazam|porygon|magneton|magnemite|machop|machoke|machamp|pok(e|é)mon|\bmew\b|\babra\b|\bditto\b' \
+leftovers=$(grep -rniE 'slowbro|slowpoke|kadabra|eevee|growlithe|dugtrio|mewtwo|meowth|alakazam|porygon|magneton|magnemite|machop|machoke|machamp|pok(e|é)mon|\bmew\b|\babra\b|\bditto\b' \
   agents commands docs skills README.md AGENTS.md 2>/dev/null || true)
 if [ -n "$leftovers" ]; then
   echo "REBRAND INCOMPLETE — old names remain:" >&2
