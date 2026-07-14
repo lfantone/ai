@@ -112,7 +112,11 @@ Conventions:
   gathering/synthesis → Sonnet, open-ended reasoning → Opus. A task being _critical_ isn't
   a reason to over-provision — reliability comes from deterministic instructions (e.g. have
   the agent find a line with `grep -n` rather than counting by eye). Keep `tools`
-  least-privilege, and set `reasoning` to match.
+  least-privilege, and set `reasoning` to match: every Haiku agent pins `reasoning: low`
+  (the deterministic floor); Sonnet/Opus agents pin `reasoning` only when the role's load
+  exceeds the tier's default (authors, reviewers, executors), so a pure gatherer that omits
+  it is inheriting the default on purpose. Add a `# escalate to xhigh …` note where a
+  larger input should bump it.
 - Any output-format contract the agent must follow (e.g. a review finding template) lives
   in the agent's own body, so a command that spawns it can assemble the output as-is.
 
