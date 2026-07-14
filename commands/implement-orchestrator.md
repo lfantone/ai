@@ -34,15 +34,26 @@ Create phase tasks: Load artifact, Execution checkpoint, Execute waves, Reposito
 Wrap-up. During execution add one task per contract and complete it only on success or an
 explicitly recorded skip.
 
-## Inputs and cache
+## Inputs
 
 - TARGET = `$ARGUMENTS`.
-- Normal input: `$CACHE/plan-<ticket>.md`.
+- Normal input: `$CACHE/plan-<ticket>.md`, where `<ticket>` is the ticket id if TARGET
+  contains one matching `[A-Z][A-Z0-9]+-[0-9]+`, else a kebab-case slug of the description
+  (the same rule `/plan-orchestrator` used to name it). If no matching file exists, list
+  `$CACHE/plan-*.md` and ask which to use rather than failing.
 - Review mode: a PR index/URL with `$CACHE/review-<index>.md`.
 - If neither exists, stop and direct the user to plan or review first.
 
-Resolve `$CACHE` as the first existing `.opencode/cache/`, `.claude/cache/`, or
-`.agents/cache/`; otherwise match the harness directory, falling back to `.agents/cache`.
+## Cache location (resolve once)
+
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context
 
