@@ -29,6 +29,9 @@ skip scanning.
 If `head:` == current HEAD and the working tree has no material change, it is fresh regardless
 of age.
 
+_(This staleness check is intentionally identical to Eevee's — the two profile scouts share
+one canonical rule; keep them in sync.)_
+
 ## Scan (only when stale or missing)
 
 Map, for THIS repo:

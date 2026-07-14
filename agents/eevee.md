@@ -31,6 +31,9 @@ scouting.
 If `head:` == current HEAD and the working tree has no material change, it is fresh regardless
 of age.
 
+_(This staleness check is intentionally identical to Growlithe's — the two profile scouts
+share one canonical rule; keep them in sync.)_
+
 ## Scout (only when stale or missing)
 
 README, AGENTS.md / CLAUDE.md, docs/, contributing guides, lint/test config.
