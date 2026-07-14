@@ -62,9 +62,13 @@ if [ -x node_modules/.bin/prettier ]; then
   node_modules/.bin/prettier --write --log-level warn "**/*.md"
 fi
 
-# --- 6. Self-verify: no old names may survive -------------------------------------------
-leftovers=$(grep -rniE 'slowbro|slowpoke|kadabra|eevee|growlithe|dugtrio|mewtwo|meowth|alakazam|porygon|magneton|magnemite|machop|machoke|machamp|pok(e|é)mon|\bmew\b|\babra\b|\bditto\b' \
-  agents commands docs skills README.md AGENTS.md 2>/dev/null || true)
+# --- 6. Self-verify: no old names may survive (pattern derived from MAP) -----------------
+alt=""
+for pair in "${MAP[@]}"; do
+  alt+="\\b$(lower "${pair%%:*}")\\b|"
+done
+alt+="pok(e|é)mon"
+leftovers=$(grep -rniE "$alt" agents commands docs skills README.md AGENTS.md 2>/dev/null || true)
 if [ -n "$leftovers" ]; then
   echo "REBRAND INCOMPLETE — old names remain:" >&2
   echo "$leftovers" >&2
