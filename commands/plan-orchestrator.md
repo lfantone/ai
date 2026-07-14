@@ -55,6 +55,10 @@ Keep exactly one phase in progress. Reopen Author/Verify when the user requests 
 - MODE = `fast` when `--fast` is present, otherwise `precise`.
 - If TARGET is missing, ask once for a ticket reference or description.
 - Never ask the user to choose a mode when omitted; precise is the stable default.
+- Derive the artifact slug `<ticket>` once and use it in every phase below: the ticket id
+  if TARGET contains one matching `[A-Z][A-Z0-9]+-[0-9]+`, otherwise a kebab-case slug of
+  the first ~6 words of the description (e.g. `add-csv-export`). `/implement-orchestrator`
+  and `/verify-orchestrator` re-derive it with the same rule, so keep it deterministic.
 
 ## External access
 
@@ -62,11 +66,16 @@ Keep exactly one phase in progress. Reopen Author/Verify when the user requests 
   pasted ticket text rather than inventing requirements.
 - Related forge references use `gh-cli` for GitHub and `tea-cli` otherwise.
 
-## Cache location
+## Cache location (resolve once)
 
-Resolve `$CACHE` once: the first existing `.opencode/cache/`, `.claude/cache/`, or
-`.agents/cache/`; otherwise match an existing harness directory, falling back to
-`.agents/cache`. Create it on first write.
+Every cache path below uses `$CACHE`, resolved deterministically before anything else:
+
+1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
+   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
+2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
+   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
+
+Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context contract
 
@@ -182,7 +191,8 @@ On no, retain the draft and stop.
 
 # Phase 4 — Finalize
 
-- On approval, set `status: approved` and save `$CACHE/plan-<ticket>.md`.
+- On approval, set `status: approved` and save `$CACHE/plan-<ticket>.md`. **Report the saved
+  path** so it can be handed to `/implement-orchestrator` verbatim.
 - Distill durable planning learnings per the `repo-learnings` skill.
 - Optionally offer to post a short summary to the ticket; outward posting requires explicit
   confirmation.

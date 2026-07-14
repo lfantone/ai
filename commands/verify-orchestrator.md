@@ -47,7 +47,10 @@ Mark items `in_progress`/`completed` as you go; exactly one in progress at a tim
 ## Inputs
 
 - TARGET = `$ARGUMENTS` — the ticket whose implementation to verify.
-- Primary source: `$CACHE/plan-<ticket>.md` (acceptance criteria are the contract).
+- Primary source: `$CACHE/plan-<ticket>.md`, where `<ticket>` is the ticket id if TARGET
+  contains one matching `[A-Z][A-Z0-9]+-[0-9]+`, else a kebab-case slug of the description
+  (the rule `/plan-orchestrator` used). If no matching file exists, list `$CACHE/plan-*.md`
+  and ask which to verify. Its acceptance criteria are the contract.
 - **No plan artifact?** Verification can still run: ask the user what was implemented and
   what behavior proves it works, then treat those as the acceptance criteria.
 
