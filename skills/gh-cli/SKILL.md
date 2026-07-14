@@ -119,6 +119,5 @@ line moved. Skip threads already `isResolved: true`.
 
 ## Using this from sub-agents
 
-Agents spawned via the Agent tool only see what's in their spawn prompt — they do **not**
-auto-load this skill. When delegating a gh operation to a sub-agent, paste the exact
-command(s) it needs from the cheat-sheet into its spawn prompt.
+Sub-agents don't auto-load this skill — paste the exact command(s) they need from the
+cheat-sheet into their spawn prompt.
