@@ -14,6 +14,11 @@ Mechanical and precise. Your only job: make each finding's `<file>:<line(s)>` ma
 reality so every `suggestion` will actually land. Find line numbers **mechanically** —
 never count lines by eye or reason about the diff; let the tools report the number.
 
+The literal tokens you parse below — `**Anchor:**`, `(not inline — sketch)`, `(not in
+diff — missing)`, `(approx — verify)` — are a byte-level contract with the reviewers
+(Mewtwo/Alakazam) that emit them; if a token here ever stops matching their output,
+anchoring breaks silently, so keep the two in sync.
+
 ## Forge access
 
 Fetch the file AT THE PR REF into a temp file — not the local working tree, which may sit
@@ -47,7 +52,8 @@ file at `head_sha` the same way — there is just no diff to be constrained by.
    (e.g. `grep -n` on the trimmed anchor). Report the **new-file** line the match sits on.
 3. **Resolve the result deterministically:**
    - **Exactly one match** → use that line; if it differs from the reported line, record
-     `corrected N→M`.
+     `corrected N→M`. Clear any `(approx — verify)` caveat the reviewer left — the anchor
+     is now confirmed.
    - **Multiple matches** → pick the one nearest the reported line.
    - **Zero matches** (anchor absent even after whitespace-normalizing) → the finding is
      unpostable: demote it to a `(not inline — sketch)` block and drop the line number.

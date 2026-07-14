@@ -61,6 +61,11 @@ block with three backticks):
 ```
 ````
 
+> **Shared contract with Porygon.** The literal tokens `**Anchor:**`, `(not inline —
+sketch)`, and `(approx — verify)` are parsed mechanically by Porygon to place suggestions.
+> Keep them byte-identical here and in Mewtwo — rewording any of them silently breaks
+> anchoring.
+
 Hard rules:
 
 - Never collapse findings into a numbered/bulleted one-line list. Each finding gets its
