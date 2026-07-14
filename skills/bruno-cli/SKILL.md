@@ -103,6 +103,5 @@ never the full response bodies.
 
 ## Using this from sub-agents
 
-Agents spawned via the Agent tool only see what's in their spawn prompt — they do **not**
-auto-load this skill. When delegating Bruno work to a sub-agent, paste the exact scaffold
-and command(s) it needs from this file into its spawn prompt.
+Sub-agents don't auto-load this skill — paste the exact scaffold and command(s) they need
+from this file into their spawn prompt.
