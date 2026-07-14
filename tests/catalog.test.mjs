@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as yaml from "js-yaml";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -12,6 +13,18 @@ const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "u
 
 const agentFiles = () =>
   fs.readdirSync(path.join(ROOT, "agents")).filter((file) => file.endsWith(".md"));
+
+// The YAML parse error for a file's `---` frontmatter, or null when it parses cleanly.
+const frontmatterError = (filePath) => {
+  const block = fs.readFileSync(filePath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1];
+  if (block == null) return "no frontmatter block";
+  try {
+    yaml.load(block);
+    return null;
+  } catch (error) {
+    return error.message.split("\n")[0];
+  }
+};
 
 const install = (harness, names = "pokemon") => {
   const project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`));
@@ -109,52 +122,30 @@ test("canonical agent identities are unique and match their filenames", () => {
   assert.equal(new Set(colors).size, colors.length, "colors must be unique");
 });
 
-test("installed and canonical agent descriptions are YAML-safe", () => {
-  // Arrange
+test("canonical and installed agent frontmatter is valid YAML", () => {
+  // Arrange — canonical files (copied verbatim for claude) plus the re-emitted output for
+  // every harness; a mid-sentence ": ", stray quote, or bad indent would fail to parse.
   const files = agentFiles();
+  const claude = install("claude");
   const opencode = install("opencode");
   const github = install("github");
-  const descOf = (root, dir, name, suffix) =>
-    fs
-      .readFileSync(path.join(root, dir, name + suffix), "utf8")
-      .match(/^description: (.*)$/m)?.[1];
-  const isJsonString = (value) => {
-    try {
-      return typeof JSON.parse(value) === "string";
-    } catch {
-      return false;
-    }
-  };
-  const isQuoted = (value) => /^".*"$/.test(value) || /^'.*'$/.test(value);
-
-  // Act — opencode/github re-emit the description (installer JSON-quotes it); claude copies
-  // canonical frontmatter verbatim, so the canonical value must itself be YAML-safe.
-  const emitted = files.flatMap((file) => {
+  const targets = files.flatMap((file) => {
     const name = file.replace(/\.md$/, "");
     return [
-      { id: `opencode/${name}`, value: descOf(opencode, ".opencode/agents", name, ".md") },
-      { id: `github/${name}`, value: descOf(github, ".github/agents", name, ".agent.md") },
+      { id: `canonical/${name}`, path: path.join(ROOT, "agents", file) },
+      { id: `claude/${name}`, path: path.join(claude, ".claude/agents", file) },
+      { id: `opencode/${name}`, path: path.join(opencode, ".opencode/agents", `${name}.md`) },
+      { id: `github/${name}`, path: path.join(github, ".github/agents", `${name}.agent.md`) },
     ];
   });
-  const canonical = files.map((file) => ({
-    id: file,
-    value: read(path.join("agents", file)).match(/^description: (.*)$/m)?.[1],
-  }));
 
-  // Assert — every re-emitted value parses as a JSON (== YAML double-quoted) string, and no
-  // unquoted canonical value contains ": ", which YAML would read as a nested mapping key.
-  assert.deepEqual(
-    emitted.filter((entry) => !isJsonString(entry.value)).map((entry) => entry.id),
-    [],
-    "re-emitted descriptions must be quoted scalars",
-  );
-  assert.deepEqual(
-    canonical
-      .filter((entry) => !isQuoted(entry.value) && entry.value.includes(": "))
-      .map((entry) => entry.id),
-    [],
-    'unquoted canonical descriptions must not contain ": "',
-  );
+  // Act — parse each frontmatter block, keeping only the ones that failed.
+  const failures = targets
+    .map((target) => ({ id: target.id, error: frontmatterError(target.path) }))
+    .filter((result) => result.error);
+
+  // Assert
+  assert.deepEqual(failures, [], "every agent frontmatter must parse as YAML");
 });
 
 test("plan contracts distinguish exact and guided execution", () => {

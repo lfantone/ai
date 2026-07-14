@@ -11,6 +11,7 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
+    "js-yaml": "^5.2.1",
     "prettier": "^3.6.2"
   }
 }
