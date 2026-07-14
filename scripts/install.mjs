@@ -138,6 +138,10 @@ const norsify = (text) => {
 const transform = (text) => (names === "norse" ? norsify(text) : text);
 const outName = (base) => transform(base);
 
+// JSON is a valid YAML subset, so JSON.stringify yields a safe double-quoted scalar for any
+// re-emitted frontmatter value — handles a mid-sentence ": ", embedded quotes, and "#".
+const yamlStr = (s) => JSON.stringify(s ?? "");
+
 const writes = [];
 const emit = (file, content) => writes.push({ file, content });
 const emitDir = (src, dest) => writes.push({ dir: src, file: dest });
@@ -172,7 +176,7 @@ for (const f of agents) {
     out = fs.readFileSync(path.join(ROOT, "agents", f), "utf8"); // canonical IS the Claude format
   } else if (harness === "opencode") {
     const lines = [
-      `description: ${fm.description}`,
+      `description: ${yamlStr(fm.description)}`,
       `mode: subagent`,
       `model: ${MODEL_MAP.opencode[fm.model] ?? MODEL_MAP.opencode.sonnet}`,
       ...(fm.temperature ? [`temperature: ${fm.temperature}`] : []),
@@ -191,7 +195,7 @@ for (const f of agents) {
     if (write) tools.push('"write"', '"editFiles"');
     const lines = [
       `name: ${fm.name}`,
-      `description: ${fm.description}`,
+      `description: ${yamlStr(fm.description)}`,
       `model: ${MODEL_MAP.github[fm.model] ?? MODEL_MAP.github.sonnet}`,
       // GitHub enables all configured tools when this property is omitted. External MCP
       // server names are installation-specific, so a generated restrictive list would
@@ -228,7 +232,7 @@ for (const f of commands) {
       .replaceAll(/TaskCreate|TaskUpdate/g, "your task list");
     emit(
       path.join(dirs.skills, name, "SKILL.md"),
-      transform(`---\nname: ${name}\ndescription: ${fm.description}\n---\n${out}`),
+      transform(`---\nname: ${name}\ndescription: ${yamlStr(fm.description)}\n---\n${out}`),
     );
   }
 }
