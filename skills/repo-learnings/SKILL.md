@@ -40,8 +40,8 @@ line you add is paid for on every future ticket. Bias toward NOT writing.
 ## Distill before you write
 
 Findings arrive as ticket-shaped war stories. Strip them down to the transferable rule —
-the ticket-specific evidence stays in the plan artifact. Ask: *"a year from now, on an
-unrelated ticket, what one sentence would have saved an agent?"* Write that sentence.
+the ticket-specific evidence stays in the plan artifact. Ask: _"a year from now, on an
+unrelated ticket, what one sentence would have saved an agent?"_ Write that sentence.
 
 Before (a ticket-shaped finding — ~90 words, commit SHAs, test names, error strings):
 
@@ -52,7 +52,7 @@ Before (a ticket-shaped finding — ~90 words, commit SHAs, test names, error st
 After:
 
 > `- Recorded container test failures can predate their fix — compare the fixing commit's
->   date to the run date before changing code. _(PROJ-42, 2026-07-14, ×2)_`
+  date to the run date before changing code. _(PROJ-42, 2026-07-14, ×2)_`
 
 ## Admission test (apply before every write)
 
@@ -84,7 +84,7 @@ hypotheses, environment findings, interview answers); the orchestrator distills:
    entries, embedded evidence, prose headers) or grows past ~40 entries, rewrite it:
    collapse each entry to its one-line fact, merge near-duplicates (sum their `×N`), and
    drop entries the repo has since invalidated (verify before dropping). This is the one
-   allowed rewrite — the *facts* are still append-only; only their phrasing is compacted.
+   allowed rewrite — the _facts_ are still append-only; only their phrasing is compacted.
 
 ## Reading (orchestrators, at their load/reuse phase)
 
