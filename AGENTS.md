@@ -151,8 +151,34 @@ argument-hint: [ticket id] [PR url] # optional, documents expected arguments
 ## Validate before committing
 
 ```bash
-skills-ref validate ./skills/<skill-name>
+skills-ref validate ./skills/<skill-name>   # skills
+npm test                                     # catalog invariants (node --test)
 ```
+
+## Writing tests
+
+Tests live in `tests/*.test.mjs` and run on the Node built-in test runner. Two hard rules:
+
+- **Arrange–Act–Assert.** Each test has three visible phases in order: **Arrange** the
+  inputs/fixtures, **Act** to produce the result under test, **Assert** on it. Mark them
+  with `// Arrange` / `// Act` / `// Assert` comments; keep all assertions in the Assert
+  phase.
+- **No imperative loops** (`for`, `while`, `do`) — they interleave act and assert and
+  hide which case failed. For a data-driven check (e.g. "every agent's color is unique"),
+  derive the data with array transforms (`map`/`flatMap`), **collect the offenders** with
+  `filter`, then make one aggregate assertion that the offender list is empty:
+
+  ```js
+  // Assert — offenders collected, then a single assertion
+  assert.deepEqual(
+    rows.filter((row) => !isValid(row)).map((row) => row.id),
+    [],
+    "every row must be valid",
+  );
+  ```
+
+  The empty-`deepEqual` names exactly which items broke, so one test still covers the
+  whole set without a loop.
 
 ## Commit messages
 
