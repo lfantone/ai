@@ -59,6 +59,8 @@ const NORSE = [
   ["Machamp", "Volund"],
   ["Abra", "Skadi"],
   ["Ditto", "Loki"],
+  ["Hypno", "Forseti"],
+  ["Meowth", "Hermod"],
 ];
 
 // Where things land, per harness × scope. {p} = project dir, {h} = home.

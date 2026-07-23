@@ -49,6 +49,14 @@ return to implementation remediation.
 both reviewers, persists findings, then deletes the raw diff. Re-reviews validate profile
 freshness before reuse and review only the new delta.
 
+### 5. Feedback
+
+`/feedback-orchestrator <PR>` works the other direction — incoming comments from human
+reviewers: every unresolved thread is judged against head (a moved line never
+auto-invalidates a concern), straightforward fixes apply inline, bigger ones defer to
+implement/plan, and replies/resolutions post only after you approve each. Disagreements
+are replied to, never resolved by the agent.
+
 ## Artifact lifecycle
 
 ```text

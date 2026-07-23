@@ -98,6 +98,8 @@ token-efficiency practices.
 - [**The workflow**](./docs/workflow.md) — how precise/fast planning, contract-routed
   implementation, verification, and review fit together. **Start here.**
 - [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
+- [Feedback](./docs/feedback.md) — the `/feedback-orchestrator` command (work incoming
+  review comments).
 - [Implementation planning](./docs/plan.md) — precise (default) and `--fast` planning.
 - [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
 - [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.

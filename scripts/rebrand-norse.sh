@@ -26,6 +26,8 @@ MAP=(
   "Machamp:Volund"
   "Abra:Skadi"
   "Ditto:Loki"
+  "Hypno:Forseti"
+  "Meowth:Hermod"
 )
 
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }

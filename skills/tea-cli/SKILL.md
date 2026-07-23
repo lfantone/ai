@@ -97,6 +97,24 @@ tea comment <index> "<body>"            # or: tea comment <index> -d @- <<'EOF' 
 tea pr resolve <comment id>
 ```
 
+## Replying to a review thread
+
+Gitea 1.21 has no dedicated reply endpoint. Post a new COMMENT review with a comment at
+the **same `path` + `new_position`** as the thread — Gitea groups review comments by
+location, so it lands in the thread:
+
+```bash
+tea api -X POST "repos/{owner}/{repo}/pulls/<index>/reviews" -d @- <<'JSON'
+{ "event": "COMMENT",
+  "commit_id": "<head sha>",
+  "comments": [ { "path": "<thread path>", "new_position": <thread line>,
+                  "body": "<reply text>" } ] }
+JSON
+```
+
+If the thread's line no longer exists at head (outdated thread), fall back to a PR-level
+`tea comment` quoting the thread (`> original comment` + reply).
+
 Only resolve a thread when the underlying issue is actually gone — never just because a
 line moved. Skip threads whose `resolver` is already set.
 
