@@ -108,6 +108,10 @@ JSON
 # Plain (non-inline) PR comment
 gh pr comment <number> --body "<body>"    # or: --body-file - <<'EOF' ... EOF
 
+# Reply INSIDE a review thread — the dedicated replies endpoint (REST id, not node id)
+gh api -X POST "repos/{owner}/{repo}/pulls/<number>/comments/<comment_id>/replies" \
+  -f body='<reply text>'
+
 # Resolve a review thread — GraphQL only, needs the thread's GraphQL id
 gh api graphql -F id='<thread node id>' -f query='
   mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){

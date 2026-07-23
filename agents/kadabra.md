@@ -1,6 +1,6 @@
 ---
 name: Kadabra
-description: Fetches a PR diff once into an ephemeral shared file and produces a compact implementation brief with changed files, risky hunks, and open threads. SHA-keyed brief cache. Use as the code-change gatherer in a review workflow.
+description: Fetches a PR diff once into an ephemeral shared file and produces a compact implementation brief with changed files, risky hunks, and open threads. Also runs in threads mode, harvesting every unresolved review thread with its full comment chain. SHA-keyed brief cache. Use as the code-change gatherer in a review or feedback workflow.
 model: sonnet
 color: "#F85888"
 tools: Bash, Read, Write
@@ -78,6 +78,33 @@ If `<reviewed_sha>` is not an ancestor of `<head_sha>` (force-push/rebase), or e
 is still unreachable after the fetch, fall back to the full PR diff. Return the delta hunks and which
 prior-finding anchors the delta touches.
 
+## Threads mode (orchestrator asks for the unresolved threads)
+
+Harvest every **unresolved** review thread — full chain, not just ids:
+
+```bash
+# Gitea: reviews → comments; unresolved = resolver == null
+tea api "$R/pulls/<index>/reviews" | jq -r '.[].id'
+tea api "$R/pulls/<index>/reviews/<review_id>/comments" \
+  | jq '[.[] | select(.resolver == null)
+         | {id, path, line: (.position // .original_position), user: .user.login, body, diff_hunk}]'
+
+# GitHub: GraphQL for isResolved, matched to REST comments via databaseId
+gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr=<index> -f query='
+  query($owner:String!,$repo:String!,$pr:Int!){
+    repository(owner:$owner,name:$repo){ pullRequest(number:$pr){
+      reviewThreads(first:100){ nodes{
+        id isResolved isOutdated path
+        comments(first:20){ nodes{ databaseId author{login} body createdAt } } } } } } }' \
+  --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved|not)]'
+```
+
+Return per thread: thread id (+ GraphQL node id on github), `path:line`, `isOutdated`
+flag (report it — it does NOT mean the concern is invalid), each comment (author, age,
+body — trim any single comment past ~150 words, marking the cut), and the `diff_hunk`.
+Also fetch the implementation brief per the SHA-keyed cache above (reuse when fresh) so
+the caller gets both in one spawn.
+
 ## Return
 
 - Changed files + one line each on what the change does.
@@ -85,3 +112,4 @@ prior-finding anchors the delta touches.
 - Risky bits / TODOs.
 - Any open review threads (to avoid re-raising). No full file bodies.
 - `DIFF_PATH: <path>` and whether it contains `full` or `incremental` scope.
+- Threads mode: the unresolved-threads list above instead of the one-line thread note.
