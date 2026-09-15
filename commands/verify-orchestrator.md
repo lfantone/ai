@@ -100,9 +100,6 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
   `$CACHE/plan-<ticket>.md` — mark it `verification-only: yes` and include a header + the
   agreed criteria as §1 — so Phase 4 has a ledger to write. With no execution contracts or
   change map, a failure must route to planning rather than the local fix loop.
-- Read `$CACHE/learnings.md` (per the **`repo-learnings` skill**, if present):
-  environment/server entries guide Phase 3 (startup quirks, flaky endpoints);
-  scenario-design entries go into Abra's spawn.
 
 ---
 
@@ -197,10 +194,6 @@ sets `status: verified` (only with user acceptance) or `status: verification-fai
 diagnostic run from `implementation-failed`, `partially-implemented`, `approved`, or `draft`
 preserves that original status regardless of scenario results.
 
-**Distill learnings** (per the `repo-learnings` skill): environment/server gotchas,
-weak-proxy scenario lessons, and fix-round root causes from this run — dedupe, then
-append.
-
 **Optional, gated (outward-facing):** offer to post the verdict to the ticket (Jira MCP
 `addCommentToJiraIssue`, or the forge CLI) — **wait for explicit yes**. Never post
 automatically.
@@ -247,6 +240,3 @@ Verification log.
   Verification log; offer to move it into the repo if the user wants it in CI.
 - **Repo profile** (`$CACHE/repo-profile.md`) — read-only (surfaces + dev-server
   command).
-- **Learnings** (`$CACHE/learnings.md`) — cross-ticket, repo-specific memory shared
-  by ALL orchestrators; read at Phase 0, appended at Phase 4 (see the `repo-learnings`
-  skill).

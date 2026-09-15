@@ -230,9 +230,6 @@ reads the same temporary diff; neither may fetch it. Assemble their output as-is
   (`scope: delta` or `scope: repo`).
 - **Alakazam** — Implementation brief + threat profile + DIFF_PATH + COORDS + active scope.
 
-Also inject the recurring-mistake entries from `$CACHE/learnings.md` (per the
-`repo-learnings` skill, if the file exists) into both reviewer spawns.
-
 If a reviewer returns a collapsed list instead of per-finding blocks, reject it and
 re-spawn that reviewer with the format requirement restated.
 
@@ -277,9 +274,7 @@ Security findings in their own section, same severity ordering and format.
 brief, and every finding (stable id, anchor text, file, severity, `status: open`). The
 cache must survive a "no" at the publish gate — otherwise the next run cannot re-review
 incrementally. After publishing, update it again with `forge_comment_id`s and the publish
-mode (`inline` / `summary-only` / `none`). If a finding class has now **recurred across
-PRs** (same mistake pattern, different changes), distill it into
-`$CACHE/learnings.md` per the `repo-learnings` skill.
+mode (`inline` / `summary-only` / `none`).
 
 After that durable state write succeeds, delete the temporary diff at DIFF_PATH. Publishing,
 same-SHA replay, and future incremental review use `review-<index>.md`, not the raw diff. If
@@ -367,6 +362,3 @@ for the freshness guard.
   `last_seen_sha`, and `forge_comment_id` (when published inline). On every run, update
   statuses and `reviewed_sha` to the head just reviewed. Never re-raise an entry already
   marked resolved.
-- **Learnings** (`learnings.md`) — cross-ticket, repo-specific memory shared by ALL
-  orchestrators; recurring finding classes are distilled into it and injected into future
-  reviewer spawns (see the `repo-learnings` skill).
