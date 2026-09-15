@@ -26,12 +26,12 @@ const MODEL_MAP = {
   opencode: {
     haiku: "github-copilot/claude-haiku-4.5",
     sonnet: "github-copilot/claude-sonnet-5",
-    opus: "github-copilot/claude-opus-4.8",
+    opus: "github-copilot/claude-opus-5",
   },
   github: {
     haiku: "claude-haiku-4.5",
     sonnet: "claude-sonnet-5",
-    opus: "claude-opus-4.8",
+    opus: "claude-opus-5",
   },
   claude: { haiku: "haiku", sonnet: "sonnet", opus: "opus" },
 };

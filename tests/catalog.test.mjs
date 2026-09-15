@@ -275,3 +275,68 @@ test("review shares an ephemeral diff and refreshes material profile changes", (
   assert.match(mewtwo, /DIFF_PATH/);
   assert.match(alakazam, /DIFF_PATH/);
 });
+
+test("orchestrators omit stale memory and redundant verification stages", () => {
+  // Arrange
+  const commandFiles = fs
+    .readdirSync(path.join(ROOT, "commands"))
+    .filter((file) => file.endsWith(".md"));
+
+  // Act
+  const commandCorpus = commandFiles
+    .map((file) => read(`commands/${file}`))
+    .join("\n");
+  const plan = read("commands/plan-orchestrator.md");
+
+  // Assert
+  assert.doesNotMatch(
+    commandCorpus,
+    /repo-learnings|learnings\.md|\bPorygon\b/,
+  );
+  assert.doesNotMatch(plan, /\bDugtrio\b/);
+  assert.equal(fs.existsSync(path.join(ROOT, "agents/porygon.md")), false);
+  assert.equal(
+    fs.existsSync(path.join(ROOT, "skills/repo-learnings/SKILL.md")),
+    false,
+  );
+});
+
+test("every orchestrator accounts for delegated output", () => {
+  // Arrange
+  const commandFiles = fs
+    .readdirSync(path.join(ROOT, "commands"))
+    .filter((file) => file.endsWith(".md"));
+
+  // Act
+  const missing = commandFiles.filter(
+    (file) => !/Never silently omit a sub-agent/.test(read(`commands/${file}`)),
+  );
+
+  // Assert
+  assert.deepEqual(
+    missing,
+    [],
+    "every orchestrator must account for every delegated item",
+  );
+});
+
+test("installed Opus agents use the current model generation", () => {
+  // Arrange
+  const agent = "mewtwo";
+
+  // Act
+  const opencodeProject = install("opencode");
+  const githubProject = install("github");
+  const opencodeAgent = fs.readFileSync(
+    path.join(opencodeProject, ".opencode/agents", `${agent}.md`),
+    "utf8",
+  );
+  const githubAgent = fs.readFileSync(
+    path.join(githubProject, ".github/agents", `${agent}.agent.md`),
+    "utf8",
+  );
+
+  // Assert
+  assert.match(opencodeAgent, /^model: github-copilot\/claude-opus-5$/m);
+  assert.match(githubAgent, /^model: claude-opus-5$/m);
+});
