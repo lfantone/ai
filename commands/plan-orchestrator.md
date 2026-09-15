@@ -23,7 +23,6 @@ Spawn these defined agents as-is; do not override their models or restate their 
 - `Slowpoke` — normalized requirement brief
 - `Eevee` — repository profile owner (only when stale/missing)
 - `Growlithe` — security profile owner (only when stale/missing)
-- `Dugtrio` — code cartographer, after requirements are normalized
 - `Mew` — precise author
 - `Meowth` — fast author
 - `Magneton` — structural plan verifier
@@ -84,7 +83,6 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 | Slowpoke  | ticket ref and/or raw description                                                                                                        |
 | Eevee     | resolved `$CACHE`                                                                                                                        |
 | Growlithe | resolved `$CACHE`                                                                                                                        |
-| Dugtrio   | Slowpoke's normalized requirement brief, verbatim                                                                                        |
 | Mew       | requirement + repository + cartographer + security briefs, interview answers, relevant learnings; revision artifact/logs when applicable |
 | Meowth    | requirement + repository + cartographer + relevant security/learnings; blocking answers when applicable                                  |
 | Magneton  | full authored plan                                                                                                                       |
@@ -125,22 +123,14 @@ Spawn concurrently:
 - Eevee only if the repository profile is stale/missing.
 - Growlithe only if the security profile is stale/missing.
 
-Wait for Slowpoke before code cartography. Its brief is the requirement source of truth,
-including acceptance criteria, scope, exclusions, and constraints.
-
----
-
-# Phase 1.25 — Map the change
-
-Spawn Dugtrio with the normalized requirement brief, never only a ticket reference. It maps
-live insertion points, prior art, seams, and collisions. This phase may overlap with any
-still-running profile refresh after Slowpoke returns.
+Wait for Slowpoke before authoring. Its brief is the requirement source of truth, including
+acceptance criteria, scope, exclusions, and constraints.
 
 ---
 
 # Phase 1.5 — Understanding checkpoint
 
-Present 3–5 bullets covering the goal, scope, landing points, prior art, and relevant security
+Present 3–5 bullets covering the goal, scope, constraints, and relevant security
 surface, plus confidence and the biggest gap.
 
 ## Precise mode
@@ -162,10 +152,11 @@ There is no separate direction-approval phase. The final authored plan is the ap
 
 # Phase 2 — Author
 
-- MODE `precise`: spawn Mew with all context. It validates complete execution preconditions
-  while authoring and emits only exact contracts.
-- MODE `fast`: spawn Meowth. It may mix exact and guided contracts while keeping every design
-  decision, file boundary, invariant, and expected result explicit.
+- MODE `precise`: spawn Mew with all context. It maps live insertion points, prior art, seams,
+  and collisions, validates complete execution preconditions, and emits only exact contracts.
+- MODE `fast`: spawn Meowth. It maps the change while authoring and may mix exact and guided
+  contracts while keeping every design decision, file boundary, invariant, and expected
+  result explicit.
 
 On revision, pass the current artifact and requested changes. Preserve logs and unchanged
 ticked contracts.

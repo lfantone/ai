@@ -61,10 +61,9 @@ block with three backticks):
 ```
 ````
 
-> **Shared contract with Porygon.** The literal tokens `**Anchor:**`, `(not inline —
-sketch)`, and `(approx — verify)` are parsed mechanically by Porygon to place suggestions.
-> Keep them byte-identical here and in Mewtwo — rewording any of them silently breaks
-> anchoring.
+> **Shared publishing contract.** The orchestrator parses `**Anchor:**`, `(not inline —
+sketch)`, and `(approx — verify)` to place suggestions. Verify every postable anchor against
+> DIFF_PATH and COORDS before returning. Keep the tokens byte-identical here and in Mewtwo.
 
 Hard rules:
 

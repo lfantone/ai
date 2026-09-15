@@ -21,7 +21,6 @@ Spawn them as-is — do not restate their instructions or override their model:
 - `Growlithe` — security-profile scout
 - `Mewtwo` — general reviewer
 - `Alakazam` — security reviewer
-- `Porygon` — line-anchor verifier
 
 ## Token discipline (non-negotiable)
 
@@ -115,7 +114,6 @@ raw diff into your own context: pass Kadabra's DIFF_PATH to both reviewers.
 | `Growlithe` | `$CACHE` — it scans the local working repo                                                                                                  |
 | `Mewtwo`    | Ticket + Implementation + Repository briefs (verbatim) + DIFF_PATH + COORDS + any Phase-2 notes. Re-review: also prior findings + statuses. |
 | `Alakazam`  | Implementation brief + Growlithe's threat profile (verbatim) + DIFF_PATH + COORDS. Re-review: also prior security findings + statuses.      |
-| `Porygon`   | the full findings from both reviewers + COORDS (its `?ref=<sha>` fetch needs `head_sha`)                                                    |
 
 Gatherers and reviewers read the local working tree. For a remote PR, verify current HEAD
 equals `head_sha`; otherwise hard-stop and ask to check it out (`tea pr checkout <index>` /
@@ -161,8 +159,8 @@ In re-review mode the whole point is to spend tokens only on what changed:
 - **Reviewers triage + delta-only** — pass `Mewtwo`/`Alakazam` the prior findings + statuses
   and the incremental diff; they triage each prior finding (`resolved` /
   `still-outstanding` / `partially-addressed`) and review only the delta for new issues.
-- **Re-anchor** — `Porygon` re-anchors every still-outstanding and new finding against the
-  new head.
+- **Re-anchor** — reviewers refresh every still-outstanding and new finding against the new
+  head while reviewing the incremental diff.
 - **Assembly** — three groups: **Resolved since last review** (one-line list, no
   suggestions), **Still outstanding** (refreshed anchors + suggestions), **New in this
   revision**. Publish only new and moved/still-outstanding findings; never repost a finding
@@ -235,14 +233,6 @@ re-spawn that reviewer with the format requirement restated.
 
 ---
 
-# Phase 4 — Verify line anchors
-
-Spawn **Porygon** with all findings from both reviewers **+ COORDS** (it needs `head_sha`
-for its `?ref=<sha>` fetch). Use its corrected `<file>:<line(s)>` for assembly and
-publishing — never the pre-verification numbers.
-
----
-
 # Final assembly (Slowbro)
 
 Produce one report:
@@ -286,7 +276,7 @@ the run is interrupted earlier, Phase 0 cleans the abandoned file next time.
 
 Publishing is outward-facing. **HARD STOP:** after presenting the assembled report, ask
 _"Publish these N findings to PR #<index>? (all / must-fix only / summary-only / no)"_ and
-**wait for an explicit reply.** Never auto-publish. Only publish the Porygon-verified,
+**wait for an explicit reply.** Never auto-publish. Only publish reviewer-anchored,
 postable findings (skip any marked `unpostable (sketch)` for inline posting).
 `(not in diff — missing)` findings and everything from a `repo`-scope audit have no diff
 line to attach to — they always go in the summary comment, never inline.
@@ -297,7 +287,7 @@ vs github `line`/`side`, multi-line addressing, `event`, `commit_id`) live there
 Your decisions:
 
 - **Inline suggestions (preferred).** One review POST for the run; one comment per postable
-  finding, anchored to **Porygon's verified new-file line**, with a `body` of
+  finding, anchored to the reviewer's new-file line, with a `body` of
   `**[<severity>] <title>**\n<what's wrong>\n\n` followed by the `suggestion` block. If the
   API rejects a comment, drop that one to the summary fallback rather than posting it wrong.
 - **Multi-line fixes** follow the forge's capability per its skill: post them inline on

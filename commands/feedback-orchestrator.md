@@ -17,7 +17,6 @@ restate their instructions or override their model:
 - `Eevee` — repository profile _(only when stale)_
 - `Slowpoke` — ticket brief _(only when the PR references a ticket)_
 - `Hypno` — the judge: one verdict + draft reply per thread
-- `Porygon` — verifies fix-spec anchors against head before any edit
 - `Machop` / `Machoke` — execute inline fixes as exact contracts _(Machoke only after
   Machop fails + user approves)_
 
@@ -66,7 +65,6 @@ your own CLI use is limited to head-SHA reads and Phase 5 posting/resolving.
 | `Eevee`              | `$CACHE` — only when the repo profile is stale                                                                                        |
 | `Slowpoke`           | the ticket ref (only when the PR/branch references one)                                                                               |
 | `Hypno`              | the threads brief + impl brief + repo profile + ticket brief (verbatim) + COORDS + the `ours` thread ids + relevant learnings entries |
-| `Porygon`            | the `valid` fix specs selected for inline application + COORDS                                                                        |
 | `Machop` / `Machoke` | ONE exact contract + the conventions excerpt + "no commits, current branch"                                                           |
 
 Judging happens against the working tree: verify current HEAD equals `head_sha`;
@@ -126,10 +124,10 @@ rationale, and the proposed action. Then ask, **recommending explicitly per thre
 
 # Phase 4 — Apply inline fixes (only the user-selected ones)
 
-1. **Porygon** verifies every selected fix spec's anchor against head — corrected
-   locations only; an unverifiable anchor demotes that fix to the deferred list.
-2. Convert each verified fix spec into ONE **exact execution contract**: `Files` = the
-   one file; a single `replace_exact` whose **Before** is the verified anchor lines and
+1. Read each selected fix spec's target lines from the current head. An anchor whose target
+   text no longer matches moves to the deferred list.
+2. Convert each matching fix spec into ONE **exact execution contract**: `Files` = the
+   one file; a single `replace_exact` whose **Before** is the current target lines and
    **After** is the suggestion body; done-check = the replacement is present.
 3. Spawn **Machop** per contract (parallel only across disjoint files). Failure → offer
    `Machoke` retry (user-gated, per the escalation rules) or demote to deferred.

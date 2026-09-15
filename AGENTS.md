@@ -204,7 +204,7 @@ All commits must follow [Conventional Commits](https://www.conventionalcommits.o
 - **breaking changes** — append `!` after the type/scope and/or add a
   `BREAKING CHANGE:` footer.
 
-Examples: `feat(agents): add porygon line-anchor verifier` ·
+Examples: `feat(agents): add mewtwo code reviewer` ·
 `docs: document conventional commits` · `refactor(commands)!: split reviewers into agents`.
 
 If a body is included, it must be a bullet list of completed tasks. Short and concise. Less than 100 words in total.
