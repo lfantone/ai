@@ -113,8 +113,7 @@ Legacy artifacts without `mode` or `Execution class` are not safe inputs to the 
 Offer a one-time `/plan-orchestrator` revision that preserves logs and converts remaining work
 to execution contracts; never guess a legacy step's class.
 
-Skip ticked contracts. Load `$CACHE/repo-profile.md`; spawn Eevee only if missing. Add relevant
-`$CACHE/learnings.md` entries to the conventions excerpt.
+Skip ticked contracts. Load `$CACHE/repo-profile.md`; spawn Eevee only if missing.
 
 The header `head` is provenance, not the applicability decision. Current HEAD or dirty-tree
 drift is handled by each unchecked contract's complete Preconditions immediately before edits.
@@ -194,7 +193,7 @@ Set exactly one status:
 - `verification-failed`: preserve during verification-fix mode regardless of repaired code.
 
 Append/update `## Execution log`: executor per contract, retries, deviations, skips, and every
-gate result. Distill durable learnings per the `repo-learnings` skill.
+gate result.
 
 Report status and suggest `/verify-orchestrator <ticket>` only for `implemented`. For review
 mode, applied findings stay open until a re-review confirms them.

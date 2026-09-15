@@ -115,8 +115,6 @@ logs, stable ids, and ticked steps that remain valid. Current working-tree conte
 baseline for new/changed contracts. Preserve lifecycle history, including
 `implementation-failed` or `verification-failed`, until the owning command changes it.
 
-Read planning-relevant entries from `$CACHE/learnings.md` per the `repo-learnings` skill.
-
 ---
 
 # Phase 1 — Normalize requirements and gather stable context
@@ -193,7 +191,6 @@ On no, retain the draft and stop.
 
 - On approval, set `status: approved` and save `$CACHE/plan-<ticket>.md`. **Report the saved
   path** so it can be handed to `/implement-orchestrator` verbatim.
-- Distill durable planning learnings per the `repo-learnings` skill.
 - Optionally offer to post a short summary to the ticket; outward posting requires explicit
   confirmation.
 
@@ -201,7 +198,6 @@ On no, retain the draft and stop.
 
 - `repo-profile.md` / `security-profile.md`: shared, regenerated only when materially stale.
 - `plan-<ticket>.md`: plan plus execution/verification ledger.
-- `learnings.md`: append-only repo-specific gotchas and constraints.
 
 Any related diff fetched only to author the plan is temporary. Delete it after the plan is
 approved; clean abandoned temporary diffs at the start of the next run.

@@ -159,8 +159,7 @@ Posting (payloads per the `<forge>` skill's "Replying to a review thread" sectio
   - `ours` threads: leave to the review flow's re-review unless the user says otherwise.
 
 Then update `$CACHE/feedback-<index>.md` (per-thread verdict, reply id, status, fix
-contract/commit) and distill learnings per the `repo-learnings` skill — a concern that
-keeps coming up across PRs is a convention the repo hasn't written down yet.
+contract/commit).
 
 ---
 
