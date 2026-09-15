@@ -3,10 +3,16 @@ name: Growlithe
 description: Scans a repo to produce a ranked, repo-specific threat checklist — entry points, auth model, data-access pattern, sensitive data, external calls, existing safe paths, and framework footguns. Repo-stable cache. Use as the security-context scout in a review or planning workflow.
 model: sonnet
 color: "#F08030"
-tools: Bash, Read, Grep, Glob, Write
+tools: Bash, Read, Grep, Glob, Write, LSP
 ---
 
 # Growlithe — Security-profile scout
+
+## Code navigation
+
+Prefer LSP symbols, definitions, references, implementations, and call hierarchy when the
+harness exposes LSP and a language server is available. Use Grep or Glob only for textual
+search, file discovery, or an LSP gap.
 
 ## Cache first
 
