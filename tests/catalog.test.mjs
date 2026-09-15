@@ -286,12 +286,19 @@ test("orchestrators omit stale memory and redundant verification stages", () => 
   const commandCorpus = commandFiles
     .map((file) => read(`commands/${file}`))
     .join("\n");
+  const agentCorpus = agentFiles()
+    .map((file) => read(`agents/${file}`))
+    .join("\n");
   const plan = read("commands/plan-orchestrator.md");
 
   // Assert
   assert.doesNotMatch(
     commandCorpus,
     /repo-learnings|learnings\.md|\bPorygon\b/,
+  );
+  assert.doesNotMatch(
+    agentCorpus,
+    /repo-learnings|learnings\.md|\bPorygon\b|relevant learnings/i,
   );
   assert.doesNotMatch(plan, /\bDugtrio\b/);
   assert.equal(fs.existsSync(path.join(ROOT, "agents/porygon.md")), false);

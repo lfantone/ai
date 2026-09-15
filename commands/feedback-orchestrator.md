@@ -66,13 +66,13 @@ your own CLI use is limited to head-SHA reads and Phase 5 posting/resolving.
 
 ## Spawn context contract
 
-| Agent                | Inject into its spawn prompt                                                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `Kadabra`            | COORDS + `$CACHE` + "threads mode" — returns the unresolved threads + impl brief                                                      |
-| `Eevee`              | `$CACHE` — only when the repo profile is stale                                                                                        |
-| `Slowpoke`           | the ticket ref (only when the PR/branch references one)                                                                               |
-| `Hypno`              | the threads brief + impl brief + repo profile + ticket brief (verbatim) + COORDS + the `ours` thread ids + relevant learnings entries |
-| `Machop` / `Machoke` | ONE exact contract + the conventions excerpt + "no commits, current branch"                                                           |
+| Agent                | Inject into its spawn prompt                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| `Kadabra`            | COORDS + `$CACHE` + "threads mode" — returns the unresolved threads + impl brief                         |
+| `Eevee`              | `$CACHE` — only when the repo profile is stale                                                           |
+| `Slowpoke`           | the ticket ref (only when the PR/branch references one)                                                  |
+| `Hypno`              | the threads brief + impl brief + repo profile + ticket brief (verbatim) + COORDS + the `ours` thread ids |
+| `Machop` / `Machoke` | ONE exact contract + the conventions excerpt + "no commits, current branch"                              |
 
 Judging happens against the working tree: verify current HEAD equals `head_sha`;
 otherwise hard-stop and ask to check the PR out (`tea pr checkout <index>` /

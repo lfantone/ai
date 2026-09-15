@@ -13,7 +13,7 @@ all spawns. Before saving or presenting an artifact, account for every input id 
 Never silently omit a sub-agent item.
 
 You schedule approved execution contracts; you do not write code or read full source files.
-Each executor receives one self-contained contract plus a short conventions/learnings excerpt.
+Each executor receives one self-contained contract plus a short conventions excerpt.
 
 - **Execution class: exact** routes to Machop/Haiku.
 - **Execution class: guided** routes to Machoke/Sonnet as an expected fast-plan cost, not an
@@ -64,15 +64,15 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context
 
-| Agent    | Input                                                                     |
-| -------- | ------------------------------------------------------------------------- |
-| Machop   | one exact contract + conventions/learnings + `no commits, current branch` |
-| Machoke  | one guided contract, or one exact contract + failure for approved retry   |
-| Machamp  | one failed contract + prior failures/deviations + conventions             |
-| Mew      | one failed contract + failure + conventions, in scoped re-spec mode       |
-| Magneton | full plan with the changed contract flagged; structural checks only       |
-| Dugtrio  | failed scenario/evidence + change map + execution deviations              |
-| Eevee    | resolved `$CACHE`                                                         |
+| Agent    | Input                                                                   |
+| -------- | ----------------------------------------------------------------------- |
+| Machop   | one exact contract + conventions + `no commits, current branch`         |
+| Machoke  | one guided contract, or one exact contract + failure for approved retry |
+| Machamp  | one failed contract + prior failures/deviations + conventions           |
+| Mew      | one failed contract + failure + conventions, in scoped re-spec mode     |
+| Magneton | full plan with the changed contract flagged; structural checks only     |
+| Dugtrio  | failed scenario/evidence + change map + execution deviations            |
+| Eevee    | resolved `$CACHE`                                                       |
 
 ## Scoped re-spec
 
