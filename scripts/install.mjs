@@ -66,7 +66,11 @@ const NORSE = [
 // Where things land, per harness × scope. {p} = project dir, {h} = home.
 const TARGETS = {
   opencode: {
-    project: { agents: "{p}/.opencode/agents", commands: "{p}/.opencode/commands", skills: "{p}/.opencode/skills" },
+    project: {
+      agents: "{p}/.opencode/agents",
+      commands: "{p}/.opencode/commands",
+      skills: "{p}/.opencode/skills",
+    },
     global: {
       agents: "{h}/.config/opencode/agents",
       commands: "{h}/.config/opencode/commands",
@@ -78,8 +82,16 @@ const TARGETS = {
     global: { agents: "{h}/.copilot/agents", skills: "{h}/.copilot/skills" },
   },
   claude: {
-    project: { agents: "{p}/.claude/agents", commands: "{p}/.claude/commands", skills: "{p}/.claude/skills" },
-    global: { agents: "{h}/.claude/agents", commands: "{h}/.claude/commands", skills: "{h}/.claude/skills" },
+    project: {
+      agents: "{p}/.claude/agents",
+      commands: "{p}/.claude/commands",
+      skills: "{p}/.claude/skills",
+    },
+    global: {
+      agents: "{h}/.claude/agents",
+      commands: "{h}/.claude/commands",
+      skills: "{h}/.claude/skills",
+    },
   },
 };
 
@@ -100,7 +112,9 @@ const dryRun = has("dry-run");
 const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
-  console.error(`usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--dry-run]`);
+  console.error(
+    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--dry-run]`,
+  );
   process.exit(1);
 }
 if (!["pokemon", "norse"].includes(names)) {
@@ -109,7 +123,10 @@ if (!["pokemon", "norse"].includes(names)) {
 }
 
 const dirs = Object.fromEntries(
-  Object.entries(TARGETS[harness][scope]).map(([k, v]) => [k, v.replace("{p}", projectDir).replace("{h}", os.homedir())]),
+  Object.entries(TARGETS[harness][scope]).map(([k, v]) => [
+    k,
+    v.replace("{p}", projectDir).replace("{h}", os.homedir()),
+  ]),
 );
 
 // ---------------------------------------------------------------------------
@@ -130,10 +147,16 @@ const norsify = (text) => {
   for (const [poke, norse] of NORSE) {
     text = text
       .replaceAll(new RegExp(`\\b${poke}\\b`, "g"), norse)
-      .replaceAll(new RegExp(`\\b${poke.toLowerCase()}\\b`, "g"), norse.toLowerCase());
+      .replaceAll(
+        new RegExp(`\\b${poke.toLowerCase()}\\b`, "g"),
+        norse.toLowerCase(),
+      );
   }
   return text
-    .replaceAll("named after a Pokémon", "named after a figure from Norse mythology")
+    .replaceAll(
+      "named after a Pokémon",
+      "named after a figure from Norse mythology",
+    )
     .replaceAll(/\bPokémon\b/g, "Norse mythology");
 };
 
@@ -148,7 +171,15 @@ const writes = [];
 const emit = (file, content) => writes.push({ file, content });
 const emitDir = (src, dest) => writes.push({ dir: src, file: dest });
 
-const PORTABLE_TOOLS = new Set(["Bash", "Read", "Grep", "Glob", "Edit", "Write"]);
+const PORTABLE_TOOLS = new Set([
+  "Bash",
+  "Read",
+  "Grep",
+  "Glob",
+  "Edit",
+  "Write",
+  "LSP",
+]);
 const toolFlags = (tools) => {
   const names = tools
     .split(",")
@@ -156,6 +187,7 @@ const toolFlags = (tools) => {
     .filter(Boolean);
   return {
     bash: names.includes("Bash"),
+    lsp: names.includes("LSP"),
     write: names.some((name) => name === "Edit" || name === "Write"),
     external: names.some((name) => !PORTABLE_TOOLS.has(name)),
   };
@@ -164,14 +196,20 @@ const toolFlags = (tools) => {
 // ---------------------------------------------------------------------------
 // Builders
 // ---------------------------------------------------------------------------
-const agents = fs.readdirSync(path.join(ROOT, "agents")).filter((f) => f.endsWith(".md"));
-const commands = fs.readdirSync(path.join(ROOT, "commands")).filter((f) => f.endsWith(".md"));
-const skills = fs.readdirSync(path.join(ROOT, "skills"), { withFileTypes: true }).filter((d) => d.isDirectory());
+const agents = fs
+  .readdirSync(path.join(ROOT, "agents"))
+  .filter((f) => f.endsWith(".md"));
+const commands = fs
+  .readdirSync(path.join(ROOT, "commands"))
+  .filter((f) => f.endsWith(".md"));
+const skills = fs
+  .readdirSync(path.join(ROOT, "skills"), { withFileTypes: true })
+  .filter((d) => d.isDirectory());
 
 for (const f of agents) {
   const name = f.replace(/\.md$/, "");
   const { fm, body } = parseDoc(path.join(ROOT, "agents", f));
-  const { bash, write, external } = toolFlags(fm.tools ?? "");
+  const { bash, lsp, write, external } = toolFlags(fm.tools ?? "");
   let out = "";
 
   if (harness === "claude") {
@@ -187,6 +225,7 @@ for (const f of agents) {
       `permission:`,
       `  edit: ${write ? "allow" : "deny"}`,
       `  bash: ${bash ? "allow" : "deny"}`,
+      ...(lsp ? [`  lsp: allow`] : []),
       `  webfetch: deny`,
     ];
     out = `---\n${lines.join("\n")}\n---\n${body}`;
@@ -234,7 +273,9 @@ for (const f of commands) {
       .replaceAll(/TaskCreate|TaskUpdate/g, "your task list");
     emit(
       path.join(dirs.skills, name, "SKILL.md"),
-      transform(`---\nname: ${name}\ndescription: ${yamlStr(fm.description)}\n---\n${out}`),
+      transform(
+        `---\nname: ${name}\ndescription: ${yamlStr(fm.description)}\n---\n${out}`,
+      ),
     );
   }
 }
@@ -259,7 +300,8 @@ for (const w of writes) {
       // skills bodies may reference agent names (e.g. repo-learnings mentions the profiler)
       for (const sk of fs.readdirSync(w.file, { recursive: true })) {
         const p = path.join(w.file, String(sk));
-        if (p.endsWith(".md")) fs.writeFileSync(p, norsify(fs.readFileSync(p, "utf8")));
+        if (p.endsWith(".md"))
+          fs.writeFileSync(p, norsify(fs.readFileSync(p, "utf8")));
       }
     }
   } else {
@@ -272,10 +314,14 @@ for (const w of writes) {
 console.log(
   `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names}` +
     `\n  agents: ${agents.length} → ${dirs.agents}` +
-    (dirs.commands ? `\n  commands: ${commands.length} → ${dirs.commands}` : `\n  command-skills: ${commands.length} → ${dirs.skills}/<name>/`) +
+    (dirs.commands
+      ? `\n  commands: ${commands.length} → ${dirs.commands}`
+      : `\n  command-skills: ${commands.length} → ${dirs.skills}/<name>/`) +
     `\n  skills: ${skills.length} → ${dirs.skills}` +
     `\n  ${dryRun ? "planned" : "installed"}: ${files || writes.length} entries`,
 );
 if (harness === "github" && scope === "global") {
-  console.log("note: verify your Copilot surface reads ~/.copilot/skills — global skill discovery varies by version.");
+  console.log(
+    "note: verify your Copilot surface reads ~/.copilot/skills — global skill discovery varies by version.",
+  );
 }

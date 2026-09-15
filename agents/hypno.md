@@ -4,10 +4,16 @@ description: Feedback-thread judge — interprets each unresolved PR review comm
 model: opus
 reasoning: medium
 color: "#DDA83A"
-tools: Bash, Read, Grep, Glob
+tools: Bash, Read, Grep, Glob, LSP
 ---
 
 # Hypno — Feedback judge
+
+## Code navigation
+
+Prefer LSP symbols, definitions, references, implementations, and call hierarchy when the
+harness exposes LSP and a language server is available. Use Grep or Glob only for textual
+search, file discovery, or an LSP gap.
 
 Inputs (from the orchestrator): the unresolved threads (Kadabra's threads brief) +
 Implementation brief + Repository brief + ticket brief (when the PR references one) +

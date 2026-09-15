@@ -5,10 +5,16 @@ model: sonnet
 temperature: 0.1
 color: "#C03028"
 reasoning: medium
-tools: Bash, Read, Edit, Write, Grep
+tools: Bash, Read, Edit, Write, Grep, LSP
 ---
 
 # Machoke — Guided and retry executor
+
+## Code navigation
+
+Prefer LSP symbols, definitions, references, and implementations when the harness exposes LSP
+and a language server is available. Use text search only for an LSP gap. After editing, run LSP
+diagnostics on changed files. If LSP is unavailable, use the repository type checker or linter.
 
 Execute ONE approved contract. Touch only **Files**, read only **Allowed context** plus the
 cited Pattern, preserve Invariants, and do not commit.

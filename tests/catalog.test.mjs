@@ -9,14 +9,19 @@ import * as yaml from "js-yaml";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "utf8");
+const read = (relativePath) =>
+  fs.readFileSync(path.join(ROOT, relativePath), "utf8");
 
 const agentFiles = () =>
-  fs.readdirSync(path.join(ROOT, "agents")).filter((file) => file.endsWith(".md"));
+  fs
+    .readdirSync(path.join(ROOT, "agents"))
+    .filter((file) => file.endsWith(".md"));
 
 // The YAML parse error for a file's `---` frontmatter, or null when it parses cleanly.
 const frontmatterError = (filePath) => {
-  const block = fs.readFileSync(filePath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1];
+  const block = fs
+    .readFileSync(filePath, "utf8")
+    .match(/^---\n([\s\S]*?)\n---/)?.[1];
   if (block == null) return "no frontmatter block";
   try {
     yaml.load(block);
@@ -49,10 +54,59 @@ test("GitHub agents with MCP dependencies do not receive a restrictive tool list
   const project = install("github");
 
   // Assert
-  const slowpoke = fs.readFileSync(path.join(project, ".github/agents/slowpoke.agent.md"), "utf8");
-  const ditto = fs.readFileSync(path.join(project, ".github/agents/ditto.agent.md"), "utf8");
+  const slowpoke = fs.readFileSync(
+    path.join(project, ".github/agents/slowpoke.agent.md"),
+    "utf8",
+  );
+  const ditto = fs.readFileSync(
+    path.join(project, ".github/agents/ditto.agent.md"),
+    "utf8",
+  );
   assert.doesNotMatch(slowpoke, /^tools:/m);
   assert.doesNotMatch(ditto, /^tools:/m);
+});
+
+test("code-aware agents receive LSP access and navigation guidance", () => {
+  // Arrange
+  const project = install("opencode");
+  const names = [
+    "abra",
+    "alakazam",
+    "dugtrio",
+    "eevee",
+    "growlithe",
+    "hypno",
+    "machamp",
+    "machoke",
+    "machop",
+    "meowth",
+    "mew",
+    "mewtwo",
+  ];
+
+  // Act
+  const rows = names.map((name) => ({
+    name,
+    canonical: read(`agents/${name}.md`),
+    installed: fs.readFileSync(
+      path.join(project, ".opencode/agents", `${name}.md`),
+      "utf8",
+    ),
+  }));
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ canonical, installed }) =>
+          !/^tools: .*\bLSP\b/m.test(canonical) ||
+          !/^## Code navigation$/m.test(canonical) ||
+          !/^  lsp: allow$/m.test(installed),
+      )
+      .map(({ name }) => name),
+    [],
+    "every code-aware agent must prefer and receive LSP access",
+  );
 });
 
 test("GitHub agents with portable tools retain a least-privilege tool list", () => {
@@ -60,7 +114,10 @@ test("GitHub agents with portable tools retain a least-privilege tool list", () 
   const project = install("github");
 
   // Assert
-  const machop = fs.readFileSync(path.join(project, ".github/agents/machop.agent.md"), "utf8");
+  const machop = fs.readFileSync(
+    path.join(project, ".github/agents/machop.agent.md"),
+    "utf8",
+  );
   assert.match(machop, /^tools: \[.*"read".*"write".*\]$/m);
 });
 
@@ -70,8 +127,12 @@ test("precise and fast plan authors install under both naming sets", () => {
   const norseProject = install("github", "norse");
 
   // Assert
-  assert.ok(fs.existsSync(path.join(pokemonProject, ".github/agents/meowth.agent.md")));
-  assert.ok(fs.existsSync(path.join(norseProject, ".github/agents/hermod.agent.md")));
+  assert.ok(
+    fs.existsSync(path.join(pokemonProject, ".github/agents/meowth.agent.md")),
+  );
+  assert.ok(
+    fs.existsSync(path.join(norseProject, ".github/agents/hermod.agent.md")),
+  );
 });
 
 test("all harnesses install the fast plan author", () => {
@@ -80,8 +141,12 @@ test("all harnesses install the fast plan author", () => {
   const opencodeProject = install("opencode");
 
   // Assert
-  assert.ok(fs.existsSync(path.join(claudeProject, ".claude/agents/meowth.md")));
-  assert.ok(fs.existsSync(path.join(opencodeProject, ".opencode/agents/meowth.md")));
+  assert.ok(
+    fs.existsSync(path.join(claudeProject, ".claude/agents/meowth.md")),
+  );
+  assert.ok(
+    fs.existsSync(path.join(opencodeProject, ".opencode/agents/meowth.md")),
+  );
 });
 
 test("canonical agent identities are unique and match their filenames", () => {
@@ -104,12 +169,16 @@ test("canonical agent identities are unique and match their filenames", () => {
   // Assert — offenders are collected into a list and that list must be empty.
   assert.equal(files.length, 17);
   assert.deepEqual(
-    rows.filter((row) => row.name?.toLowerCase() !== row.file).map((row) => row.file),
+    rows
+      .filter((row) => row.name?.toLowerCase() !== row.file)
+      .map((row) => row.file),
     [],
     "every name must equal its filename",
   );
   assert.deepEqual(
-    rows.filter((row) => !["haiku", "sonnet", "opus"].includes(row.model)).map((row) => row.file),
+    rows
+      .filter((row) => !["haiku", "sonnet", "opus"].includes(row.model))
+      .map((row) => row.file),
     [],
     "every model must be a known tier",
   );
@@ -134,8 +203,14 @@ test("canonical and installed agent frontmatter is valid YAML", () => {
     return [
       { id: `canonical/${name}`, path: path.join(ROOT, "agents", file) },
       { id: `claude/${name}`, path: path.join(claude, ".claude/agents", file) },
-      { id: `opencode/${name}`, path: path.join(opencode, ".opencode/agents", `${name}.md`) },
-      { id: `github/${name}`, path: path.join(github, ".github/agents", `${name}.agent.md`) },
+      {
+        id: `opencode/${name}`,
+        path: path.join(opencode, ".opencode/agents", `${name}.md`),
+      },
+      {
+        id: `github/${name}`,
+        path: path.join(github, ".github/agents", `${name}.agent.md`),
+      },
     ];
   });
 
