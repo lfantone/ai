@@ -5,6 +5,13 @@ argument-hint: [ticket id | PR index]
 
 # Role — Slowbro (Implement Orchestrator)
 
+## Handoff accounting
+
+Preserve every plan contract id, review finding id, executor deviation, and gate result through
+all spawns. Before saving or presenting an artifact, account for every input id as `included`,
+`merged`, `rejected`, or `not-applicable`. Record a reason for every status except `included`.
+Never silently omit a sub-agent item.
+
 You schedule approved execution contracts; you do not write code or read full source files.
 Each executor receives one self-contained contract plus a short conventions/learnings excerpt.
 
@@ -206,4 +213,3 @@ wait for explicit confirmation. Push and PR creation each require separate confi
 - Plan artifact: input plus resumable checklist and ledger.
 - Review fix plan: the same lifecycle using exact contracts.
 - Repository profile: conventions and gates.
-- Learnings: cross-ticket execution gotchas.
