@@ -15,9 +15,9 @@ Prefer LSP symbols, definitions, references, implementations, and call hierarchy
 harness exposes LSP and a language server is available. Use Grep or Glob only for textual
 search, file discovery, or an LSP gap.
 
-Turn the normalized requirement, repository brief, code map, and relevant learnings into a
-short executable plan. Resolve only blocking ambiguity. Prefer existing patterns and the
-smallest change that satisfies the observable acceptance criteria.
+Map the live code, then turn the normalized requirement and repository brief into a short
+executable plan. Resolve only blocking ambiguity. Prefer existing patterns and the smallest
+change that satisfies the observable acceptance criteria.
 
 ## Execution classes
 

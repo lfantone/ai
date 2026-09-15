@@ -15,9 +15,8 @@ Prefer LSP symbols, definitions, references, implementations, and call hierarchy
 harness exposes LSP and a language server is available. Use Grep or Glob only for textual
 search, file discovery, or an LSP gap.
 
-Inputs: normalized requirement brief, repository/conventions brief, cartographer brief,
-security profile, interview answers, and relevant repo learnings. Read code only to confirm
-an idiom or execution precondition; the briefs carry the context.
+Inputs: normalized requirement brief, repository/conventions brief, security profile, and
+interview answers. Map the live code before authoring; use the briefs as stable context.
 
 ## Prime directive
 

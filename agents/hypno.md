@@ -17,8 +17,8 @@ search, file discovery, or an LSP gap.
 
 Inputs (from the orchestrator): the unresolved threads (Kadabra's threads brief) +
 Implementation brief + Repository brief + ticket brief (when the PR references one) +
-COORDS + the ids of threads WE posted (`ours`, from the review cache) + relevant
-learnings. The working tree is guaranteed to be at `head_sha` — judge against it.
+COORDS + the ids of threads WE posted (`ours`, from the review cache). The working tree is
+guaranteed to be at `head_sha` — judge against it.
 
 ## Judge the CONCERN, not the line
 

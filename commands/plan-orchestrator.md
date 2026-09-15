@@ -85,14 +85,14 @@ Inject the resolved `$CACHE` into every cache-touching spawn.
 
 ## Spawn context contract
 
-| Agent     | Input                                                                                                                                    |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Slowpoke  | ticket ref and/or raw description                                                                                                        |
-| Eevee     | resolved `$CACHE`                                                                                                                        |
-| Growlithe | resolved `$CACHE`                                                                                                                        |
-| Mew       | requirement + repository + cartographer + security briefs, interview answers, relevant learnings; revision artifact/logs when applicable |
-| Meowth    | requirement + repository + cartographer + relevant security/learnings; blocking answers when applicable                                  |
-| Magneton  | full authored plan                                                                                                                       |
+| Agent     | Input                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Slowpoke  | ticket ref and/or raw description                                                                     |
+| Eevee     | resolved `$CACHE`                                                                                     |
+| Growlithe | resolved `$CACHE`                                                                                     |
+| Mew       | requirement + repository + security briefs, interview answers; revision artifact/logs when applicable |
+| Meowth    | requirement + repository + relevant security brief; blocking answers when applicable                  |
+| Magneton  | full authored plan                                                                                    |
 
 ---
 
