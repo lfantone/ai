@@ -316,6 +316,12 @@ for (const d of skills) {
 // ---------------------------------------------------------------------------
 // Install
 // ---------------------------------------------------------------------------
+const targetDirs = [...new Set(Object.values(dirs))];
+for (const dir of targetDirs) {
+  if (dryRun) console.log(`would remove ${dir}`);
+  else fs.rmSync(dir, { recursive: true, force: true });
+}
+
 let files = 0;
 for (const w of writes) {
   if (dryRun) {
