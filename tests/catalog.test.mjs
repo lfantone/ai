@@ -31,8 +31,9 @@ const frontmatterError = (filePath) => {
   }
 };
 
-const install = (harness, names = "pokemon", modelFamily = "claude") => {
+const install = (harness, names = "pokemon", provider) => {
   const project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`));
+  const providerArgs = provider ? ["--provider", provider] : [];
   execFileSync(
     process.execPath,
     [
@@ -43,8 +44,7 @@ const install = (harness, names = "pokemon", modelFamily = "claude") => {
       project,
       "--names",
       names,
-      "--model-family",
-      modelFamily,
+      ...providerArgs,
     ],
     { cwd: ROOT, stdio: "pipe" },
   );
@@ -357,38 +357,54 @@ test("installed Opus agents use the current model generation", () => {
   assert.match(githubAgent, /^model: claude-opus-5$/m);
 });
 
-test("OpenAI model family maps every tier for OpenCode and GitHub", () => {
+test("OpenCode providers map every capability tier", () => {
   // Arrange
   const expected = [
     {
+      provider: "claude",
       agent: "magneton",
-      opencode: "openai/gpt-5.4-mini",
-      github: "gpt-5.4-mini",
+      model: "anthropic/claude-haiku-4-5",
     },
     {
+      provider: "claude",
       agent: "dugtrio",
-      opencode: "openai/gpt-5.3-codex-spark",
-      github: "gpt-5.3-codex",
+      model: "anthropic/claude-sonnet-5",
     },
     {
+      provider: "claude",
       agent: "mewtwo",
-      opencode: "openai/gpt-5.6-sol",
-      github: "gpt-5.6-sol",
+      model: "anthropic/claude-opus-5",
+    },
+    {
+      provider: "openai",
+      agent: "magneton",
+      model: "openai/gpt-5.4-mini",
+    },
+    {
+      provider: "openai",
+      agent: "dugtrio",
+      model: "openai/gpt-5.3-codex-spark",
+    },
+    {
+      provider: "openai",
+      agent: "mewtwo",
+      model: "openai/gpt-5.6-sol",
     },
   ];
 
   // Act
-  const opencodeProject = install("opencode", "pokemon", "openai");
-  const githubProject = install("github", "pokemon", "openai");
-  const rows = expected.map(({ agent, ...models }) => ({
+  const projects = Object.fromEntries(
+    ["claude", "openai"].map((provider) => [
+      provider,
+      install("opencode", "pokemon", provider),
+    ]),
+  );
+  const rows = expected.map(({ provider, agent, model }) => ({
+    provider,
     agent,
-    models,
-    opencode: fs.readFileSync(
-      path.join(opencodeProject, ".opencode/agents", `${agent}.md`),
-      "utf8",
-    ),
-    github: fs.readFileSync(
-      path.join(githubProject, ".github/agents", `${agent}.agent.md`),
+    model,
+    source: fs.readFileSync(
+      path.join(projects[provider], ".opencode/agents", `${agent}.md`),
       "utf8",
     ),
   }));
@@ -396,30 +412,27 @@ test("OpenAI model family maps every tier for OpenCode and GitHub", () => {
   // Assert
   assert.deepEqual(
     rows
-      .filter(
-        ({ models, opencode, github }) =>
-          !opencode.includes(`model: ${models.opencode}`) ||
-          !github.includes(`model: ${models.github}`),
-      )
-      .map(({ agent }) => agent),
+      .filter(({ model, source }) => !source.includes(`model: ${model}`))
+      .map(({ provider, agent }) => `${provider}/${agent}`),
     [],
-    "every abstract tier must map to its OpenAI model",
+    "every provider must map all abstract tiers",
   );
 });
 
-test("installer rejects unsupported model-family combinations", () => {
+test("installer rejects unsupported provider combinations", () => {
   // Arrange
   const installer = path.join(ROOT, "scripts/install.mjs");
   const cases = [
-    { harness: "opencode", family: "unknown", message: "must be" },
-    { harness: "claude", family: "openai", message: "not supported" },
+    { harness: "opencode", provider: "unknown", message: "must be" },
+    { harness: "github", provider: "openai", message: "only supported" },
+    { harness: "claude", provider: "openai", message: "only supported" },
   ];
 
   // Act
-  const rows = cases.map(({ harness, family, message }) => {
+  const rows = cases.map(({ harness, provider, message }) => {
     const result = spawnSync(
       process.execPath,
-      [installer, "--harness", harness, "--model-family", family, "--dry-run"],
+      [installer, "--harness", harness, "--provider", provider, "--dry-run"],
       { cwd: ROOT, encoding: "utf8" },
     );
     return { harness, message, result };

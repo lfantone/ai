@@ -8,7 +8,8 @@ generated to drift:
 ./scripts/install.mjs --harness opencode --project <project>   # → <project>/.opencode/
 ./scripts/install.mjs --harness opencode --global              # → ~/.config/opencode/
 ./scripts/install.mjs --harness opencode --project <p> --names norse
-./scripts/install.mjs --harness opencode --project <p> --model-family openai
+./scripts/install.mjs --harness opencode --project <p> --provider claude
+./scripts/install.mjs --harness opencode --project <p> --provider openai
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview.
@@ -24,15 +25,14 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## Model mapping
 
-Catalog capability tiers use GitHub Copilot Claude models by default. Pass
-`--model-family openai` for direct OpenAI/Codex models. `opencode models <provider>` lists
+Select provider with `--provider`; default is `copilot`. `opencode models <provider>` lists
 valid ids.
 
-| Tier   | Claude model                      | OpenAI/Codex model           |
-| ------ | --------------------------------- | ---------------------------- |
-| haiku  | `github-copilot/claude-haiku-4.5` | `openai/gpt-5.4-mini`        |
-| sonnet | `github-copilot/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
-| opus   | `github-copilot/claude-opus-5`    | `openai/gpt-5.6-sol`         |
+| Tier   | Copilot model                     | Claude model                 | OpenAI/Codex model           |
+| ------ | --------------------------------- | ---------------------------- | ---------------------------- |
+| haiku  | `github-copilot/claude-haiku-4.5` | `anthropic/claude-haiku-4-5` | `openai/gpt-5.4-mini`        |
+| sonnet | `github-copilot/claude-sonnet-5`  | `anthropic/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
+| opus   | `github-copilot/claude-opus-5`    | `anthropic/claude-opus-5`    | `openai/gpt-5.6-sol`         |
 
 ## Agent properties
 

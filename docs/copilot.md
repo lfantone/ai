@@ -8,7 +8,6 @@ all read the same files) with the harness installer — it builds from the canon
 ./scripts/install.mjs --harness github --project <project>   # → <project>/.github/
 ./scripts/install.mjs --harness github --global              # → ~/.copilot/
 ./scripts/install.mjs --harness github --project <p> --names norse
-./scripts/install.mjs --harness github --project <p> --model-family openai
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview. Since `.github/` is
@@ -31,14 +30,14 @@ the project's repo.
 
 ## Model mapping
 
-Claude is the default model family. Pass `--model-family openai` for OpenAI/Codex; valid
-ids are listed under `model` in `copilot help config`.
+GitHub Copilot uses its native model ids; valid ids are listed under `model` in
+`copilot help config`.
 
-| Tier   | Claude model       | OpenAI/Codex model |
-| ------ | ------------------ | ------------------ |
-| haiku  | `claude-haiku-4.5` | `gpt-5.4-mini`     |
-| sonnet | `claude-sonnet-5`  | `gpt-5.3-codex`    |
-| opus   | `claude-opus-5`    | `gpt-5.6-sol`      |
+| Tier   | Copilot model      |
+| ------ | ------------------ |
+| haiku  | `claude-haiku-4.5` |
+| sonnet | `claude-sonnet-5`  |
+| opus   | `claude-opus-5`    |
 
 ## Tools mapping
 
