@@ -10,7 +10,7 @@
  *   --global              install to the user-level config dir (default: project)
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
- *   --model-family <name> claude (default) | openai
+ *   --provider <name>     OpenCode only: copilot (default) | claude | openai
  *   --dry-run             print what would be written, write nothing
  */
 import fs from "node:fs";
@@ -24,29 +24,27 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Maps (single source of truth for every harness)
 // ---------------------------------------------------------------------------
 const MODEL_MAP = {
-  claude: {
-    opencode: {
+  opencode: {
+    copilot: {
       haiku: "github-copilot/claude-haiku-4.5",
       sonnet: "github-copilot/claude-sonnet-5",
       opus: "github-copilot/claude-opus-5",
     },
-    github: {
-      haiku: "claude-haiku-4.5",
-      sonnet: "claude-sonnet-5",
-      opus: "claude-opus-5",
+    claude: {
+      haiku: "anthropic/claude-haiku-4-5",
+      sonnet: "anthropic/claude-sonnet-5",
+      opus: "anthropic/claude-opus-5",
     },
-  },
-  openai: {
-    opencode: {
+    openai: {
       haiku: "openai/gpt-5.4-mini",
       sonnet: "openai/gpt-5.3-codex-spark",
       opus: "openai/gpt-5.6-sol",
     },
-    github: {
-      haiku: "gpt-5.4-mini",
-      sonnet: "gpt-5.3-codex",
-      opus: "gpt-5.6-sol",
-    },
+  },
+  github: {
+    haiku: "claude-haiku-4.5",
+    sonnet: "claude-sonnet-5",
+    opus: "claude-opus-5",
   },
 };
 
@@ -120,13 +118,16 @@ const has = (name) => args.includes(`--${name}`);
 const harness = opt("harness");
 const scope = has("global") ? "global" : "project";
 const names = opt("names", "pokemon");
-const modelFamily = opt("model-family", "claude");
+const provider = opt(
+  "provider",
+  harness === "opencode" ? "copilot" : undefined,
+);
 const dryRun = has("dry-run");
 const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
   console.error(
-    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--model-family <claude|openai>] [--dry-run]`,
+    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
   );
   process.exit(1);
 }
@@ -134,16 +135,17 @@ if (!["pokemon", "norse"].includes(names)) {
   console.error(`--names must be "pokemon" or "norse"`);
   process.exit(1);
 }
-if (!MODEL_MAP[modelFamily]) {
-  console.error(`--model-family must be "claude" or "openai"`);
+if (harness !== "opencode" && has("provider")) {
+  console.error(`--provider is only supported by the opencode harness`);
   process.exit(1);
 }
-if (harness === "claude" && modelFamily !== "claude") {
-  console.error(`--model-family openai is not supported by the claude harness`);
+if (harness === "opencode" && !MODEL_MAP.opencode[provider]) {
+  console.error(`--provider must be "copilot", "claude", or "openai"`);
   process.exit(1);
 }
 
-const modelMap = MODEL_MAP[modelFamily]?.[harness];
+const modelMap =
+  harness === "opencode" ? MODEL_MAP.opencode[provider] : MODEL_MAP[harness];
 
 const dirs = Object.fromEntries(
   Object.entries(TARGETS[harness][scope]).map(([k, v]) => [
@@ -339,7 +341,7 @@ for (const w of writes) {
 }
 
 console.log(
-  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names} · models=${modelFamily}` +
+  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names}${provider ? ` · provider=${provider}` : ""}` +
     `\n  agents: ${agents.length} → ${dirs.agents}` +
     (dirs.commands
       ? `\n  commands: ${commands.length} → ${dirs.commands}`
