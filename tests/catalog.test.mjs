@@ -31,8 +31,12 @@ const frontmatterError = (filePath) => {
   }
 };
 
-const install = (harness, names = "pokemon", provider) => {
-  const project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`));
+const install = (
+  harness,
+  names = "pokemon",
+  provider,
+  project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`)),
+) => {
   const providerArgs = provider ? ["--provider", provider] : [];
   execFileSync(
     process.execPath,
@@ -68,34 +72,24 @@ test("GitHub agents with MCP dependencies do not receive a restrictive tool list
   assert.doesNotMatch(ditto, /^tools:/m);
 });
 
-test("installer removes stale target files before installing", () => {
+test("installer refreshes catalog entries without removing external entries", () => {
   // Arrange
   const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-install-clean-"));
-  const stale = [
-    ".opencode/agents/stale.md",
-    ".opencode/commands/stale.md",
-    ".opencode/skills/stale/SKILL.md",
-  ].map((relativePath) => path.join(project, relativePath));
-  stale.forEach((file) => {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, "stale");
-  });
+  install("opencode", "pokemon", undefined, project);
+  const external = path.join(project, ".opencode/skills/external/SKILL.md");
+  fs.mkdirSync(path.dirname(external), { recursive: true });
+  fs.writeFileSync(external, "external");
 
   // Act
-  execFileSync(
-    process.execPath,
-    [
-      path.join(ROOT, "scripts/install.mjs"),
-      "--harness",
-      "opencode",
-      "--project",
-      project,
-    ],
-    { cwd: ROOT, stdio: "pipe" },
-  );
+  install("opencode", "norse", undefined, project);
 
   // Assert
-  assert.deepEqual(stale.filter(fs.existsSync), []);
+  assert.equal(fs.readFileSync(external, "utf8"), "external");
+  assert.equal(
+    fs.existsSync(path.join(project, ".opencode/agents/abra.md")),
+    false,
+  );
+  assert.ok(fs.existsSync(path.join(project, ".opencode/agents/skadi.md")));
 });
 
 test("code-aware agents receive LSP access and navigation guidance", () => {
