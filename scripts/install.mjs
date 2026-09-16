@@ -10,6 +10,7 @@
  *   --global              install to the user-level config dir (default: project)
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
+ *   --model-family <name> claude (default) | openai
  *   --dry-run             print what would be written, write nothing
  */
 import fs from "node:fs";
@@ -23,17 +24,30 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Maps (single source of truth for every harness)
 // ---------------------------------------------------------------------------
 const MODEL_MAP = {
-  opencode: {
-    haiku: "github-copilot/claude-haiku-4.5",
-    sonnet: "github-copilot/claude-sonnet-5",
-    opus: "github-copilot/claude-opus-5",
+  claude: {
+    opencode: {
+      haiku: "github-copilot/claude-haiku-4.5",
+      sonnet: "github-copilot/claude-sonnet-5",
+      opus: "github-copilot/claude-opus-5",
+    },
+    github: {
+      haiku: "claude-haiku-4.5",
+      sonnet: "claude-sonnet-5",
+      opus: "claude-opus-5",
+    },
   },
-  github: {
-    haiku: "claude-haiku-4.5",
-    sonnet: "claude-sonnet-5",
-    opus: "claude-opus-5",
+  openai: {
+    opencode: {
+      haiku: "openai/gpt-5.4-mini",
+      sonnet: "openai/gpt-5.3-codex-spark",
+      opus: "openai/gpt-5.6-sol",
+    },
+    github: {
+      haiku: "gpt-5.4-mini",
+      sonnet: "gpt-5.3-codex",
+      opus: "gpt-5.6-sol",
+    },
   },
-  claude: { haiku: "haiku", sonnet: "sonnet", opus: "opus" },
 };
 
 // color and temperature live in the canonical agent frontmatter (self-contained files —
@@ -51,7 +65,6 @@ const NORSE = [
   ["Growlithe", "Heimdall"],
   ["Dugtrio", "Kraken"],
   ["Alakazam", "Tyr"],
-  ["Porygon", "Urd"],
   ["Magneton", "Skuld"],
   ["Magnemite", "Verdandi"],
   ["Machop", "Brokkr"],
@@ -60,7 +73,6 @@ const NORSE = [
   ["Abra", "Skadi"],
   ["Ditto", "Loki"],
   ["Hypno", "Forseti"],
-  ["Meowth", "Hermod"],
 ];
 
 // Where things land, per harness × scope. {p} = project dir, {h} = home.
@@ -108,12 +120,13 @@ const has = (name) => args.includes(`--${name}`);
 const harness = opt("harness");
 const scope = has("global") ? "global" : "project";
 const names = opt("names", "pokemon");
+const modelFamily = opt("model-family", "claude");
 const dryRun = has("dry-run");
 const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
   console.error(
-    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--dry-run]`,
+    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--model-family <claude|openai>] [--dry-run]`,
   );
   process.exit(1);
 }
@@ -121,6 +134,16 @@ if (!["pokemon", "norse"].includes(names)) {
   console.error(`--names must be "pokemon" or "norse"`);
   process.exit(1);
 }
+if (!MODEL_MAP[modelFamily]) {
+  console.error(`--model-family must be "claude" or "openai"`);
+  process.exit(1);
+}
+if (harness === "claude" && modelFamily !== "claude") {
+  console.error(`--model-family openai is not supported by the claude harness`);
+  process.exit(1);
+}
+
+const modelMap = MODEL_MAP[modelFamily]?.[harness];
 
 const dirs = Object.fromEntries(
   Object.entries(TARGETS[harness][scope]).map(([k, v]) => [
@@ -204,7 +227,11 @@ const commands = fs
   .filter((f) => f.endsWith(".md"));
 const skills = fs
   .readdirSync(path.join(ROOT, "skills"), { withFileTypes: true })
-  .filter((d) => d.isDirectory());
+  .filter(
+    (d) =>
+      d.isDirectory() &&
+      fs.existsSync(path.join(ROOT, "skills", d.name, "SKILL.md")),
+  );
 
 for (const f of agents) {
   const name = f.replace(/\.md$/, "");
@@ -218,7 +245,7 @@ for (const f of agents) {
     const lines = [
       `description: ${yamlStr(fm.description)}`,
       `mode: subagent`,
-      `model: ${MODEL_MAP.opencode[fm.model] ?? MODEL_MAP.opencode.sonnet}`,
+      `model: ${modelMap[fm.model] ?? modelMap.sonnet}`,
       ...(fm.temperature ? [`temperature: ${fm.temperature}`] : []),
       ...(fm.reasoning ? [`reasoningEffort: ${fm.reasoning}`] : []),
       ...(fm.color ? [`color: ${fm.color}`] : []),
@@ -237,7 +264,7 @@ for (const f of agents) {
     const lines = [
       `name: ${fm.name}`,
       `description: ${yamlStr(fm.description)}`,
-      `model: ${MODEL_MAP.github[fm.model] ?? MODEL_MAP.github.sonnet}`,
+      `model: ${modelMap[fm.model] ?? modelMap.sonnet}`,
       // GitHub enables all configured tools when this property is omitted. External MCP
       // server names are installation-specific, so a generated restrictive list would
       // silently remove the Jira/browser tools these agents require.
@@ -297,7 +324,7 @@ for (const w of writes) {
     fs.mkdirSync(path.dirname(w.file), { recursive: true });
     fs.cpSync(w.dir, w.file, { recursive: true });
     if (names === "norse") {
-      // skills bodies may reference agent names (e.g. repo-learnings mentions the profiler)
+      // Skill bodies may reference agent names.
       for (const sk of fs.readdirSync(w.file, { recursive: true })) {
         const p = path.join(w.file, String(sk));
         if (p.endsWith(".md"))
@@ -312,7 +339,7 @@ for (const w of writes) {
 }
 
 console.log(
-  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names}` +
+  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names} · models=${modelFamily}` +
     `\n  agents: ${agents.length} → ${dirs.agents}` +
     (dirs.commands
       ? `\n  commands: ${commands.length} → ${dirs.commands}`

@@ -66,12 +66,11 @@ replied/resolved/fixed are skipped.
 | `Eevee`            | Sonnet       | Repo profile _(cached; only when stale)_          |
 | `Slowpoke`         | Haiku        | Ticket brief _(only when a ticket is referenced)_ |
 | `Hypno`            | Opus         | The judge — verdicts + draft replies              |
-| `Porygon`          | Haiku        | Verifies fix anchors before any edit              |
 | `Machop`/`Machoke` | Haiku/Sonnet | Execute inline fixes as exact contracts           |
 
-State lives in `$CACHE/feedback-<index>.md` (per-thread verdict/status/reply id);
-recurring reviewer concerns are distilled into `learnings.md` — a concern that keeps
-coming up is a convention the repo hasn't written down yet.
+State lives in `$CACHE/feedback-<index>.md` (per-thread verdict/status/reply id). Before an
+inline edit, the orchestrator reads the selected target lines from the current head and defers
+any fix whose target text no longer matches.
 
 ## Requirements
 

@@ -8,30 +8,31 @@ generated to drift:
 ./scripts/install.mjs --harness opencode --project <project>   # → <project>/.opencode/
 ./scripts/install.mjs --harness opencode --global              # → ~/.config/opencode/
 ./scripts/install.mjs --harness opencode --project <p> --names norse
+./scripts/install.mjs --harness opencode --project <p> --model-family openai
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## What's installed
 
-- **`agents/*.md`** — the 17 agents with OpenCode frontmatter: `mode: subagent`, a GitHub
-  Copilot `model`, and a `permission` object derived from each agent's canonical `tools`
-  list (least-privilege: `edit: allow` only for executors and cache-writers).
-- **`commands/*.md`** — the 4 orchestrators (`$ARGUMENTS` works as-is); harness terms are
+- **`agents/*.md`** — the 17 agents with OpenCode frontmatter: `mode: subagent`, a selected
+  provider `model`, and a `permission` object derived from each agent's canonical `tools` list
+  (least-privilege: `edit: allow` only for executors and cache-writers).
+- **`commands/*.md`** — the 5 orchestrators (`$ARGUMENTS` works as-is); harness terms are
   mapped (`Agent tool` → `task tool`, `TaskCreate`/`TaskUpdate` → `todowrite`).
 - **`skills/`** — copied as-is: OpenCode reads the agentskills `SKILL.md` format natively.
 
 ## Model mapping
 
-Catalog tiers map to GitHub Copilot model ids (edit `MODEL_MAP.opencode` in
-`scripts/install.mjs` to retarget; `opencode models | grep copilot` lists your install's
-valid ids):
+Catalog capability tiers use GitHub Copilot Claude models by default. Pass
+`--model-family openai` for direct OpenAI/Codex models. `opencode models <provider>` lists
+valid ids.
 
-| Tier   | OpenCode model                    |
-| ------ | --------------------------------- |
-| haiku  | `github-copilot/claude-haiku-4.5` |
-| sonnet | `github-copilot/claude-sonnet-5`  |
-| opus   | `github-copilot/claude-opus-4.8`  |
+| Tier   | Claude model                      | OpenAI/Codex model           |
+| ------ | --------------------------------- | ---------------------------- |
+| haiku  | `github-copilot/claude-haiku-4.5` | `openai/gpt-5.4-mini`        |
+| sonnet | `github-copilot/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
+| opus   | `github-copilot/claude-opus-5`    | `openai/gpt-5.6-sol`         |
 
 ## Agent properties
 
@@ -39,7 +40,7 @@ All three ride through from the **canonical agent frontmatter** (self-contained 
 no installer-side maps, so renames can never orphan them):
 
 - **`temperature: 0.1`** — pinned in the deterministic verifiers/executors (Machop,
-  Machoke, Porygon, Magneton, Magnemite).
+  Machoke, Magneton, Magnemite).
 - **`color`** — a unique hex per agent so the TUI shows at a glance who's working: the
   Pokémon **type color, shaded by evolution stage/tier**. The Fighting executor ladder
   darkens as it escalates (`#E57373` Machop → `#C03028` Machoke → `#8E1B12` Machamp),
@@ -47,7 +48,7 @@ no installer-side maps, so renames can never orphan them):
   Magnemite/Magneton pair splits its Electric/Steel dual type. Norse names inherit their
   colors automatically (Mimir wears Mewtwo's purple).
 - **`reasoningEffort`** — the canonical `reasoning:` field, renamed to the provider
-  pass-through option (e.g. Mewtwo/Alakazam `high`, Porygon/Machop `low`).
+  pass-through option (e.g. Mewtwo/Alakazam `high`, Machop/Magneton `low`).
 
 Considered and deliberately **unset**: `top_p` (don't tune it and `temperature`
 together), `hidden` (workers are `mode: subagent` already — keeping them `@`-able helps

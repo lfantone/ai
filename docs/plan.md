@@ -21,12 +21,11 @@ does not add another question just to select it.
 
 1. Reuse fresh repository/security profiles directly, refreshing only materially stale ones.
 2. Normalize the ticket with Slowpoke.
-3. Pass that full brief to Dugtrio so code mapping never runs from a bare ticket id.
-4. Present the understanding checkpoint. Precise mode interviews for decisions that affect
+3. Present the understanding checkpoint. Precise mode interviews for decisions that affect
    exact execution; fast mode asks only blocking questions.
-5. Author with Mew (precise) or Meowth (fast).
-6. Structurally verify ids, contracts, dependencies, and file-disjoint waves with Magneton.
-7. Present the complete plan for approval or revision.
+4. Author and map live code in one spawn with Mew (precise) or Meowth (fast).
+5. Structurally verify ids, contracts, dependencies, and file-disjoint waves with Magneton.
+6. Present the complete plan for approval or revision.
 
 There is no separate direction-approval gate. Precise mode normally has two stops: the
 interview and final plan approval. Fast mode has only final approval unless a blocking question
@@ -94,15 +93,14 @@ a separate repository-anchor pass.
 
 ## Agents
 
-| Agent     | Model  | Job                                      |
-| --------- | ------ | ---------------------------------------- |
-| Slowpoke  | Haiku  | Normalize requirements                   |
-| Eevee     | Sonnet | Refresh repository profile when stale    |
-| Growlithe | Sonnet | Refresh security profile when stale      |
-| Dugtrio   | Sonnet | Map normalized requirements to live code |
-| Mew       | Opus   | Author precise exact contracts           |
-| Meowth    | Sonnet | Author fast exact/guided contracts       |
-| Magneton  | Haiku  | Validate plan structure                  |
+| Agent     | Model  | Job                                             |
+| --------- | ------ | ----------------------------------------------- |
+| Slowpoke  | Haiku  | Normalize requirements                          |
+| Eevee     | Sonnet | Refresh repository profile when stale           |
+| Growlithe | Sonnet | Refresh security profile when stale             |
+| Mew       | Opus   | Map code and author precise exact contracts     |
+| Meowth    | Sonnet | Map code and author fast exact/guided contracts |
+| Magneton  | Haiku  | Validate plan structure                         |
 
 ## Artifacts and revisions
 
@@ -110,5 +108,5 @@ The approved plan is saved to `<cache>/plan-<ticket>.md`. Revisions preserve sta
 ticked contracts, and Execution/Verification logs. Related diffs used only during authoring
 are temporary and deleted after approval.
 
-Profiles and `learnings.md` remain shared with the other orchestrators. A fresh profile is
-read directly without spawning its owner.
+Profiles remain shared with the other orchestrators. A fresh profile is read directly without
+spawning its owner.

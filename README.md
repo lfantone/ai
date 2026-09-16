@@ -71,6 +71,7 @@ git clone git@github.com:lfantone/ai.git && cd ai
 
 ./scripts/install.mjs --harness claude --global                    # → ~/.claude/
 ./scripts/install.mjs --harness opencode --global --names norse    # Norse-named roster
+./scripts/install.mjs --harness opencode --project . --model-family openai
 
 ./scripts/install.mjs --harness github --project . --dry-run       # preview only
 ```
@@ -81,6 +82,9 @@ each harness's invocation style (OpenCode commands, Copilot command-skills, Clau
 commands), and skills copied as-is. Re-run it after pulling catalog updates. Runtime
 caches are created by the flows in the harness's own config dir (see
 [Code review › Caching](./docs/code-review.md#caching)).
+
+OpenCode and GitHub installs use Claude models by default. Pass
+`--model-family openai` to map the same capability tiers to OpenAI/Codex models.
 
 Harness details: [OpenCode](./docs/opencode.md) · [Copilot](./docs/copilot.md).
 
