@@ -316,10 +316,31 @@ for (const d of skills) {
 // ---------------------------------------------------------------------------
 // Install
 // ---------------------------------------------------------------------------
-const targetDirs = [...new Set(Object.values(dirs))];
-for (const dir of targetDirs) {
-  if (dryRun) console.log(`would remove ${dir}`);
-  else fs.rmSync(dir, { recursive: true, force: true });
+const installRoot = path.dirname(dirs.agents);
+const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
+const isWithinInstallRoot = (file) => {
+  const relative = path.relative(installRoot, file);
+  return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
+};
+const previousWrites = (() => {
+  try {
+    const entries = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    return Array.isArray(entries)
+      ? entries
+          .filter((entry) => typeof entry === "string")
+          .map((entry) => path.resolve(installRoot, entry))
+          .filter(isWithinInstallRoot)
+      : [];
+  } catch {
+    return [];
+  }
+})();
+const currentWrites = writes.map((write) => write.file);
+const cleanup = [...new Set([...previousWrites, ...currentWrites])];
+
+for (const file of cleanup) {
+  if (dryRun) console.log(`would remove ${file}`);
+  else fs.rmSync(file, { recursive: true, force: true });
 }
 
 let files = 0;
@@ -344,6 +365,14 @@ for (const w of writes) {
     fs.writeFileSync(w.file, w.content);
   }
   files++;
+}
+
+if (!dryRun) {
+  fs.mkdirSync(installRoot, { recursive: true });
+  fs.writeFileSync(
+    manifestFile,
+    `${JSON.stringify(currentWrites.map((file) => path.relative(installRoot, file)))}\n`,
+  );
 }
 
 console.log(
