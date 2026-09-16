@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -31,7 +31,7 @@ const frontmatterError = (filePath) => {
   }
 };
 
-const install = (harness, names = "pokemon") => {
+const install = (harness, names = "pokemon", modelFamily = "claude") => {
   const project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`));
   execFileSync(
     process.execPath,
@@ -43,6 +43,8 @@ const install = (harness, names = "pokemon") => {
       project,
       "--names",
       names,
+      "--model-family",
+      modelFamily,
     ],
     { cwd: ROOT, stdio: "pipe" },
   );
@@ -290,6 +292,7 @@ test("orchestrators omit stale memory and redundant verification stages", () => 
     .map((file) => read(`agents/${file}`))
     .join("\n");
   const plan = read("commands/plan-orchestrator.md");
+  const installedProject = install("opencode");
 
   // Assert
   assert.doesNotMatch(
@@ -304,6 +307,12 @@ test("orchestrators omit stale memory and redundant verification stages", () => 
   assert.equal(fs.existsSync(path.join(ROOT, "agents/porygon.md")), false);
   assert.equal(
     fs.existsSync(path.join(ROOT, "skills/repo-learnings/SKILL.md")),
+    false,
+  );
+  assert.equal(
+    fs.existsSync(
+      path.join(installedProject, ".opencode/skills/repo-learnings"),
+    ),
     false,
   );
 });
@@ -346,4 +355,85 @@ test("installed Opus agents use the current model generation", () => {
   // Assert
   assert.match(opencodeAgent, /^model: github-copilot\/claude-opus-5$/m);
   assert.match(githubAgent, /^model: claude-opus-5$/m);
+});
+
+test("OpenAI model family maps every tier for OpenCode and GitHub", () => {
+  // Arrange
+  const expected = [
+    {
+      agent: "magneton",
+      opencode: "openai/gpt-5.4-mini",
+      github: "gpt-5.4-mini",
+    },
+    {
+      agent: "dugtrio",
+      opencode: "openai/gpt-5.3-codex-spark",
+      github: "gpt-5.3-codex",
+    },
+    {
+      agent: "mewtwo",
+      opencode: "openai/gpt-5.6-sol",
+      github: "gpt-5.6-sol",
+    },
+  ];
+
+  // Act
+  const opencodeProject = install("opencode", "pokemon", "openai");
+  const githubProject = install("github", "pokemon", "openai");
+  const rows = expected.map(({ agent, ...models }) => ({
+    agent,
+    models,
+    opencode: fs.readFileSync(
+      path.join(opencodeProject, ".opencode/agents", `${agent}.md`),
+      "utf8",
+    ),
+    github: fs.readFileSync(
+      path.join(githubProject, ".github/agents", `${agent}.agent.md`),
+      "utf8",
+    ),
+  }));
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ models, opencode, github }) =>
+          !opencode.includes(`model: ${models.opencode}`) ||
+          !github.includes(`model: ${models.github}`),
+      )
+      .map(({ agent }) => agent),
+    [],
+    "every abstract tier must map to its OpenAI model",
+  );
+});
+
+test("installer rejects unsupported model-family combinations", () => {
+  // Arrange
+  const installer = path.join(ROOT, "scripts/install.mjs");
+  const cases = [
+    { harness: "opencode", family: "unknown", message: "must be" },
+    { harness: "claude", family: "openai", message: "not supported" },
+  ];
+
+  // Act
+  const rows = cases.map(({ harness, family, message }) => {
+    const result = spawnSync(
+      process.execPath,
+      [installer, "--harness", harness, "--model-family", family, "--dry-run"],
+      { cwd: ROOT, encoding: "utf8" },
+    );
+    return { harness, message, result };
+  });
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ message, result }) =>
+          result.status === 0 || !result.stderr.includes(message),
+      )
+      .map(({ harness }) => harness),
+    [],
+    "unsupported model families must fail with an actionable error",
+  );
 });

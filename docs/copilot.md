@@ -8,6 +8,7 @@ all read the same files) with the harness installer — it builds from the canon
 ./scripts/install.mjs --harness github --project <project>   # → <project>/.github/
 ./scripts/install.mjs --harness github --global              # → ~/.copilot/
 ./scripts/install.mjs --harness github --project <p> --names norse
+./scripts/install.mjs --harness github --project <p> --model-family openai
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview. Since `.github/` is
@@ -24,20 +25,20 @@ the project's repo.
   for it by name ("run the plan-orchestrator for IE-1234") or let the description
   trigger it; `$ARGUMENTS` is mapped to "the user's request". No model pin — they run on
   whatever model you've selected.
-- **Catalog skills** (tea-cli, gh-cli, bruno-cli, repo-learnings) — copied into
+- **Catalog skills** (tea-cli, gh-cli, bruno-cli) — copied into
   `.github/skills/`; Copilot consumes the agentskills format natively (manage with
   `/skills` in the CLI).
 
 ## Model mapping
 
-Edit `MODEL_MAP.github` in `scripts/install.mjs` to retarget; your install's valid ids
-are listed under `model` in `copilot help config`.
+Claude is the default model family. Pass `--model-family openai` for OpenAI/Codex; valid
+ids are listed under `model` in `copilot help config`.
 
-| Tier   | Copilot model      |
-| ------ | ------------------ |
-| haiku  | `claude-haiku-4.5` |
-| sonnet | `claude-sonnet-5`  |
-| opus   | `claude-opus-4.8`  |
+| Tier   | Claude model       | OpenAI/Codex model |
+| ------ | ------------------ | ------------------ |
+| haiku  | `claude-haiku-4.5` | `gpt-5.4-mini`     |
+| sonnet | `claude-sonnet-5`  | `gpt-5.3-codex`    |
+| opus   | `claude-opus-5`    | `gpt-5.6-sol`      |
 
 ## Tools mapping
 

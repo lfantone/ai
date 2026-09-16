@@ -90,15 +90,14 @@ and the fixed threads auto-resolve.
 The command is a thin orchestrator (**Slowbro**). The actual work is done by agents in
 [`agents/`](../agents), each pinned to the cheapest model that fits its job:
 
-| Agent       | Model  | Job                                    |
-| ----------- | ------ | -------------------------------------- |
-| `Slowpoke`  | Haiku  | Ticket brief                           |
-| `Kadabra`   | Sonnet | Implementation brief (what changed)    |
-| `Eevee`     | Sonnet | Repository profile (conventions)       |
-| `Growlithe` | Sonnet | Security-surface scout                 |
-| `Mewtwo`    | Opus   | General reviewer                       |
-| `Alakazam`  | Opus   | Security reviewer                      |
-| `Porygon`   | Haiku  | Verifies each suggestion's line number |
+| Agent       | Model  | Job                                 |
+| ----------- | ------ | ----------------------------------- |
+| `Slowpoke`  | Haiku  | Ticket brief                        |
+| `Kadabra`   | Sonnet | Implementation brief (what changed) |
+| `Eevee`     | Sonnet | Repository profile (conventions)    |
+| `Growlithe` | Sonnet | Security-surface scout              |
+| `Mewtwo`    | Opus   | General reviewer and exact anchors  |
+| `Alakazam`  | Opus   | Security reviewer and exact anchors |
 
 Forge access goes through the [`tea-cli`](../skills/tea-cli) (Gitea) or
 [`gh-cli`](../skills/gh-cli) (GitHub) skill — the orchestrator detects the forge from the
@@ -110,13 +109,12 @@ To keep re-reviews cheap, the agents cache context in the reviewed project's **c
 dir** — auto-detected per harness: `.opencode/cache/` (OpenCode), `.claude/cache/`
 (Claude Code), else `.agents/cache/`; an existing cache always wins:
 
-| File                          | Holds                                  | Owner         |
-| ----------------------------- | -------------------------------------- | ------------- |
-| `repo-profile.md`             | Stack & conventions                    | `Eevee`       |
-| `security-profile.md`         | Threat surface                         | `Growlithe`   |
-| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`     |
-| `review-<index>.md`           | Review state for incremental re-review | orchestrator  |
-| `learnings.md`                | Cross-ticket repo learnings (shared)   | orchestrators |
+| File                          | Holds                                  | Owner        |
+| ----------------------------- | -------------------------------------- | ------------ |
+| `repo-profile.md`             | Stack & conventions                    | `Eevee`      |
+| `security-profile.md`         | Threat surface                         | `Growlithe`  |
+| `impl-brief-<index>-<sha>.md` | What a PR changed (per head commit)    | `Kadabra`    |
+| `review-<index>.md`           | Review state for incremental re-review | orchestrator |
 
 During an active run, `$CACHE/tmp/review-<index>-<head_sha>.diff` holds the single shared
 full/incremental diff. It is deleted immediately after `review-<index>.md` is persisted;

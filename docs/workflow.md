@@ -82,9 +82,9 @@ Only Implement grants `implemented`; only Verify grants `verified`. A verificati
 
 ## Durable and temporary state
 
-Durable cache files include profiles, plans/ledgers, review findings, Bruno collections, and
-`learnings.md`. Raw review/planning diffs live only under `$CACHE/tmp` during the active run;
-they are deleted after durable state is written and cleaned on the next run after interruption.
+Durable cache files include profiles, plans/ledgers, review findings, and Bruno collections.
+Raw review/planning diffs live only under `$CACHE/tmp` during the active run; they are deleted
+after durable state is written and cleaned on the next run after interruption.
 
 Outward actions remain gated: ticket/PR posting, commits, pushes, and PR creation each require
 explicit approval.
