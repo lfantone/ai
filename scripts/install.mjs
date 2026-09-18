@@ -336,7 +336,28 @@ const previousWrites = (() => {
   }
 })();
 const currentWrites = writes.map((write) => write.file);
-const cleanup = [...new Set([...previousWrites, ...currentWrites])];
+// Pre-manifest catalog releases installed Porygon without recording its path.
+// Match its unique body markers so unrelated agents remain untouched.
+const legacyPorygon = path.join(
+  dirs.agents,
+  `porygon${harness === "github" ? ".agent.md" : ".md"}`,
+);
+const legacyWrites = (() => {
+  try {
+    const content = fs.readFileSync(legacyPorygon, "utf8");
+    return content.includes("# Porygon — Verify line anchors") &&
+      content.includes(
+        "Mechanical and precise. Your only job: make each finding's",
+      )
+      ? [legacyPorygon]
+      : [];
+  } catch {
+    return [];
+  }
+})();
+const cleanup = [
+  ...new Set([...previousWrites, ...currentWrites, ...legacyWrites]),
+];
 
 for (const file of cleanup) {
   if (dryRun) console.log(`would remove ${file}`);
