@@ -154,6 +154,47 @@ test("Codex global install uses ~/.codex for agents and ~/.agents for skills", (
   assert.ok(fs.existsSync(path.join(home, ".agents/skills/gh-cli/SKILL.md")));
 });
 
+test("installer removes legacy Porygon agents without removing external agents", () => {
+  // Arrange
+  const cases = [
+    { harness: "claude", dir: ".claude" },
+    { harness: "opencode", dir: ".opencode" },
+  ].map(({ harness, dir }) => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`));
+    const agentsDir = path.join(project, dir, "agents");
+    const legacy = path.join(agentsDir, "porygon.md");
+    const external = path.join(agentsDir, "external.md");
+    const review = path.join(project, dir, "commands/review-orchestrator.md");
+    fs.mkdirSync(agentsDir, { recursive: true });
+    fs.writeFileSync(
+      legacy,
+      "# Porygon — Verify line anchors\nMechanical and precise. Your only job: make each finding's\n",
+    );
+    fs.writeFileSync(external, "external");
+    fs.mkdirSync(path.dirname(review), { recursive: true });
+    fs.writeFileSync(review, "Spawn Porygon");
+    return { harness, project, legacy, external, review };
+  });
+
+  // Act
+  cases.forEach(({ harness, project }) =>
+    install(harness, "pokemon", undefined, project),
+  );
+
+  // Assert
+  assert.deepEqual(
+    cases
+      .filter(
+        ({ legacy, external, review }) =>
+          fs.existsSync(legacy) ||
+          !fs.existsSync(external) ||
+          fs.readFileSync(review, "utf8").includes("Porygon"),
+      )
+      .map(({ harness }) => harness),
+    [],
+  );
+});
+
 test("code-aware agents receive LSP access and navigation guidance", () => {
   // Arrange
   const project = install("opencode");

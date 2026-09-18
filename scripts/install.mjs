@@ -357,6 +357,25 @@ const isWithinInstallRoot = (installRoot, file) => {
   return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
 };
 const currentWrites = writes.map((write) => write.file);
+// Pre-manifest catalog releases installed Porygon without recording its path.
+// Match its unique body markers so unrelated agents remain untouched.
+const legacyPorygon = path.join(
+  dirs.agents,
+  `porygon${harness === "github" ? ".agent.md" : ".md"}`,
+);
+const legacyWrites = (() => {
+  try {
+    const content = fs.readFileSync(legacyPorygon, "utf8");
+    return content.includes("# Porygon — Verify line anchors") &&
+      content.includes(
+        "Mechanical and precise. Your only job: make each finding's",
+      )
+      ? [legacyPorygon]
+      : [];
+  } catch {
+    return [];
+  }
+})();
 const installStates = installRoots.map((installRoot) => {
   const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
   let previousWrites = [];
@@ -378,7 +397,15 @@ const installStates = installRoots.map((installRoot) => {
     installRoot,
     manifestFile,
     current,
-    cleanup: [...new Set([...previousWrites, ...current])],
+    cleanup: [
+      ...new Set([
+        ...previousWrites,
+        ...current,
+        ...legacyWrites.filter((file) =>
+          isWithinInstallRoot(installRoot, file),
+        ),
+      ]),
+    ],
   };
 });
 
