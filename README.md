@@ -68,9 +68,11 @@ git clone git@github.com:lfantone/ai.git && cd ai
 ./scripts/install.mjs --harness claude   --project ~/work/my-app   # → .claude/
 ./scripts/install.mjs --harness opencode --project ~/work/my-app   # → .opencode/
 ./scripts/install.mjs --harness github   --project ~/work/my-app   # → .github/
+./scripts/install.mjs --harness codex    --project ~/work/my-app   # → .codex/ + .agents/
 
 ./scripts/install.mjs --harness claude --global                    # → ~/.claude/
 ./scripts/install.mjs --harness opencode --global --names norse    # Norse-named roster
+./scripts/install.mjs --harness codex --global                     # → ~/.codex/ + ~/.agents/
 ./scripts/install.mjs --harness opencode --project . --provider openai
 
 ./scripts/install.mjs --harness github --project . --dry-run       # preview only
@@ -78,16 +80,16 @@ git clone git@github.com:lfantone/ai.git && cd ai
 
 The installer **builds at install time** from the canonical catalog: per-harness
 frontmatter (models, permissions/tools, colors, reasoning effort), commands adapted to
-each harness's invocation style (OpenCode commands, Copilot command-skills, Claude
+each harness's invocation style (OpenCode commands, Copilot/Codex command-skills, Claude
 commands), and skills copied as-is. Re-run it after pulling catalog updates. Runtime
 caches are created by the flows in the harness's own config dir (see
 [Code review › Caching](./docs/code-review.md#caching)).
 
 OpenCode defaults to GitHub Copilot models. Pass `--provider claude` or
-`--provider openai` to use direct Anthropic or OpenAI/Codex models. Claude Code and GitHub
-Copilot use their native model configuration and do not need provider selection.
+`--provider openai` to use direct Anthropic or OpenAI/Codex models. Claude Code, GitHub
+Copilot, and Codex use their native model configuration and do not need provider selection.
 
-Harness details: [OpenCode](./docs/opencode.md) · [Copilot](./docs/copilot.md).
+Harness details: [OpenCode](./docs/opencode.md) · [Copilot](./docs/copilot.md) · [Codex](./docs/codex.md).
 
 ## Conventions
 
@@ -110,6 +112,7 @@ token-efficiency practices.
 - [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.
 - [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.
 - [Copilot setup](./docs/copilot.md) — the generated `.github/agents/` config.
+- [Codex setup](./docs/codex.md) — the generated `.codex/agents/` and `.agents/skills/` config.
 
 ## Development
 

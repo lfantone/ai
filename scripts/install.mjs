@@ -3,10 +3,10 @@
  * Catalog installer — builds the canonical agents/commands/skills for a harness and
  * installs them project-wise or globally. Zero dependencies.
  *
- *   ./scripts/install.mjs --harness <opencode|github|claude> [options]
+ *   ./scripts/install.mjs --harness <opencode|github|claude|codex> [options]
  *
  * Options:
- *   --harness <name>      opencode | github (Copilot CLI/VS Code/coding agent) | claude
+ *   --harness <name>      opencode | github (Copilot CLI/VS Code/coding agent) | claude | codex
  *   --global              install to the user-level config dir (default: project)
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
@@ -45,6 +45,11 @@ const MODEL_MAP = {
     haiku: "claude-haiku-4.5",
     sonnet: "claude-sonnet-5",
     opus: "claude-opus-5",
+  },
+  codex: {
+    haiku: "gpt-6-luna",
+    sonnet: "gpt-6-sol",
+    opus: "gpt-6-sol",
   },
 };
 
@@ -103,6 +108,16 @@ const TARGETS = {
       skills: "{h}/.claude/skills",
     },
   },
+  codex: {
+    project: {
+      agents: "{p}/.codex/agents",
+      skills: "{p}/.agents/skills",
+    },
+    global: {
+      agents: "{h}/.codex/agents",
+      skills: "{h}/.agents/skills",
+    },
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -127,7 +142,7 @@ const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
   console.error(
-    `usage: install.mjs --harness <opencode|github|claude> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
+    `usage: install.mjs --harness <opencode|github|claude|codex> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
   );
   process.exit(1);
 }
@@ -191,6 +206,7 @@ const outName = (base) => transform(base);
 // JSON is a valid YAML subset, so JSON.stringify yields a safe double-quoted scalar for any
 // re-emitted frontmatter value — handles a mid-sentence ": ", embedded quotes, and "#".
 const yamlStr = (s) => JSON.stringify(s ?? "");
+const tomlStr = (s) => JSON.stringify(s ?? "");
 
 const writes = [];
 const emit = (file, content) => writes.push({ file, content });
@@ -242,7 +258,7 @@ for (const f of agents) {
   let out = "";
 
   if (harness === "claude") {
-    out = fs.readFileSync(path.join(ROOT, "agents", f), "utf8"); // canonical IS the Claude format
+    out = fs.readFileSync(path.join(ROOT, "agents", f), "utf8");
   } else if (harness === "opencode") {
     const lines = [
       `description: ${yamlStr(fm.description)}`,
@@ -258,6 +274,18 @@ for (const f of agents) {
       `  webfetch: deny`,
     ];
     out = `---\n${lines.join("\n")}\n---\n${body}`;
+  } else if (harness === "codex") {
+    const lines = [
+      `name = ${tomlStr(outName(name))}`,
+      `description = ${tomlStr(fm.description)}`,
+      `model = ${tomlStr(modelMap[fm.model] ?? modelMap.sonnet)}`,
+      ...(fm.reasoning
+        ? [`model_reasoning_effort = ${tomlStr(fm.reasoning)}`]
+        : []),
+      `sandbox_mode = ${tomlStr(write ? "workspace-write" : "read-only")}`,
+      `developer_instructions = ${tomlStr(body)}`,
+    ];
+    out = lines.join("\n");
   } else if (harness === "github") {
     // tools: dual vocabulary (CLI + VS Code aliases); unknown names are silently ignored.
     const tools = ['"read"', '"search"'];
@@ -276,7 +304,8 @@ for (const f of agents) {
     out = `---\n${lines.join("\n")}\n---\n${body}`;
   }
 
-  const suffix = harness === "github" ? ".agent.md" : ".md";
+  const suffix =
+    harness === "github" ? ".agent.md" : harness === "codex" ? ".toml" : ".md";
   emit(path.join(dirs.agents, outName(name) + suffix), transform(out));
 }
 
@@ -293,8 +322,8 @@ for (const f of commands) {
       .replaceAll("the Agent tool", "the task tool")
       .replaceAll(/TaskCreate|TaskUpdate/g, "todowrite");
     emit(path.join(dirs.commands, f), transform(out));
-  } else if (harness === "github") {
-    // VS Code/Copilot invoke workflows as skills → agentskills SKILL.md per command.
+  } else if (harness === "github" || harness === "codex") {
+    // Copilot and Codex invoke workflows as skills → agentskills SKILL.md per command.
     const out = body
       .replaceAll(/`\$ARGUMENTS`|\$ARGUMENTS/g, "the user's request")
       .replaceAll("via the Agent tool", "as subagents")
@@ -316,31 +345,48 @@ for (const d of skills) {
 // ---------------------------------------------------------------------------
 // Install
 // ---------------------------------------------------------------------------
-const installRoot = path.dirname(dirs.agents);
-const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
-const isWithinInstallRoot = (file) => {
+const installRoots = [
+  ...new Set(
+    Object.values(dirs)
+      .filter(Boolean)
+      .map((dir) => path.dirname(dir)),
+  ),
+];
+const isWithinInstallRoot = (installRoot, file) => {
   const relative = path.relative(installRoot, file);
   return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
 };
-const previousWrites = (() => {
+const currentWrites = writes.map((write) => write.file);
+const installStates = installRoots.map((installRoot) => {
+  const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
+  let previousWrites = [];
   try {
     const entries = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
-    return Array.isArray(entries)
-      ? entries
-          .filter((entry) => typeof entry === "string")
-          .map((entry) => path.resolve(installRoot, entry))
-          .filter(isWithinInstallRoot)
-      : [];
+    if (Array.isArray(entries)) {
+      previousWrites = entries
+        .filter((entry) => typeof entry === "string")
+        .map((entry) => path.resolve(installRoot, entry))
+        .filter((file) => isWithinInstallRoot(installRoot, file));
+    }
   } catch {
-    return [];
+    // Missing or invalid manifests do not block a fresh install.
   }
-})();
-const currentWrites = writes.map((write) => write.file);
-const cleanup = [...new Set([...previousWrites, ...currentWrites])];
+  const current = currentWrites.filter((file) =>
+    isWithinInstallRoot(installRoot, file),
+  );
+  return {
+    installRoot,
+    manifestFile,
+    current,
+    cleanup: [...new Set([...previousWrites, ...current])],
+  };
+});
 
-for (const file of cleanup) {
-  if (dryRun) console.log(`would remove ${file}`);
-  else fs.rmSync(file, { recursive: true, force: true });
+for (const { cleanup } of installStates) {
+  for (const file of cleanup) {
+    if (dryRun) console.log(`would remove ${file}`);
+    else fs.rmSync(file, { recursive: true, force: true });
+  }
 }
 
 let files = 0;
@@ -368,11 +414,13 @@ for (const w of writes) {
 }
 
 if (!dryRun) {
-  fs.mkdirSync(installRoot, { recursive: true });
-  fs.writeFileSync(
-    manifestFile,
-    `${JSON.stringify(currentWrites.map((file) => path.relative(installRoot, file)))}\n`,
-  );
+  for (const { installRoot, manifestFile, current } of installStates) {
+    fs.mkdirSync(installRoot, { recursive: true });
+    fs.writeFileSync(
+      manifestFile,
+      `${JSON.stringify(current.map((file) => path.relative(installRoot, file)))}\n`,
+    );
+  }
 }
 
 console.log(
