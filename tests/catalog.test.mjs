@@ -36,21 +36,26 @@ const install = (
   names = "pokemon",
   provider,
   project = fs.mkdtempSync(path.join(os.tmpdir(), `ai-${harness}-`)),
+  options = {},
 ) => {
   const providerArgs = provider ? ["--provider", provider] : [];
+  const scopeArgs = options.global ? ["--global"] : ["--project", project];
   execFileSync(
     process.execPath,
     [
       path.join(ROOT, "scripts/install.mjs"),
       "--harness",
       harness,
-      "--project",
-      project,
       "--names",
       names,
+      ...scopeArgs,
       ...providerArgs,
     ],
-    { cwd: ROOT, stdio: "pipe" },
+    {
+      cwd: ROOT,
+      stdio: "pipe",
+      env: { ...process.env, ...(options.env ?? {}) },
+    },
   );
   return project;
 };
@@ -90,6 +95,53 @@ test("installer refreshes catalog entries without removing external entries", ()
     false,
   );
   assert.ok(fs.existsSync(path.join(project, ".opencode/agents/skadi.md")));
+});
+
+test("Codex installs TOML agents and skills in Codex discovery roots", () => {
+  // Arrange
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-codex-"));
+
+  // Act
+  install("codex", "pokemon", undefined, project);
+
+  // Assert
+  const machop = fs.readFileSync(
+    path.join(project, ".codex/agents/machop.toml"),
+    "utf8",
+  );
+  assert.match(machop, /^name = "machop"$/m);
+  assert.match(machop, /^description = /m);
+  assert.match(machop, /^model = "gpt-6-luna"$/m);
+  assert.match(machop, /^model_reasoning_effort = "low"$/m);
+  assert.match(machop, /^sandbox_mode = "workspace-write"$/m);
+  assert.match(machop, /^developer_instructions = /m);
+  assert.doesNotMatch(machop, /^---$/m);
+  assert.ok(
+    fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
+  );
+  const planSkill = fs.readFileSync(
+    path.join(project, ".agents/skills/plan-orchestrator/SKILL.md"),
+    "utf8",
+  );
+  assert.match(planSkill, /^name: plan-orchestrator$/m);
+  assert.doesNotMatch(planSkill, /\$ARGUMENTS/);
+  assert.equal(fs.existsSync(path.join(project, ".codex/commands")), false);
+});
+
+test("Codex global install uses ~/.codex for agents and ~/.agents for skills", () => {
+  // Arrange
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ai-codex-home-"));
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-codex-project-"));
+
+  // Act
+  install("codex", "pokemon", undefined, project, {
+    global: true,
+    env: { HOME: home },
+  });
+
+  // Assert
+  assert.ok(fs.existsSync(path.join(home, ".codex/agents/machop.toml")));
+  assert.ok(fs.existsSync(path.join(home, ".agents/skills/gh-cli/SKILL.md")));
 });
 
 test("code-aware agents receive LSP access and navigation guidance", () => {
