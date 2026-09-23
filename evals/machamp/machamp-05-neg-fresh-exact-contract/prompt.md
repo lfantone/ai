@@ -2,7 +2,6 @@
 max_turns: 12
 timeout_seconds: 480
 allowed_tools: [Agent, Read, Write, Edit]
-plugins: [../../..]
 model: opus
 runs: 3
 ---

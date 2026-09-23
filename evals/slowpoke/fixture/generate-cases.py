@@ -178,7 +178,6 @@ FRONT = """---
 max_turns: 8
 timeout_seconds: 180
 allowed_tools: [Agent]
-plugins: [../../..]
 model: sonnet
 runs: 5
 ---
