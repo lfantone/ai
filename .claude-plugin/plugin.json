@@ -1,0 +1,7 @@
+{
+  "name": "ai",
+  "version": "0.1.0",
+  "description": "Pokémon-named agent catalog and skills for plan → implement → verify and review workflows, plus the gh-cli, tea-cli, and bruno-cli skills.",
+  "author": { "name": "Luciano Fantone" },
+  "license": "MIT"
+}

@@ -209,7 +209,6 @@ FRONT = """---
 max_turns: 8
 timeout_seconds: 600
 allowed_tools: [Agent]
-plugins: [../../..]
 model: opus
 runs: 3
 ---

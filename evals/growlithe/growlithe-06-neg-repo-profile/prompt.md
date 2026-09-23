@@ -2,7 +2,6 @@
 max_turns: 14
 timeout_seconds: 600
 allowed_tools: [Agent, Read, Write, Edit, Glob, Grep]
-plugins: [../../..]
 model: sonnet
 runs: 5
 ---

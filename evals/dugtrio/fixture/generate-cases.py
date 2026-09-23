@@ -210,7 +210,6 @@ FRONT = """---
 max_turns: 12
 timeout_seconds: 300
 allowed_tools: [Agent, Read, Write, Edit, Glob, Grep]
-plugins: [../../..]
 model: sonnet
 runs: 5
 ---
