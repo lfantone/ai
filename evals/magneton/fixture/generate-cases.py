@@ -63,10 +63,11 @@ def llm(rubric: str) -> str:
 ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Magneton\nmin: 1\narm: with-only\nweight: 0.01\n---\n"
 NOT_ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Magneton\nmin: 0\nmax: 0\narm: both\n---\n"
 
-# Magneton's return format is one line per step, `OK` or `structural error — <violation>`,
-# with or without a leading step id. Exactly four such lines for a four-step plan.
+# Magneton's return format (since 2026-09-23) is one line per step, prefixed with the step id:
+# `S<N> — OK` or `S<N> — structural error — <violation>`. Exactly four such lines for a
+# four-step plan.
 STRICT_VERDICT = regex(r"^(VALID|INVALID)\s*$", flags="m")
-STRICT_FOUR_LINES = regex(r"^\W*(S[1-4]\b\W*)?(OK\W*$|structural error)", match="count:4", flags="m")
+STRICT_FOUR_LINES = regex(r"^\W*S[1-4]\b\W*(OK\W*$|structural error)", match="count:4", flags="m")
 
 ONLY_VERDICT_LINES = """
 The answer relays a structural verification verdict. All claims must hold to pass.
@@ -118,7 +119,7 @@ fire_case(
     {
         "verdict-valid": regex(r"^VALID\s*$", flags="m"),
         "no-errors": regex(r"INVALID|structural error", match="not_contains"),
-        "four-ok-lines": regex(r"^\W*(S[1-4]\b\W*)?OK\W*$", match="count:4", flags="m"),
+        "four-ok-lines": regex(r"^\W*S[1-4]\b\W*OK\W*$", match="count:4", flags="m"),
         "only-verdict-lines": llm(ONLY_VERDICT_LINES),
     },
 )
