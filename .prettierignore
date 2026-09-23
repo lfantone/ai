@@ -1,0 +1,5 @@
+# Generated eval cases and mocks (written by evals/*/fixture/generate-cases.py; grader bodies are regexes)
+evals/*/*/prompt.md
+evals/*/*/graders/
+evals/mocks/
+evals/*/fixture/*.md
