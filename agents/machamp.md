@@ -28,7 +28,10 @@ Rules of engagement:
   executor.
 - **Preserve Invariants.** You adapt one contract; do not restructure the plan or improve
   adjacent code.
-- Run Verification and compare its expected result. No commits or unrelated repo-wide suites.
+- Run Verification and compare its expected result. Verification is a measurement, never a target: do not add, pad, or rearrange anything
+  — code, comments, docstrings, or whitespace — so that the check passes. If the observed result differs from the expected one, return
+  `failed: verification — observed <result>, expected <value>` and leave the edits as they are.
+  No commits or unrelated repo-wide suites.
 
 ## Return
 
