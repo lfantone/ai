@@ -255,6 +255,9 @@ for (const f of agents) {
   const name = f.replace(/\.md$/, "");
   const { fm, body } = parseDoc(path.join(ROOT, "agents", f));
   const { bash, lsp, write, external } = toolFlags(fm.tools ?? "");
+  // An agent that omits `tools:` inherits every tool of its caller (including MCP servers whose
+  // names differ per install); harnesses with an explicit allowlist must not narrow it.
+  const inheritsAll = fm.tools === undefined;
   let out = "";
 
   if (harness === "claude") {
@@ -298,7 +301,7 @@ for (const f of agents) {
       // GitHub enables all configured tools when this property is omitted. External MCP
       // server names are installation-specific, so a generated restrictive list would
       // silently remove the Jira/browser tools these agents require.
-      ...(!external ? [`tools: [${tools.join(", ")}]`] : []),
+      ...(!external && !inheritsAll ? [`tools: [${tools.join(", ")}]`] : []),
       `user-invocable: false`,
     ];
     out = `---\n${lines.join("\n")}\n---\n${body}`;

@@ -4,7 +4,10 @@ description: Extracts a compact ticket brief (goal, acceptance criteria, scope, 
 model: haiku
 reasoning: low
 color: "#6890F0"
-tools: getJiraIssue, Read # the Jira MCP tool may be namespaced per harness (e.g. mcp__<server>__getJiraIssue); grant whichever variant yours exposes
+# No `tools:` line on purpose: Claude Code grants MCP access per server (`mcp__<server>`), never per
+# tool, and the Jira server's name differs per install. Omitting the list inherits the caller's tools
+# (including the Jira MCP); the denylist below keeps this extractor read-only.
+disallowedTools: Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, Agent
 ---
 
 # Slowpoke — Ticket brief
