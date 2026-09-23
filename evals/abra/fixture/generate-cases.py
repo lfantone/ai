@@ -80,7 +80,7 @@ The answer is a checklist of verification scenarios (V1, V2, ...). All claims mu
 
 1. Every `expect:` names something a driver can assert without judgment: an HTTP status code, a response field and value, visible text or UI state, an exit code, a stdout line, a log line, or a stored value. An expect such as "works correctly", "behaves as expected" or "the feature is applied" fails this claim. When the brief defines the exact status or text for a situation, an either/or hedge (such as "401/404") also fails this claim.
 2. Steps are executable as written: api steps carry the HTTP method and path (and payload when there is a body); web steps carry the route and what to click or fill; cli steps carry the exact command.
-3. Every `mutating:` flag matches the steps with respect to application data: a scenario that creates, updates or deletes data (POST/PUT/PATCH/DELETE, saving or deleting through the UI, a command that writes or may delete records, including a prune run without a dry-run flag) is `yes`; a pure read is `no`. Environment manipulation done in `pre:` (stopping or starting a service, setting a test clock header, restarting with a different env var) does not by itself decide the flag; either value is acceptable for it.
+3. Every `mutating:` flag matches the steps with respect to application data: a scenario that creates, updates or deletes data (POST/PUT/PATCH/DELETE, saving or deleting through the UI, a command that writes or may delete records, including a prune run without a dry-run flag) is `yes`; a pure read is `no`. Environment manipulation done in `pre:` (stopping or starting a service, setting a test clock header, restarting with a different env var) does not by itself decide the flag, and a scenario that exhausts a rate limiter with GET requests may be flagged either way; either value is acceptable for those.
 4. No scenario verifies a runtime criterion by reading or grepping source code text instead of exercising behavior.
 5. The answer is the checklist only: no preamble beyond one short sentence, no explanation after it, no questions back.
 """
@@ -192,7 +192,7 @@ The answer is a checklist of verification scenarios for a /health endpoint. All 
 
 # ---------------------------------------------------------------- 04 — collision area + two surfaces
 brief_04 = """
-Surfaces in play: api (http://localhost:3000, local, mutating allowed) and cli (the `sessions` admin tool, run as `npm run sessions -- <args>` from the repo root).
+Surfaces in play: api (http://localhost:3000, local, mutating allowed) and cli (the `sessions` admin tool, run as `npm run sessions -- <args>` from the repo root). Sessions are created with `POST /api/login` (body `{ "user": "<name>" }`, sets cookie `sid`) and inspected with `GET /api/me` (200 for a live session, 401 `{ "error": "unauthenticated" }` otherwise). Test clock: with `NODE_ENV=test` the server honours an `X-Test-Now` header (epoch ms) and the CLI honours a `SESSIONS_NOW` environment variable (epoch ms), so a session can be made idle by advancing the clock rather than waiting.
 
 ## Acceptance criteria
 - [ ] AC1 — `npm run sessions -- prune` deletes every session idle longer than `SESSION_IDLE_TTL_MS`, prints `pruned <n> sessions` and exits 0.
