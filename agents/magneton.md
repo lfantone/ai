@@ -30,6 +30,8 @@ executors validate them again immediately before editing.
 
 ## Return
 
-Return one line per step: `OK` or `structural error — <specific contract violation>`, then a
-final `VALID` or `INVALID`. Do not return the whole plan. Structural errors go back to the
+Return exactly one line per step, prefixed with its id — `S<N> — OK` or
+`S<N> — structural error — <specific contract violation>` — in checklist order, then a final
+line that is exactly `VALID` or `INVALID`. Never add, merge, or omit a step line; a plan with
+four steps yields four lines. Do not return the whole plan. Structural errors go back to the
 same author once before the draft is presented.
