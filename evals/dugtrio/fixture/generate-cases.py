@@ -265,7 +265,7 @@ ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Dugtrio\nmin: 1\narm: 
 NOT_ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Dugtrio\nmin: 0\nmax: 0\narm: both\n---\n"
 DUMP = r"private readonly (sessions|buckets) = new Map|return \(req: Request, res: Response, next: NextFunction\) =>"
 # bold labels or markdown headings, in Dugtrio's order
-H = lambda t: rf"(?:\*\*{t}:?\*\*|^#{{1,4}} {t})"
+H = lambda t: rf"(?:\*\*{t}\b[^\n*]*\*\*|^#{{1,4}} {t}\b)"
 SECTIONS = H("Insertion points") + r"[\s\S]*" + H("Prior art to mirror") + r"[\s\S]*" + H("Seams & extension points") + r"[\s\S]*" + H("Collisions")
 ABS_PATHS = r"/private/tmp/|/home/cwd/|/Users/"
 
@@ -311,7 +311,7 @@ map_case(
     {
         "cites-store": regex(r"session-store\.ts:(SessionStore|SessionRecord)"),
         "cites-middleware": regex(r"session-middleware\.ts:sessionMiddleware"),
-        "prior-art-sweep": regex(r"rate-limit-store\.ts[^\n]*\bsweep\b|\bsweep\b[^\n]*rate-limit-store\.ts"),
+        "prior-art-sweep": regex(r"rate-limit-store\.ts[^\n]*(\bsweep\b|RateLimitStore)|(\bsweep\b|RateLimitStore)[^\n]*rate-limit-store\.ts"),
         "prior-art-middleware": regex(r"rate-limit-middleware\.ts"),
         "collision-me-route": regex(r"routes/me\.ts"),
         "seam-clock": regex(r"src/lib/clock\.ts|\bClock\b"),

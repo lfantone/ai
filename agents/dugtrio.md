@@ -30,9 +30,15 @@ context; return `missing normalized requirement` if that is all the caller provi
   they follow, so the plan matches rather than reinvents.
 - **Seams & extension points:** interfaces/abstractions the change should plug into, and
   where a future-proof design would add a seam rather than a special-case.
-- **Collisions:** code that must change as a side effect.
+- **Collisions:** code that must change as a side effect. For every type, interface, or
+  function signature the change touches, find its consumers (LSP references, then grep) and
+  list each one — a serializer, a caller, a test fixture — with what it must absorb.
 
-No full file bodies — cite `file:symbol` locations and name the patterns.
+No full file bodies — cite `file:symbol` locations and name the patterns. Use the four labels
+above verbatim and in that order. Every path in the brief — citations, test locations, and notes
+about what you searched — is relative to the repository root
+(`src/http/routes/me.ts:meHandler`), never an absolute filesystem path, and `file:symbol` rather
+than `file:line` — line numbers drift, symbols do not.
 
 ## Diagnosis mode (verification fix loop)
 
