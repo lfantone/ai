@@ -1,0 +1,36 @@
+{
+  "_note": "Hand-written approximation of the Atlassian MCP connector's getJiraIssue schema; the real tools/list was not obtainable without credentials in the authoring session.",
+  "tools": [
+    {
+      "name": "getJiraIssue",
+      "description": "Get the details of a Jira issue by its key or id. Returns the issue resource including summary, description, status, assignee, labels and parent.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cloudId": {
+            "type": "string",
+            "description": "Atlassian cloud id (optional when a single site is configured)"
+          },
+          "issueIdOrKey": {
+            "type": "string",
+            "description": "Issue key such as HB-2041, or numeric id"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Fields to include; defaults to all navigable fields"
+          },
+          "expand": {
+            "type": "string",
+            "description": "Comma-separated expansions such as renderedFields"
+          }
+        },
+        "required": [
+          "issueIdOrKey"
+        ]
+      }
+    }
+  ]
+}
