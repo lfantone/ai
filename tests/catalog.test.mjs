@@ -111,11 +111,21 @@ test("Codex installs TOML agents and skills in Codex discovery roots", () => {
   );
   assert.match(machop, /^name = "machop"$/m);
   assert.match(machop, /^description = /m);
-  assert.match(machop, /^model = "gpt-6-luna"$/m);
+  assert.match(machop, /^model = "gpt-5.6-luna"$/m);
   assert.match(machop, /^model_reasoning_effort = "low"$/m);
   assert.match(machop, /^sandbox_mode = "workspace-write"$/m);
   assert.match(machop, /^developer_instructions = /m);
   assert.doesNotMatch(machop, /^---$/m);
+  const growlithe = fs.readFileSync(
+    path.join(project, ".codex/agents/growlithe.toml"),
+    "utf8",
+  );
+  assert.match(growlithe, /^model = "gpt-5.6-terra"$/m);
+  const alakazam = fs.readFileSync(
+    path.join(project, ".codex/agents/alakazam.toml"),
+    "utf8",
+  );
+  assert.match(alakazam, /^model = "gpt-5.6-sol"$/m);
   assert.ok(
     fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
   );

@@ -47,9 +47,9 @@ const MODEL_MAP = {
     opus: "claude-opus-5",
   },
   codex: {
-    haiku: "gpt-6-luna",
-    sonnet: "gpt-6-sol",
-    opus: "gpt-6-sol",
+    haiku: "gpt-5.6-luna",
+    sonnet: "gpt-5.6-terra",
+    opus: "gpt-5.6-sol",
   },
 };
 
