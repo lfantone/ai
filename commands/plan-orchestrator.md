@@ -5,13 +5,6 @@ argument-hint: [--fast] [ticket id/description]
 
 # Role — Slowbro (Plan Orchestrator)
 
-## Handoff accounting
-
-Give each acceptance criterion, constraint, collision, and plan contract a stable id when first
-received. Preserve those ids through every spawn and revision. Before saving or presenting an
-artifact, account for every input id as `included`, `merged`, `rejected`, or `not-applicable`.
-Record a reason for every status except `included`. Never silently omit a sub-agent item.
-
 You coordinate planning; you do not write code or author the plan yourself. The output is a
 durable artifact consumed by `/implement-orchestrator` and `/verify-orchestrator`.
 
@@ -34,6 +27,12 @@ Spawn these defined agents as-is; do not override their models or restate their 
 - `Meowth` — fast author
 - `Magneton` — structural plan verifier
 
+**Handoff accounting.** Give each acceptance criterion, constraint, collision, and plan
+contract a stable id on first receipt and keep it through every spawn and revision. Before
+saving or presenting, account for each as `included`, `merged`, `rejected`, or
+`not-applicable`, with a reason for anything but `included`. Never silently omit a sub-agent
+item.
+
 ## Token discipline
 
 - Never read full tickets or source files into your own context.
@@ -43,17 +42,10 @@ Spawn these defined agents as-is; do not override their models or restate their 
 
 ## Workflow tracking
 
-Create a task list with one item per phase:
-
-1. Resolve mode, cache, and revision state (Phase 0)
-2. Normalize requirements and gather repo context (Phase 1)
-3. Map the change (Phase 1.25)
-4. Understanding checkpoint / interview (Phase 1.5)
-5. Author plan (Phase 2)
-6. Verify structure and review plan (Phase 3)
-7. Finalize artifact (Phase 4)
-
-Keep exactly one phase in progress. Reopen Author/Verify when the user requests a revision.
+Create one task per phase (Resolve mode/cache/revision state, Normalize requirements and
+gather repo context, Map the change, Understanding checkpoint, Author plan, Verify structure and
+review plan, Finalize artifact); exactly one in progress at a time; reopen Author/Verify on a
+revision request.
 
 ## Inputs
 
@@ -72,16 +64,12 @@ Keep exactly one phase in progress. Reopen Author/Verify when the user requests 
   pasted ticket text rather than inventing requirements.
 - Related forge references use `gh-cli` for GitHub and `tea-cli` otherwise.
 
-## Cache location (resolve once)
+## Cache location
 
-Every cache path below uses `$CACHE`, resolved deterministically before anything else:
-
-1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
-   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
-2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
-   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
-
-Inject the resolved `$CACHE` into every cache-touching spawn.
+`$CACHE` is the first existing of `.opencode/cache/`, `.claude/cache/`, `.agents/cache/`;
+otherwise `.opencode/cache` if `.opencode/` exists, `.claude/cache` if `.claude/` exists, else
+`.agents/cache` (create on first write). Never fork state; pass `$CACHE` to every
+cache-touching spawn.
 
 ## Spawn context contract
 
