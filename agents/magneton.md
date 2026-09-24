@@ -1,6 +1,6 @@
 ---
 name: Magneton
-description: Structurally verifies implementation plans — complete execution contracts, consistent ids, an acyclic dependency graph, and file-disjoint parallel waves. Use after either plan author returns. Cheap deterministic review; it never rechecks repository anchors.
+description: Structural plan verifier — complete execution contracts, consistent ids, an acyclic dependency graph, file-disjoint waves; cheap and deterministic, never rechecks repository anchors. Use after either plan author returns.
 model: haiku
 temperature: 0.1
 reasoning: low

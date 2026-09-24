@@ -1,6 +1,6 @@
 ---
 name: gh-cli
-description: Write, fix, or explain `gh` commands for GitHub — get a pull request's head SHA, diff, or metadata, read a file at a commit, list review comments and unresolved threads, post a review with inline `suggestion` blocks, reply in a thread, resolve threads. Use whenever the user asks for a gh command, a shell snippet or sub-agent prompt that talks to GitHub, or a fix for a script that parses gh output. Standardizes on `gh api` + `--jq` (never parsing `gh pr view`/`gh pr list` text), REST 2022-11-28 field names, `line`/`side` review addressing, `--paginate`, and the GraphQL-only thread operations so responses parse deterministically.
+description: Write, fix, or explain `gh` commands for GitHub — a pull request's head SHA, diff, or files at a commit, review comments, unresolved threads, posting reviews with inline `suggestion` blocks, replying in and resolving threads. Use for any gh command, GitHub shell snippet or sub-agent prompt, or a script that parses gh output; not for plain git or other forges. Standardizes on `gh api` + `--jq`, REST 2022-11-28 fields, `line`/`side` addressing, `--paginate`, and the GraphQL-only thread operations.
 ---
 
 # gh CLI — reliable GitHub access

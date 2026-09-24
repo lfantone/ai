@@ -1,6 +1,6 @@
 ---
 name: tea-cli
-description: Write, fix, or explain `tea` commands for Gitea — get a pull request's head SHA, diff, or metadata, read a file at a commit (base64 `.content`), list reviews and their unresolved comments, post a review with inline `suggestion` blocks (`new_position`), reply in a thread, resolve threads. Use whenever the user asks for a tea command, a shell snippet or sub-agent prompt that talks to Gitea, or a fix for a script that parses tea output. Standardizes on `tea api` + `jq` (never `tea pr ls -o json`, which drops the SHA), Gitea 1.21 field names, single-line suggestions, and the no-reply-endpoint workaround so responses parse deterministically.
+description: Write, fix, or explain `tea` commands for Gitea — head SHA, diff, files at a commit (base64 `.content`), reviews and unresolved comments, posting reviews with inline `suggestion` blocks (`new_position`), replying in and resolving threads. Use for any tea command, Gitea shell snippet or sub-agent prompt, or a script that parses tea output. Standardizes on `tea api` + `jq` (never the lossy `tea pr ls -o json`), Gitea 1.21 fields, and single-line suggestions.
 ---
 
 # tea CLI — reliable Gitea access

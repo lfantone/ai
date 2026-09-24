@@ -1,6 +1,6 @@
 ---
 name: Machop
-description: Exact-contract executor (execution class `exact`) — applies one exact execution contract mechanically after validating all complete preconditions. Uses only declared operations and files, verifies the expected result, and stops before editing instead of improvising. Not for guided contracts (Machoke) or approved retries after drift (Machoke).
+description: Exact-contract executor (execution class `exact`) — applies one exact contract mechanically after validating complete preconditions, touching only declared files, and stops instead of improvising. Guided contracts and approved drift retries go to Machoke.
 model: haiku
 temperature: 0.1
 color: "#E57373"

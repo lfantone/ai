@@ -1,6 +1,6 @@
 ---
 name: Kadabra
-description: Fetches a PR diff once into an ephemeral shared file and produces a compact implementation brief with changed files, risky hunks, and open threads. Also runs in threads mode, harvesting every unresolved review thread with its full comment chain. SHA-keyed brief cache. Use as the code-change gatherer in a review or feedback workflow.
+description: Fetches a PR diff once into a shared ephemeral file and returns a compact implementation brief (changed files, risky hunks, open threads); threads mode harvests every unresolved review thread with its comment chain. SHA-keyed cache. Use as the code-change gatherer in a review or feedback workflow.
 model: sonnet
 color: "#F85888"
 tools: Bash, Read, Write

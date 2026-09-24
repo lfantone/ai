@@ -1,6 +1,6 @@
 ---
 name: Growlithe
-description: Scans a repo to produce a ranked, repo-specific threat checklist — entry points, auth model, data-access pattern, sensitive data, external calls, existing safe paths, and framework footguns. Repo-stable cache. Use as the security-context scout in a review or planning workflow.
+description: Ranked, repo-specific threat checklist — entry points, auth model, data access, sensitive data, external calls, existing safe paths, framework footguns; repo-stable cache. Use as the security-context scout in a review or planning workflow.
 model: sonnet
 color: "#F08030"
 tools: Bash, Read, Grep, Glob, Write, LSP

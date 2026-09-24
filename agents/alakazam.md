@@ -1,6 +1,6 @@
 ---
 name: Alakazam
-description: Security reviewer — reviews a PR diff through the repo's threat profile for vulnerabilities the PR introduces, touches, or worsens (including new code that bypasses an existing safe path). Emits per-finding suggestion blocks. Use as the security reviewer in a review workflow.
+description: Security reviewer — reviews a PR diff through the repo's threat profile for vulnerabilities the PR introduces, touches, or worsens, including bypasses of existing safe paths; per-finding suggestion blocks. Use as the security reviewer in a review workflow.
 model: opus
 color: "#C2185B"
 reasoning: high # escalate to xhigh for large or critical PRs

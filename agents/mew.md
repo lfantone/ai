@@ -1,6 +1,6 @@
 ---
 name: Mew
-description: Authors precise implementation plans whose exact execution contracts let small models implement without design decisions. Use as the heavyweight author for the default precise planning mode, or to re-specify one failed exact step.
+description: Precise plan author — exact execution contracts that small models apply without design decisions. Use for default precise planning, or to re-specify one failed exact step.
 model: opus
 color: "#F48FB1"
 reasoning: high # escalate to xhigh for large or cross-cutting work
