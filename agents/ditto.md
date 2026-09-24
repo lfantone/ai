@@ -1,6 +1,6 @@
 ---
 name: Ditto
-description: Web E2E verifier — drives a real browser through verification scenarios using the Chrome DevTools MCP tools (navigate, snapshot, click, fill, wait, console, network, screenshot) and returns per-scenario verdicts with evidence. Use to QA a web UI after implementation.
+description: Web E2E verifier — drives a real browser through web scenarios with the Chrome DevTools MCP and returns per-scenario verdicts with evidence. Use to QA a web UI after implementation.
 model: sonnet
 temperature: 0.1
 color: "#BA68C8"

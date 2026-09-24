@@ -1,6 +1,6 @@
 ---
 name: Eevee
-description: Builds a repository profile brief — stack, architecture patterns, naming/code conventions, testing expectations, and project-specific rules a reviewer must enforce. Repo-stable cache. Use as the repo-context gatherer in a review or planning workflow.
+description: Repository profile brief — stack, architecture patterns, naming and code conventions, testing expectations, and rules a reviewer must enforce; repo-stable cache. Use as the repo-context gatherer in a review or planning workflow.
 model: sonnet
 color: "#A8A878"
 tools: Bash, Read, Grep, Glob, Write, LSP

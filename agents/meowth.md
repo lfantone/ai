@@ -1,6 +1,6 @@
 ---
 name: Meowth
-description: Authors fast implementation plans with constrained exact or guided execution contracts. Use for --fast planning when shorter authoring time matters more than fully mechanical Haiku execution.
+description: Fast plan author — shorter plans with exact or guided execution contracts, for --fast planning when authoring time matters more than fully mechanical Haiku execution.
 model: sonnet
 reasoning: medium
 color: "#C49A6C"

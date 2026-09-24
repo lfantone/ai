@@ -1,6 +1,6 @@
 ---
 name: Machamp
-description: Last-resort contract executor — completes an exact or guided step whose intent is right but execution needs bounded judgment. Stays within the contract's files and invariants and logs every deviation. Use only after Machop/Machoke fails and the user approves escalation.
+description: Last-resort executor — completes one exact or guided contract whose intent is clear but whose operation does not apply cleanly, staying inside its files and invariants and logging every deviation. Use only after Machop/Machoke failed and the user approved escalation.
 model: opus
 color: "#8E1B12"
 reasoning: medium

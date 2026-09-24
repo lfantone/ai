@@ -1,6 +1,6 @@
 ---
 name: Mewtwo
-description: General code reviewer — reviews a PR's delta (never the whole repository) against ticket intent, repo conventions, and correctness/quality, emitting per-finding suggestion blocks anchored to changed lines. Use as the correctness/quality reviewer in a review workflow.
+description: General code reviewer — reviews a PR delta (never the whole repository) against ticket intent, repo conventions, and correctness, with per-finding suggestion blocks anchored to changed lines. Use as the correctness/quality reviewer in a review workflow.
 model: opus
 color: "#8E4585"
 reasoning: high # escalate to xhigh for large or critical PRs

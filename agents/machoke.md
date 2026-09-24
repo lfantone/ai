@@ -1,6 +1,6 @@
 ---
 name: Machoke
-description: Guided-contract executor (execution class `guided`) — executes one guided contract from a fast plan, or retries an exact contract after the user approved a retry over minor drift. Adapts code only inside declared files and constraints, follows cited prior art, verifies the target state, and reports every deviation. Fresh exact contracts go to Machop.
+description: Guided-contract executor (execution class `guided`) — executes one guided contract, or retries an exact contract after the user approved a retry over minor drift, adapting only inside declared files and reporting every deviation. Fresh exact contracts go to Machop.
 model: sonnet
 temperature: 0.1
 color: "#C03028"

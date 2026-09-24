@@ -1,6 +1,6 @@
 ---
 name: Abra
-description: Verification-scenario designer — turns a plan's acceptance criteria, change map, and testing notes into an executable QA checklist — concrete scenarios with steps, expected observable results, surface (web / api / cli), and a mutating flag. Use before end-to-end verification.
+description: Verification-scenario designer — turns acceptance criteria, change map, and testing notes into an executable QA checklist (concrete steps, observable expects, surface web/api/cli, mutating flag). Use before end-to-end verification.
 model: sonnet
 color: "#FFB3C6"
 tools: Read, Grep, Glob, LSP

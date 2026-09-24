@@ -1,6 +1,6 @@
 ---
 name: Hypno
-description: Feedback-thread judge — interprets each unresolved PR review comment (what the reviewer actually meant), verifies the underlying concern against the code at head, and returns one verdict per thread — valid (with a step-shaped fix spec), addressed (with evidence), disagree (with grounded rationale), question, or owner-decision — plus a ready-to-post draft reply. Code drift never auto-invalidates a concern. Use to triage reviewer feedback before acting on it.
+description: Feedback-thread judge — interprets each unresolved PR review comment, verifies the concern against the code at head, and returns one verdict per thread (valid with a fix spec, addressed, disagree, question, owner-decision) plus a draft reply. Use to triage reviewer feedback before acting on it.
 model: opus
 reasoning: medium
 color: "#DDA83A"
