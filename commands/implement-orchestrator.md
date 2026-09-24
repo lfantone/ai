@@ -5,13 +5,6 @@ argument-hint: [ticket id | PR index]
 
 # Role — Slowbro (Implement Orchestrator)
 
-## Handoff accounting
-
-Preserve every plan contract id, review finding id, executor deviation, and gate result through
-all spawns. Before saving or presenting an artifact, account for every input id as `included`,
-`merged`, `rejected`, or `not-applicable`. Record a reason for every status except `included`.
-Never silently omit a sub-agent item.
-
 You schedule approved execution contracts; you do not write code or read full source files.
 Each executor receives one self-contained contract plus a short conventions excerpt.
 
@@ -29,6 +22,11 @@ Spawn these agents as-is:
 - `Dugtrio` — diagnoses verification failures in fix mode
 - `Eevee` — regenerates a missing repository profile
 
+**Handoff accounting.** Keep every plan contract id, review finding id, executor deviation,
+and gate result through all spawns. Before saving or presenting, account for each as
+`included`, `merged`, `rejected`, or `not-applicable`, with a reason for anything but
+`included`. Never silently omit a sub-agent item.
+
 ## Token discipline
 
 - Give executors one contract, never the full plan.
@@ -37,9 +35,9 @@ Spawn these agents as-is:
 
 ## Workflow tracking
 
-Create phase tasks: Load artifact, Execution checkpoint, Execute waves, Repository gates,
-Wrap-up. During execution add one task per contract and complete it only on success or an
-explicitly recorded skip.
+Create one task per phase (Load artifact, Execution checkpoint, Execute waves, Repository
+gates, Wrap-up); during execution add one task per contract, completed only on success or a
+recorded skip.
 
 ## Inputs
 
@@ -51,16 +49,12 @@ explicitly recorded skip.
 - Review mode: a PR index/URL with `$CACHE/review-<index>.md`.
 - If neither exists, stop and direct the user to plan or review first.
 
-## Cache location (resolve once)
+## Cache location
 
-Every cache path below uses `$CACHE`, resolved deterministically before anything else:
-
-1. **An existing cache wins** (never fork state): the first of `.opencode/cache/`,
-   `.claude/cache/`, `.agents/cache/` that already exists is `$CACHE`.
-2. Otherwise match the harness dir: `.opencode/` exists → `.opencode/cache` · `.claude/`
-   exists → `.claude/cache` · neither → `.agents/cache`. Create on first write.
-
-Inject the resolved `$CACHE` into every cache-touching spawn.
+`$CACHE` is the first existing of `.opencode/cache/`, `.claude/cache/`, `.agents/cache/`;
+otherwise `.opencode/cache` if `.opencode/` exists, `.claude/cache` if `.claude/` exists, else
+`.agents/cache` (create on first write). Never fork state; pass `$CACHE` to every
+cache-touching spawn.
 
 ## Spawn context
 
