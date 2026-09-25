@@ -463,6 +463,72 @@ test("every orchestrator accounts for delegated output", () => {
   );
 });
 
+test("orchestrators retain explicit safety gates after prompt compression", () => {
+  // Arrange
+  const guardrails = [
+    {
+      command: "review-orchestrator",
+      source: read("commands/review-orchestrator.md"),
+      requirements: [
+        { name: "delta is the default scope", pattern: /`delta` \(default\)/ },
+        {
+          name: "publishing is never automatic",
+          pattern: /Never auto-publish/,
+        },
+        {
+          name: "publishing needs an explicit reply",
+          pattern: /explicit reply/,
+        },
+      ],
+    },
+    {
+      command: "feedback-orchestrator",
+      source: read("commands/feedback-orchestrator.md"),
+      requirements: [
+        {
+          name: "feedback changes wait for approval",
+          pattern: /Nothing is edited, posted, or resolved before it/,
+        },
+      ],
+    },
+    {
+      command: "implement-orchestrator",
+      source: read("commands/implement-orchestrator.md"),
+      requirements: [
+        {
+          name: "plan execution needs explicit approval",
+          pattern: /Execute this plan[\s\S]*wait for explicit approval/,
+        },
+      ],
+    },
+    {
+      command: "verify-orchestrator",
+      source: read("commands/verify-orchestrator.md"),
+      requirements: [
+        {
+          name: "shared environments require opt-in mutations",
+          pattern:
+            /scenarios are skipped unless explicitly allowed — never assume a shared environment is\s+disposable/,
+        },
+      ],
+    },
+  ];
+
+  // Act
+  const missing = guardrails.flatMap(({ command, requirements, source }) =>
+    requirements
+      .filter(({ pattern }) => !pattern.test(source))
+      .map(({ name }) => `${command}: ${name}`),
+  );
+
+  // Assert
+  assert.deepEqual(
+    missing,
+    [],
+    "every orchestrator must preserve its explicit safety gate",
+  );
+});
+
 test("installed Opus agents use the current model generation", () => {
   // Arrange
   const agent = "mewtwo";
