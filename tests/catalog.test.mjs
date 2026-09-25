@@ -439,8 +439,8 @@ test("installed Opus agents use the current model generation", () => {
   );
 
   // Assert
-  assert.match(opencodeAgent, /^model: github-copilot\/claude-opus-5$/m);
-  assert.match(githubAgent, /^model: claude-opus-5$/m);
+  assert.match(opencodeAgent, /^model: github-copilot\/claude-opus-5\.5$/m);
+  assert.match(githubAgent, /^model: claude-opus-5\.5$/m);
 });
 
 test("OpenCode providers map every capability tier", () => {
@@ -459,7 +459,7 @@ test("OpenCode providers map every capability tier", () => {
     {
       provider: "claude",
       agent: "mewtwo",
-      model: "anthropic/claude-opus-5",
+      model: "anthropic/claude-opus-5-5",
     },
     {
       provider: "openai",

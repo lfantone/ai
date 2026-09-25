@@ -28,12 +28,12 @@ const MODEL_MAP = {
     copilot: {
       haiku: "github-copilot/claude-haiku-4.5",
       sonnet: "github-copilot/claude-sonnet-5",
-      opus: "github-copilot/claude-opus-5",
+      opus: "github-copilot/claude-opus-5.5",
     },
     claude: {
       haiku: "anthropic/claude-haiku-4-5",
       sonnet: "anthropic/claude-sonnet-5",
-      opus: "anthropic/claude-opus-5",
+      opus: "anthropic/claude-opus-5-5",
     },
     openai: {
       haiku: "openai/gpt-5.4-mini",
@@ -44,7 +44,7 @@ const MODEL_MAP = {
   github: {
     haiku: "claude-haiku-4.5",
     sonnet: "claude-sonnet-5",
-    opus: "claude-opus-5",
+    opus: "claude-opus-5.5",
   },
   codex: {
     haiku: "gpt-5.6-luna",

@@ -32,7 +32,7 @@ valid ids.
 | ------ | --------------------------------- | ---------------------------- | ---------------------------- |
 | haiku  | `github-copilot/claude-haiku-4.5` | `anthropic/claude-haiku-4-5` | `openai/gpt-5.4-mini`        |
 | sonnet | `github-copilot/claude-sonnet-5`  | `anthropic/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
-| opus   | `github-copilot/claude-opus-5`    | `anthropic/claude-opus-5`    | `openai/gpt-5.6-sol`         |
+| opus   | `github-copilot/claude-opus-5.5`  | `anthropic/claude-opus-5-5`  | `openai/gpt-5.6-sol`         |
 
 ## Agent properties
 
