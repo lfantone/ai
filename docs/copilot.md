@@ -37,7 +37,7 @@ GitHub Copilot uses its native model ids; valid ids are listed under `model` in
 | ------ | ------------------ |
 | haiku  | `claude-haiku-4.5` |
 | sonnet | `claude-sonnet-5`  |
-| opus   | `claude-opus-5`    |
+| opus   | `claude-opus-5.5`  |
 
 ## Tools mapping
 
