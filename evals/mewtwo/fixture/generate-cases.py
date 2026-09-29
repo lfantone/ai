@@ -2,7 +2,7 @@
 """Regenerate the mewtwo-* cases.
 
 A synthetic TypeScript PR implements the shared TK-412 plan
-(../../magneton/fixture/plan-TK-412.md). Each fire case is a variant of the PR's new-file
+(plan-TK-412.md, alongside this script). Each fire case is a variant of the PR's new-file
 contents; the unified diff is produced with difflib so hunk headers are real, and every
 grader line number is derived from the new-file text (asserted unique). Re-run after edits.
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SUITE = HERE.parent
-PLAN = (SUITE.parent / "magneton" / "fixture" / "plan-TK-412.md").read_text()
+PLAN = (HERE / "plan-TK-412.md").read_text()
 
 
 def section(md: str, number: int) -> str:
@@ -327,7 +327,7 @@ runs: 3
 ---
 """
 
-REVIEW = """Review this pull request delta with a sub-agent: correctness, ticket coverage, and repository conventions. Do not review it yourself. There is no checkout and no DIFF_PATH in this environment; the full diff is inline in the brief and is the only source. Return the sub-agent's output verbatim and nothing else. It must start with a `## Ticket coverage` section (one line per acceptance criterion: covered / partial / MISSING) and then give findings, each as its own block:
+REVIEW = """Review this pull request delta with a sub-agent: correctness, ticket coverage, and repository conventions. Do not review it yourself. There is no checkout in this environment; the full diff is inline in the brief and is the only source. Return the sub-agent's output verbatim and nothing else. It must start with a `## Ticket coverage` section (one line per acceptance criterion: covered / partial / MISSING) and then give findings, each as its own block:
 
 ````text
 ### [<must-fix|recommended|cosmetic>] <short title> — <file>:<new-file line(s)>
