@@ -6,28 +6,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# --- Name map (canonical → Norse). Order matters: longest-overlapping first (Mewtwo > Mew).
+# --- Name map (canonical → Norse). Order matters: longest-overlapping first.
 MAP=(
-  "Slowbro:Odin"
   "Mewtwo:Mimir"
-  "Meowth:Hermod"
-  "Mew:Bragi"
-  "Slowpoke:Ratatoskr"
-  "Kadabra:Huginn"
-  "Eevee:Muninn"
-  "Growlithe:Heimdall"
-  "Dugtrio:Kraken"
-  "Alakazam:Tyr"
-  "Porygon:Urd"
-  "Magneton:Skuld"
-  "Magnemite:Verdandi"
-  "Machop:Brokkr"
   "Machoke:Sindri"
-  "Machamp:Volund"
-  "Abra:Skadi"
+  "Machop:Brokkr"
   "Ditto:Loki"
-  "Hypno:Forseti"
-  "Meowth:Hermod"
 )
 
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
@@ -51,7 +35,7 @@ done
 perl -pi -e "$subs" $FILES
 
 # --- 3. Prose: the naming convention itself --------------------------------------------
-perl -CSD -0777 -pi -e 's/- \*\*Names are Generation I Pok\x{e9}mon only\*\*.*?follows the same rule\./- **Names come from Norse mythology.** Pick a figure whose myth matches the role \x{2014} the\n  ravens gather, the Norns verify, the smiths execute; families map onto model tiers. The\n  orchestrator persona in a command follows the same rule./s' AGENTS.md
+perl -CSD -0777 -pi -e 's/- \*\*Names are Generation I Pok\x{e9}mon only\*\*.*?follows the same rule\./- **Names come from Norse mythology.** Pick a figure whose myth matches the role \x{2014} the\n  smiths execute (Brokkr \x{2192} Sindri), the wise one reviews, the trickster imitates users.\n  Commands carry no persona; any future one follows the same rule./s' AGENTS.md
 # shellcheck disable=SC2086
 perl -CSD -pi -e 's/named after a Pok\x{e9}mon/named after a figure from Norse mythology/g; s/\bPok\x{e9}mon\b/Norse mythology/g' $FILES
 

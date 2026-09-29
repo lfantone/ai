@@ -2,8 +2,8 @@
 .opencode/
 node_modules/
 
-# Runtime cache written when this catalog is deployed as a project's .agents/ dir
-cache/
+# Workflow state if the commands run in this repo
+.agents/work/
 
 # claude plugin eval reports (embed fixture text)
 evals/results/

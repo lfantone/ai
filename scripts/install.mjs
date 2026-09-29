@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Catalog installer — builds the canonical agents/commands/skills for a harness and
- * installs them project-wise or globally. Zero dependencies.
+ * installs them project-wise or globally. A global install also maintains the
+ * instructions/AGENTS.md block in the harness's user-level instructions file.
+ * Zero dependencies.
  *
  *   ./scripts/install.mjs --harness <opencode|github|claude|codex> [options]
  *
@@ -56,26 +58,12 @@ const MODEL_MAP = {
 // color and temperature live in the canonical agent frontmatter (self-contained files —
 // no name-keyed maps here, so renames/rebrands can never orphan them).
 
-// Pokémon → Norse. Order matters: longest-overlapping first (Mewtwo before Mew).
+// Pokémon → Norse. Order matters: longest-overlapping first.
 const NORSE = [
-  ["Slowbro", "Odin"],
   ["Mewtwo", "Mimir"],
-  ["Meowth", "Hermod"],
-  ["Mew", "Bragi"],
-  ["Slowpoke", "Ratatoskr"],
-  ["Kadabra", "Huginn"],
-  ["Eevee", "Muninn"],
-  ["Growlithe", "Heimdall"],
-  ["Dugtrio", "Kraken"],
-  ["Alakazam", "Tyr"],
-  ["Magneton", "Skuld"],
-  ["Magnemite", "Verdandi"],
-  ["Machop", "Brokkr"],
   ["Machoke", "Sindri"],
-  ["Machamp", "Volund"],
-  ["Abra", "Skadi"],
+  ["Machop", "Brokkr"],
   ["Ditto", "Loki"],
-  ["Hypno", "Forseti"],
 ];
 
 // Where things land, per harness × scope. {p} = project dir, {h} = home.
@@ -120,6 +108,51 @@ const TARGETS = {
   },
 };
 
+// User-level instructions file per harness; global installs only — a project owns its own.
+const INSTRUCTIONS = {
+  opencode: "{h}/.config/opencode/AGENTS.md",
+  github: "{h}/.copilot/copilot-instructions.md",
+  claude: "{h}/.claude/CLAUDE.md",
+  codex: "{h}/.codex/AGENTS.md",
+};
+const BLOCK_BEGIN = "<!-- ai-catalog-begin -->";
+const BLOCK_END = "<!-- ai-catalog-end -->";
+
+// Names earlier catalog versions installed and this one no longer ships (from git history,
+// both naming sets). Every install removes them from its target dirs, which also clears
+// installs that predate the manifest. Current names in the other naming set are derived.
+const RETIRED = {
+  agents: [
+    ...["abra", "alakazam", "dugtrio", "eevee", "espeon", "growlithe", "hypno"],
+    ...[
+      "kadabra",
+      "machamp",
+      "magnemite",
+      "magneton",
+      "meowth",
+      "mew",
+      "pichu",
+    ],
+    ...["pikachu", "porygon", "porygon2", "raichu", "slowpoke"],
+    ...["bragi", "forseti", "heimdall", "hermod", "huginn", "kraken", "muninn"],
+    ...["ratatoskr", "skadi", "skuld", "tyr", "urd", "verdandi", "volund"],
+  ],
+  commands: [
+    ...["feedback-orchestrator", "implement-orchestrator", "plan-orchestrator"],
+    ...["review-orchestrator", "verify-orchestrator"],
+  ],
+  skills: ["repo-learnings"],
+};
+// The retired orchestrators' project caches. Matched by exact artifact name, never by
+// directory: a harness may keep its own files there (e.g. ~/.claude/cache).
+const RETIRED_CACHE_DIRS = [
+  ".agents/cache",
+  ".claude/cache",
+  ".opencode/cache",
+];
+const RETIRED_CACHE_ENTRY =
+  /^\.?(plan|review|feedback|impl-brief)-.+\.md$|^(repo-profile|security-profile|learnings)\.md$|^(tmp|bruno)$/;
+
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
@@ -162,12 +195,14 @@ if (harness === "opencode" && !MODEL_MAP.opencode[provider]) {
 const modelMap =
   harness === "opencode" ? MODEL_MAP.opencode[provider] : MODEL_MAP[harness];
 
-const dirs = Object.fromEntries(
-  Object.entries(TARGETS[harness][scope]).map(([k, v]) => [
-    k,
-    v.replace("{p}", projectDir).replace("{h}", os.homedir()),
-  ]),
-);
+const resolveDirs = (h) =>
+  Object.fromEntries(
+    Object.entries(TARGETS[h][scope]).map(([k, v]) => [
+      k,
+      v.replace("{p}", projectDir).replace("{h}", os.homedir()),
+    ]),
+  );
+const dirs = resolveDirs(harness);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -345,6 +380,26 @@ for (const d of skills) {
   emitDir(path.join(ROOT, "skills", d.name), path.join(dirs.skills, d.name));
 }
 
+// Kept out of `writes` on purpose: the manifest cleanup must never delete a file the user owns.
+const instructionsFile =
+  scope === "global"
+    ? INSTRUCTIONS[harness].replace("{h}", os.homedir())
+    : undefined;
+const withBlock = (existing, block) => {
+  const wrapped = `${BLOCK_BEGIN}\n${block.trim()}\n${BLOCK_END}`;
+  const start = existing.indexOf(BLOCK_BEGIN);
+  const end = existing.indexOf(BLOCK_END);
+  if (start >= 0 && end > start)
+    return (
+      existing.slice(0, start) +
+      wrapped +
+      existing.slice(end + BLOCK_END.length)
+    );
+  return existing.trim()
+    ? `${existing.trimEnd()}\n\n${wrapped}\n`
+    : `${wrapped}\n`;
+};
+
 // ---------------------------------------------------------------------------
 // Install
 // ---------------------------------------------------------------------------
@@ -360,25 +415,6 @@ const isWithinInstallRoot = (installRoot, file) => {
   return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
 };
 const currentWrites = writes.map((write) => write.file);
-// Pre-manifest catalog releases installed Porygon without recording its path.
-// Match its unique body markers so unrelated agents remain untouched.
-const legacyPorygon = path.join(
-  dirs.agents,
-  `porygon${harness === "github" ? ".agent.md" : ".md"}`,
-);
-const legacyWrites = (() => {
-  try {
-    const content = fs.readFileSync(legacyPorygon, "utf8");
-    return content.includes("# Porygon — Verify line anchors") &&
-      content.includes(
-        "Mechanical and precise. Your only job: make each finding's",
-      )
-      ? [legacyPorygon]
-      : [];
-  } catch {
-    return [];
-  }
-})();
 const installStates = installRoots.map((installRoot) => {
   const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
   let previousWrites = [];
@@ -400,23 +436,85 @@ const installStates = installRoots.map((installRoot) => {
     installRoot,
     manifestFile,
     current,
-    cleanup: [
-      ...new Set([
-        ...previousWrites,
-        ...current,
-        ...legacyWrites.filter((file) =>
-          isWithinInstallRoot(installRoot, file),
-        ),
-      ]),
-    ],
+    cleanup: [...new Set([...previousWrites, ...current])],
   };
 });
+
+// lstat, not exists: the old deploy scripts left symlinks that now dangle.
+const present = (file) => {
+  try {
+    fs.lstatSync(file);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const bothSets = (name) => [...new Set([name, norsify(name)])];
+// Where a catalog with these names would sit in harness `h` at this scope.
+const catalogPaths = (
+  h,
+  { agents: agentNames, commands: commandNames, skills: skillNames },
+) => {
+  const d = resolveDirs(h);
+  const suffix = h === "github" ? ".agent.md" : h === "codex" ? ".toml" : ".md";
+  return [
+    ...agentNames.map((name) => path.join(d.agents, name + suffix)),
+    // github/codex install commands as skills
+    ...commandNames.map((name) =>
+      d.commands
+        ? path.join(d.commands, `${name}.md`)
+        : path.join(d.skills, name),
+    ),
+    ...skillNames.map((name) => path.join(d.skills, name)),
+  ];
+};
+const everShipped = {
+  agents: [
+    ...RETIRED.agents,
+    ...agents.map((f) => f.replace(/\.md$/, "")),
+  ].flatMap(bothSets),
+  commands: [
+    ...RETIRED.commands,
+    ...commands.map((f) => f.replace(/\.md$/, "")),
+  ],
+  skills: RETIRED.skills,
+};
+const retiredCaches =
+  scope === "project"
+    ? RETIRED_CACHE_DIRS.map((dir) => path.join(projectDir, dir))
+    : [];
+const written = new Set(currentWrites);
+const stale = [
+  // This harness: every name ever shipped that this install doesn't write.
+  ...catalogPaths(harness, everShipped),
+  // Other harnesses: retired names only; their current entries belong to their own install.
+  ...Object.keys(TARGETS)
+    .filter((h) => h !== harness)
+    .flatMap((h) => catalogPaths(h, RETIRED)),
+  ...retiredCaches
+    .filter((dir) => fs.existsSync(dir))
+    .flatMap((dir) =>
+      fs
+        .readdirSync(dir)
+        .filter((entry) => RETIRED_CACHE_ENTRY.test(entry))
+        .map((entry) => path.join(dir, entry)),
+    ),
+].filter((file) => !written.has(file) && present(file));
 
 for (const { cleanup } of installStates) {
   for (const file of cleanup) {
     if (dryRun) console.log(`would remove ${file}`);
     else fs.rmSync(file, { recursive: true, force: true });
   }
+}
+for (const file of stale) {
+  if (dryRun) console.log(`would remove stale ${file}`);
+  else fs.rmSync(file, { recursive: true, force: true });
+}
+// A cache dir the old workflow emptied goes too; one holding anything else stays.
+for (const dir of retiredCaches) {
+  if (dryRun || !fs.existsSync(dir) || fs.readdirSync(dir).length) continue;
+  fs.rmdirSync(dir);
 }
 
 let files = 0;
@@ -443,6 +541,22 @@ for (const w of writes) {
   files++;
 }
 
+if (instructionsFile) {
+  const block = fs.readFileSync(
+    path.join(ROOT, "instructions/AGENTS.md"),
+    "utf8",
+  );
+  const existing = fs.existsSync(instructionsFile)
+    ? fs.readFileSync(instructionsFile, "utf8")
+    : "";
+  if (dryRun)
+    console.log(`would update ${BLOCK_BEGIN} block in ${instructionsFile}`);
+  else {
+    fs.mkdirSync(path.dirname(instructionsFile), { recursive: true });
+    fs.writeFileSync(instructionsFile, withBlock(existing, block));
+  }
+}
+
 if (!dryRun) {
   for (const { installRoot, manifestFile, current } of installStates) {
     fs.mkdirSync(installRoot, { recursive: true });
@@ -460,6 +574,10 @@ console.log(
       ? `\n  commands: ${commands.length} → ${dirs.commands}`
       : `\n  command-skills: ${commands.length} → ${dirs.skills}/<name>/`) +
     `\n  skills: ${skills.length} → ${dirs.skills}` +
+    (instructionsFile ? `\n  instructions: block → ${instructionsFile}` : "") +
+    (stale.length
+      ? `\n  stale: ${stale.length} ${dryRun ? "to remove" : "removed"}`
+      : "") +
     `\n  ${dryRun ? "planned" : "installed"}: ${files || writes.length} entries`,
 );
 if (harness === "github" && scope === "global") {
