@@ -17,6 +17,45 @@ const agentFiles = () =>
     .readdirSync(path.join(ROOT, "agents"))
     .filter((file) => file.endsWith(".md"));
 
+const commandFiles = () =>
+  fs
+    .readdirSync(path.join(ROOT, "commands"))
+    .filter((file) => file.endsWith(".md"));
+
+const skillDirs = () =>
+  fs
+    .readdirSync(path.join(ROOT, "skills"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+
+// Frontmatter object + body text of a catalog Markdown file.
+const splitDoc = (source) => {
+  const match = source.match(/^---\n([\s\S]*?)\n---\n?/);
+  return {
+    frontmatter: match ? yaml.load(match[1]) : {},
+    body: source.slice(match?.[0].length ?? 0),
+  };
+};
+
+// lstat-based: a dangling symlink still counts as present.
+const isLink = (file) => {
+  try {
+    return fs.lstatSync(file).isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
+
+const wordCount = (text) => text.split(/\s+/).filter(Boolean).length;
+
+// Size budgets: descriptions load in every session, bodies on every activation.
+const BUDGETS = {
+  agents: { words: 300, description: 160 },
+  commands: { words: 450, description: 160 },
+  skills: { words: 600, description: 300 },
+};
+const INSTRUCTIONS_WORD_BUDGET = 120;
+
 // The YAML parse error for a file's `---` frontmatter, or null when it parses cleanly.
 const frontmatterError = (filePath) => {
   const block = fs
@@ -65,15 +104,10 @@ test("GitHub agents with MCP dependencies do not receive a restrictive tool list
   const project = install("github");
 
   // Assert
-  const slowpoke = fs.readFileSync(
-    path.join(project, ".github/agents/slowpoke.agent.md"),
-    "utf8",
-  );
   const ditto = fs.readFileSync(
     path.join(project, ".github/agents/ditto.agent.md"),
     "utf8",
   );
-  assert.doesNotMatch(slowpoke, /^tools:/m);
   assert.doesNotMatch(ditto, /^tools:/m);
 });
 
@@ -91,10 +125,10 @@ test("installer refreshes catalog entries without removing external entries", ()
   // Assert
   assert.equal(fs.readFileSync(external, "utf8"), "external");
   assert.equal(
-    fs.existsSync(path.join(project, ".opencode/agents/abra.md")),
+    fs.existsSync(path.join(project, ".opencode/agents/ditto.md")),
     false,
   );
-  assert.ok(fs.existsSync(path.join(project, ".opencode/agents/skadi.md")));
+  assert.ok(fs.existsSync(path.join(project, ".opencode/agents/loki.md")));
 });
 
 test("Codex installs TOML agents and skills in Codex discovery roots", () => {
@@ -116,25 +150,25 @@ test("Codex installs TOML agents and skills in Codex discovery roots", () => {
   assert.match(machop, /^sandbox_mode = "workspace-write"$/m);
   assert.match(machop, /^developer_instructions = /m);
   assert.doesNotMatch(machop, /^---$/m);
-  const growlithe = fs.readFileSync(
-    path.join(project, ".codex/agents/growlithe.toml"),
+  const machoke = fs.readFileSync(
+    path.join(project, ".codex/agents/machoke.toml"),
     "utf8",
   );
-  assert.match(growlithe, /^model = "gpt-5.6-terra"$/m);
-  const alakazam = fs.readFileSync(
-    path.join(project, ".codex/agents/alakazam.toml"),
+  assert.match(machoke, /^model = "gpt-5.6-terra"$/m);
+  const mewtwo = fs.readFileSync(
+    path.join(project, ".codex/agents/mewtwo.toml"),
     "utf8",
   );
-  assert.match(alakazam, /^model = "gpt-5.6-sol"$/m);
+  assert.match(mewtwo, /^model = "gpt-5.6-sol"$/m);
   assert.ok(
     fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
   );
-  const planSkill = fs.readFileSync(
-    path.join(project, ".agents/skills/plan-orchestrator/SKILL.md"),
+  const ticketSkill = fs.readFileSync(
+    path.join(project, ".agents/skills/ticket/SKILL.md"),
     "utf8",
   );
-  assert.match(planSkill, /^name: plan-orchestrator$/m);
-  assert.doesNotMatch(planSkill, /\$ARGUMENTS/);
+  assert.match(ticketSkill, /^name: ticket$/m);
+  assert.doesNotMatch(ticketSkill, /\$ARGUMENTS/);
   assert.equal(fs.existsSync(path.join(project, ".codex/commands")), false);
 });
 
@@ -188,7 +222,8 @@ test("installer removes legacy Porygon agents without removing external agents",
         ({ legacy, external, review }) =>
           fs.existsSync(legacy) ||
           !fs.existsSync(external) ||
-          fs.readFileSync(review, "utf8").includes("Porygon"),
+          // the retired orchestrator that spawned Porygon goes with it
+          fs.existsSync(review),
       )
       .map(({ harness }) => harness),
     [],
@@ -198,20 +233,7 @@ test("installer removes legacy Porygon agents without removing external agents",
 test("code-aware agents receive LSP access and navigation guidance", () => {
   // Arrange
   const project = install("opencode");
-  const names = [
-    "abra",
-    "alakazam",
-    "dugtrio",
-    "eevee",
-    "growlithe",
-    "hypno",
-    "machamp",
-    "machoke",
-    "machop",
-    "meowth",
-    "mew",
-    "mewtwo",
-  ];
+  const names = ["machoke", "machop", "mewtwo"];
 
   // Act
   const rows = names.map((name) => ({
@@ -250,34 +272,6 @@ test("GitHub agents with portable tools retain a least-privilege tool list", () 
   assert.match(machop, /^tools: \[.*"read".*"write".*\]$/m);
 });
 
-test("precise and fast plan authors install under both naming sets", () => {
-  // Arrange + Act
-  const pokemonProject = install("github");
-  const norseProject = install("github", "norse");
-
-  // Assert
-  assert.ok(
-    fs.existsSync(path.join(pokemonProject, ".github/agents/meowth.agent.md")),
-  );
-  assert.ok(
-    fs.existsSync(path.join(norseProject, ".github/agents/hermod.agent.md")),
-  );
-});
-
-test("all harnesses install the fast plan author", () => {
-  // Arrange + Act
-  const claudeProject = install("claude");
-  const opencodeProject = install("opencode");
-
-  // Assert
-  assert.ok(
-    fs.existsSync(path.join(claudeProject, ".claude/agents/meowth.md")),
-  );
-  assert.ok(
-    fs.existsSync(path.join(opencodeProject, ".opencode/agents/meowth.md")),
-  );
-});
-
 test("canonical agent identities are unique and match their filenames", () => {
   // Arrange
   const files = agentFiles();
@@ -296,7 +290,7 @@ test("canonical agent identities are unique and match their filenames", () => {
   const colors = rows.map((row) => row.color);
 
   // Assert — offenders are collected into a list and that list must be empty.
-  assert.equal(files.length, 17);
+  assert.equal(files.length, 4);
   assert.deepEqual(
     rows
       .filter((row) => row.name?.toLowerCase() !== row.file)
@@ -352,183 +346,6 @@ test("canonical and installed agent frontmatter is valid YAML", () => {
   assert.deepEqual(failures, [], "every agent frontmatter must parse as YAML");
 });
 
-test("plan contracts distinguish exact and guided execution", () => {
-  // Arrange
-  const mew = read("agents/mew.md");
-  const meowth = read("agents/meowth.md");
-  const magneton = read("agents/magneton.md");
-  const plan = read("commands/plan-orchestrator.md");
-
-  // Assert
-  assert.match(mew, /Execution class.*exact/i);
-  assert.match(mew, /replace_exact/);
-  assert.match(mew, /Failure policy/i);
-  assert.match(meowth, /Execution class.*guided/i);
-  assert.match(plan, /--fast/);
-  assert.match(plan, /Meowth/);
-  assert.doesNotMatch(plan, /Approve this direction/);
-  assert.match(magneton, /^model: haiku$/m);
-  assert.doesNotMatch(magneton, /grep -c -F/);
-});
-
-test("implementation routes execution classes and preserves failed gate state", () => {
-  // Arrange
-  const implement = read("commands/implement-orchestrator.md");
-  const verify = read("commands/verify-orchestrator.md");
-  const machop = read("agents/machop.md");
-  const machoke = read("agents/machoke.md");
-
-  // Assert
-  assert.match(implement, /Execution class.*exact/i);
-  assert.match(implement, /Execution class.*guided/i);
-  assert.match(implement, /implementation-failed/);
-  assert.match(verify, /implementation-failed/);
-  assert.match(verify, /verification-failed.*re-verification/is);
-  assert.match(verify, /diagnostic run.*preserves.*original status/is);
-  assert.match(machop, /complete.*Before/i);
-  assert.match(machoke, /guided/i);
-});
-
-test("review shares an ephemeral diff and refreshes material profile changes", () => {
-  // Arrange
-  const review = read("commands/review-orchestrator.md");
-  const kadabra = read("agents/kadabra.md");
-  const mewtwo = read("agents/mewtwo.md");
-  const alakazam = read("agents/alakazam.md");
-
-  // Assert
-  assert.match(review, /\$CACHE\/tmp\/review-<index>-<head_sha>\.diff/);
-  assert.match(review, /delete.*temporary diff/i);
-  assert.match(review, /material change/i);
-  assert.match(kadabra, /DIFF_PATH/);
-  assert.match(mewtwo, /DIFF_PATH/);
-  assert.match(alakazam, /DIFF_PATH/);
-});
-
-test("orchestrators omit stale memory and redundant verification stages", () => {
-  // Arrange
-  const commandFiles = fs
-    .readdirSync(path.join(ROOT, "commands"))
-    .filter((file) => file.endsWith(".md"));
-
-  // Act
-  const commandCorpus = commandFiles
-    .map((file) => read(`commands/${file}`))
-    .join("\n");
-  const agentCorpus = agentFiles()
-    .map((file) => read(`agents/${file}`))
-    .join("\n");
-  const plan = read("commands/plan-orchestrator.md");
-  const installedProject = install("opencode");
-
-  // Assert
-  assert.doesNotMatch(
-    commandCorpus,
-    /repo-learnings|learnings\.md|\bPorygon\b/,
-  );
-  assert.doesNotMatch(
-    agentCorpus,
-    /repo-learnings|learnings\.md|\bPorygon\b|relevant learnings/i,
-  );
-  assert.doesNotMatch(plan, /\bDugtrio\b/);
-  assert.equal(fs.existsSync(path.join(ROOT, "agents/porygon.md")), false);
-  assert.equal(
-    fs.existsSync(path.join(ROOT, "skills/repo-learnings/SKILL.md")),
-    false,
-  );
-  assert.equal(
-    fs.existsSync(
-      path.join(installedProject, ".opencode/skills/repo-learnings"),
-    ),
-    false,
-  );
-});
-
-test("every orchestrator accounts for delegated output", () => {
-  // Arrange
-  const commandFiles = fs
-    .readdirSync(path.join(ROOT, "commands"))
-    .filter((file) => file.endsWith(".md"));
-
-  // Act
-  const missing = commandFiles.filter(
-    (file) => !/Never silently omit a sub-agent/.test(read(`commands/${file}`)),
-  );
-
-  // Assert
-  assert.deepEqual(
-    missing,
-    [],
-    "every orchestrator must account for every delegated item",
-  );
-});
-
-test("orchestrators retain explicit safety gates after prompt compression", () => {
-  // Arrange
-  const guardrails = [
-    {
-      command: "review-orchestrator",
-      source: read("commands/review-orchestrator.md"),
-      requirements: [
-        { name: "delta is the default scope", pattern: /`delta` \(default\)/ },
-        {
-          name: "publishing is never automatic",
-          pattern: /Never auto-publish/,
-        },
-        {
-          name: "publishing needs an explicit reply",
-          pattern: /explicit reply/,
-        },
-      ],
-    },
-    {
-      command: "feedback-orchestrator",
-      source: read("commands/feedback-orchestrator.md"),
-      requirements: [
-        {
-          name: "feedback changes wait for approval",
-          pattern: /Nothing is edited, posted, or resolved before it/,
-        },
-      ],
-    },
-    {
-      command: "implement-orchestrator",
-      source: read("commands/implement-orchestrator.md"),
-      requirements: [
-        {
-          name: "plan execution needs explicit approval",
-          pattern: /Execute this plan[\s\S]*wait for explicit approval/,
-        },
-      ],
-    },
-    {
-      command: "verify-orchestrator",
-      source: read("commands/verify-orchestrator.md"),
-      requirements: [
-        {
-          name: "shared environments require opt-in mutations",
-          pattern:
-            /scenarios are skipped unless explicitly allowed — never assume a shared environment is\s+disposable/,
-        },
-      ],
-    },
-  ];
-
-  // Act
-  const missing = guardrails.flatMap(({ command, requirements, source }) =>
-    requirements
-      .filter(({ pattern }) => !pattern.test(source))
-      .map(({ name }) => `${command}: ${name}`),
-  );
-
-  // Assert
-  assert.deepEqual(
-    missing,
-    [],
-    "every orchestrator must preserve its explicit safety gate",
-  );
-});
-
 test("installed Opus agents use the current model generation", () => {
   // Arrange
   const agent = "mewtwo";
@@ -555,12 +372,12 @@ test("OpenCode providers map every capability tier", () => {
   const expected = [
     {
       provider: "claude",
-      agent: "magneton",
+      agent: "machop",
       model: "anthropic/claude-haiku-4-5",
     },
     {
       provider: "claude",
-      agent: "dugtrio",
+      agent: "machoke",
       model: "anthropic/claude-sonnet-5",
     },
     {
@@ -570,12 +387,12 @@ test("OpenCode providers map every capability tier", () => {
     },
     {
       provider: "openai",
-      agent: "magneton",
+      agent: "machop",
       model: "openai/gpt-5.4-mini",
     },
     {
       provider: "openai",
-      agent: "dugtrio",
+      agent: "machoke",
       model: "openai/gpt-5.3-codex-spark",
     },
     {
@@ -641,5 +458,316 @@ test("installer rejects unsupported provider combinations", () => {
       .map(({ harness }) => harness),
     [],
     "unsupported model families must fail with an actionable error",
+  );
+});
+
+test("catalog text stays within its size budgets", () => {
+  // Arrange
+  const docs = [
+    ...agentFiles().map((file) => ({ kind: "agents", id: `agents/${file}` })),
+    ...commandFiles().map((file) => ({
+      kind: "commands",
+      id: `commands/${file}`,
+    })),
+    ...skillDirs().map((dir) => ({
+      kind: "skills",
+      id: `skills/${dir}/SKILL.md`,
+    })),
+  ];
+
+  // Act
+  const rows = docs.map(({ kind, id }) => {
+    const { frontmatter, body } = splitDoc(read(id));
+    return {
+      id,
+      kind,
+      words: wordCount(body),
+      description: String(frontmatter.description ?? "").length,
+    };
+  });
+  const instructionsWords = wordCount(read("instructions/AGENTS.md"));
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter((row) => row.words > BUDGETS[row.kind].words)
+      .map((row) => `${row.id}: ${row.words} words`),
+    [],
+    "every body must fit its word budget",
+  );
+  assert.deepEqual(
+    rows
+      .filter(
+        (row) =>
+          row.description === 0 ||
+          row.description > BUDGETS[row.kind].description,
+      )
+      .map((row) => `${row.id}: ${row.description} chars`),
+    [],
+    "every description must exist and fit its character budget",
+  );
+  assert.ok(
+    instructionsWords <= INSTRUCTIONS_WORD_BUDGET,
+    `instructions/AGENTS.md: ${instructionsWords} words`,
+  );
+});
+
+test("commands reference only shipped agents and every agent has a caller", () => {
+  // Arrange
+  const agents = agentFiles().map(
+    (file) => splitDoc(read(`agents/${file}`)).frontmatter.name,
+  );
+
+  // Act — backticked capitalised words in a command are agent spawns.
+  const referenced = [
+    ...new Set(
+      commandFiles().flatMap((file) =>
+        [...read(`commands/${file}`).matchAll(/`([A-Z][a-z]+)`/g)].map(
+          (match) => match[1],
+        ),
+      ),
+    ),
+  ];
+
+  // Assert
+  assert.deepEqual(
+    referenced.filter((name) => !agents.includes(name)),
+    [],
+    "every agent a command names must exist in agents/",
+  );
+  assert.deepEqual(
+    agents.filter((name) => !referenced.includes(name)),
+    [],
+    "every agent must be spawned by some command",
+  );
+});
+
+test("global install maintains one instructions block and keeps user content", () => {
+  // Arrange
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ai-instructions-home-"));
+  const file = path.join(home, ".claude/CLAUDE.md");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, "# Mine\n\nKeep me.\n");
+  const options = { global: true, env: { HOME: home } };
+
+  // Act — installing twice must replace the block, not append a second one.
+  install("claude", "pokemon", undefined, undefined, options);
+  install("claude", "pokemon", undefined, undefined, options);
+  const content = fs.readFileSync(file, "utf8");
+
+  // Assert
+  assert.match(content, /^# Mine\n\nKeep me\.\n/);
+  assert.equal(content.split("<!-- ai-catalog-begin -->").length - 1, 1);
+  assert.ok(content.includes(read("instructions/AGENTS.md").trim()));
+});
+
+test("project installs leave instruction files to the project", () => {
+  // Arrange + Act
+  const project = install("claude");
+
+  // Assert
+  assert.equal(fs.existsSync(path.join(project, "CLAUDE.md")), false);
+  assert.equal(fs.existsSync(path.join(project, ".claude/CLAUDE.md")), false);
+});
+
+test("installs remove retired catalog entries even without a manifest", () => {
+  // Arrange — a pre-manifest install: retired names, a kept agent under the other naming
+  // set, a dangling symlink from the old deploy scripts, and one external agent.
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-retired-"));
+  const at = (relative) => path.join(project, ".opencode", relative);
+  const seed = (relative) => {
+    fs.mkdirSync(path.dirname(at(relative)), { recursive: true });
+    fs.writeFileSync(at(relative), "old");
+  };
+  seed("agents/abra.md");
+  seed("agents/brokkr.md");
+  seed("agents/cavecrew-builder.md");
+  seed("commands/plan-orchestrator.md");
+  seed("skills/repo-learnings/SKILL.md");
+  fs.symlinkSync(
+    "../../.agents/.opencode/agents/kadabra.md",
+    at("agents/kadabra.md"),
+  );
+
+  // Act
+  install("opencode", "pokemon", undefined, project);
+
+  // Assert
+  const leftovers = [
+    "agents/abra.md",
+    "agents/brokkr.md",
+    "agents/kadabra.md",
+    "commands/plan-orchestrator.md",
+    "skills/repo-learnings",
+  ].filter((relative) => fs.existsSync(at(relative)) || isLink(at(relative)));
+  assert.deepEqual(leftovers, [], "retired entries must be removed");
+  assert.equal(
+    fs.readFileSync(at("agents/cavecrew-builder.md"), "utf8"),
+    "old",
+  );
+  assert.ok(fs.existsSync(at("agents/machop.md")));
+});
+
+test("project installs clear the retired workflow caches and keep unknown files", () => {
+  // Arrange
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-caches-"));
+  const seed = (relative) => {
+    const file = path.join(project, relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "old");
+  };
+  seed(".claude/cache/plan-IE-1.md");
+  seed(".claude/cache/.plan-draft.md");
+  seed(".claude/cache/review-7.md");
+  seed(".claude/cache/impl-brief-7-abc.md");
+  seed(".claude/cache/tmp/review-7-abc.diff");
+  seed(".claude/cache/notes.txt");
+  seed(".agents/cache/repo-profile.md");
+
+  // Act
+  install("claude", "pokemon", undefined, project);
+
+  // Assert
+  assert.deepEqual(fs.readdirSync(path.join(project, ".claude/cache")), [
+    "notes.txt",
+  ]);
+  assert.equal(fs.existsSync(path.join(project, ".agents/cache")), false);
+});
+
+test("global installs leave the harness's own cache alone", () => {
+  // Arrange
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ai-global-cache-"));
+  const cache = path.join(home, ".claude/cache");
+  fs.mkdirSync(cache, { recursive: true });
+  fs.writeFileSync(path.join(cache, "changelog.md"), "harness");
+  fs.writeFileSync(path.join(cache, "plan-notes.md"), "harness");
+
+  // Act
+  install("claude", "pokemon", undefined, undefined, {
+    global: true,
+    env: { HOME: home },
+  });
+
+  // Assert
+  assert.deepEqual(fs.readdirSync(cache).sort(), [
+    "changelog.md",
+    "plan-notes.md",
+  ]);
+});
+
+test("an install clears retired names from every harness's dirs", () => {
+  // Arrange — retired entries under two other harnesses, plus a current opencode agent
+  // that belongs to that harness's own install.
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-cross-harness-"));
+  const seed = (relative) => {
+    const file = path.join(project, relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "old");
+  };
+  seed(".opencode/agents/abra.md");
+  seed(".opencode/agents/machop.md");
+  seed(".github/agents/tyr.agent.md");
+  seed(".github/skills/plan-orchestrator/SKILL.md");
+
+  // Act
+  install("claude", "pokemon", undefined, project);
+
+  // Assert
+  assert.deepEqual(
+    [
+      ".opencode/agents/abra.md",
+      ".github/agents/tyr.agent.md",
+      ".github/skills/plan-orchestrator",
+    ].filter((relative) => fs.existsSync(path.join(project, relative))),
+    [],
+    "retired names must go from every harness",
+  );
+  assert.equal(
+    fs.readFileSync(path.join(project, ".opencode/agents/machop.md"), "utf8"),
+    "old",
+  );
+});
+
+test("commands and the reviewer retain their explicit safety gates", () => {
+  // Arrange
+  const guardrails = [
+    {
+      file: "commands/ticket.md",
+      requirements: [
+        { name: "the plan waits for approval", pattern: /Plan — HARD STOP/ },
+        { name: "no edits before approval", pattern: /No edits before that/ },
+        { name: "never commits", pattern: /Never commit\./ },
+      ],
+    },
+    {
+      file: "commands/verify.md",
+      requirements: [
+        {
+          name: "environment is confirmed",
+          pattern: /Environment — HARD STOP/,
+        },
+        {
+          name: "shared environments are not disposable",
+          pattern: /Never assume a shared environment is disposable/,
+        },
+        { name: "ticket posts need a yes", pattern: /only on an explicit yes/ },
+      ],
+    },
+    {
+      file: "commands/ship.md",
+      requirements: [
+        { name: "commit needs a yes", pattern: /Commit on yes/ },
+        { name: "push needs a yes", pattern: /origin HEAD` on yes/ },
+        { name: "PR creation needs a yes", pattern: /create on yes/ },
+        { name: "merge stays manual", pattern: /Merging stays with the user/ },
+      ],
+    },
+    {
+      file: "commands/pr-review.md",
+      requirements: [
+        {
+          name: "publishing waits for a reply",
+          pattern: /Publish — HARD STOP/,
+        },
+        { name: "human threads stay open", pattern: /never human threads/ },
+      ],
+    },
+    {
+      file: "commands/pr-feedback.md",
+      requirements: [
+        { name: "verdicts are confirmed", pattern: /Checkpoint — HARD STOP/ },
+        {
+          name: "replies are confirmed",
+          pattern: /Reply and resolve — HARD STOP/,
+        },
+        {
+          name: "disagreements stay open",
+          pattern: /Never resolve `disagree`/,
+        },
+      ],
+    },
+    {
+      file: "agents/mewtwo.md",
+      requirements: [
+        {
+          name: "review stays on the delta",
+          pattern: /Never audit untouched code/,
+        },
+      ],
+    },
+  ].map((guardrail) => ({ ...guardrail, source: read(guardrail.file) }));
+
+  // Act
+  const missing = guardrails.flatMap(({ file, requirements, source }) =>
+    requirements
+      .filter(({ pattern }) => !pattern.test(source))
+      .map(({ name }) => `${file}: ${name}`),
+  );
+
+  // Assert
+  assert.deepEqual(
+    missing,
+    [],
+    "every workflow must keep its explicit safety gates",
   );
 });
