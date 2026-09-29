@@ -1,7 +1,5 @@
 # Codex setup
 
-Install catalog for [Codex](https://developers.openai.com/codex/) with harness installer:
-
 ```bash
 ./scripts/install.mjs --harness codex --project <project>   # → <project>/.codex/ + .agents/
 ./scripts/install.mjs --harness codex --global              # → ~/.codex/ + ~/.agents/
@@ -12,13 +10,11 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## What's installed
 
-- **Agents** — Codex TOML agent files under `.codex/agents/` or `~/.codex/agents/`.
-  Canonical Markdown frontmatter and instructions are converted during installation.
-- **Skills** — catalog skills under `.agents/skills/` or `~/.agents/skills/`, matching Codex
-  skill discovery paths.
-- **Orchestrators** — command workflows exposed as regular skills, because Codex has no
-  command directory. Invoke them with `$plan-orchestrator`, `$implement-orchestrator`, and
-  related skill names.
-
-Codex persistent instructions remain user- or repository-owned `AGENTS.md` files; installer
-does not overwrite them.
+- **Agents**: TOML agent files in `.codex/agents/` or `~/.codex/agents/`, converted from the
+  canonical Markdown.
+- **Skills**: catalog skills in `.agents/skills/` or `~/.agents/skills/`.
+- **Commands**: exposed as skills because Codex has no command directory — invoke them as
+  `$ticket`, `$verify`, `$ship`, `$pr-review`, `$pr-feedback`.
+- **Global only:** the `instructions/AGENTS.md` block in `~/.codex/AGENTS.md`, between
+  `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`. A repository's own `AGENTS.md` is
+  never touched.

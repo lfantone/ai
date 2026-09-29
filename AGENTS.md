@@ -11,6 +11,7 @@ as possible.**
 skills/<skill-name>/SKILL.md   # one skill per dir; dir name == frontmatter `name`
 agents/<agent-name>.md         # one spawnable agent definition per file
 commands/<command-name>.md     # one invokable workflow per file
+instructions/AGENTS.md         # global defaults block, installed on --global only
 ```
 
 ## Writing a skill
@@ -59,6 +60,20 @@ Rules that keep token cost low:
   exhaustive docs. Leave rare edge cases to the agent's judgment.
 - **Bundle repeated logic as a script** in `scripts/` instead of re-describing it in
   prose the agent must re-derive each run.
+- **Stay inside the size budgets** — `npm test` fails past them:
+
+  | File                     | Description | Body                |
+  | ------------------------ | ----------- | ------------------- |
+  | agent, command           | ≤ 160 chars | ≤ 300 / ≤ 450 words |
+  | skill                    | ≤ 300 chars | ≤ 600 words         |
+  | `instructions/AGENTS.md` | —           | ≤ 120 words         |
+
+- **Each fact lives once.** Forge detection and payloads live only in `gh-cli` / `tea-cli`;
+  commands run in the main session, where skills load, so they point at the skill.
+- **No boilerplate:** no persona, task-tracking, handoff-accounting, or cache-resolution
+  prose. Short imperative bullets; at most one short example.
+- **Prefer bullets to wide tables** in agent-facing files — Prettier pads every table cell,
+  and the padding is paid in tokens.
 
 ## Quality practices
 
@@ -86,8 +101,8 @@ agent's system prompt:
 
 ```markdown
 ---
-name: Kadabra # spawnable display name (file: kadabra.md — lowercase filename)
-description: What the agent produces and when to spawn it. # how the orchestrator picks it
+name: Machop # spawnable display name (file: machop.md — lowercase filename)
+description: What the agent produces and when to spawn it. # how the caller picks it
 model: haiku | sonnet | opus # pin the model deliberately — the intelligence tier is a design choice
 reasoning: low | medium | high # optional thinking-effort hint (add a `# escalate to xhigh …` note where it applies)
 temperature: 0.1 # optional — pin ONLY for deterministic executors/verifiers
@@ -100,9 +115,13 @@ tools: Bash, Read, Write # least-privilege list of what it may use
 
 Conventions:
 
+- **Add an agent only when isolation pays:** a fresh perspective (review), bulky tool
+  output kept out of the main session (browser snapshots), or parallel file-disjoint work.
+  Never split work that needs shared context — every handoff loses information, and the
+  caller pays to relay it.
 - **Names are Generation I Pokémon only** (the original 151). Pick one whose flavor
-  matches the role; evolution lines map nicely onto model tiers or agent families. The
-  orchestrator persona in a command follows the same rule.
+  matches the role; evolution lines map nicely onto model tiers (Machop → Machoke).
+  Commands carry no persona; any future one follows the same rule.
 - **Self-contained.** A sub-agent only sees its spawn prompt — it does **not** auto-load
   skills or other agents. So an agent that uses a skill embeds the few exact commands it
   needs and cites the skill as the source of truth (don't make the caller paste them).
@@ -120,9 +139,8 @@ Conventions:
 - Any output-format contract the agent must follow (e.g. a review finding template) lives
   in the agent's own body, so a command that spawns it can assemble the output as-is.
 
-These files are only spawnable once the catalog is deployed as a project's `.agents/`
-directory (see the README's Installation section), so an agent resolves to
-`.agents/agents/<name>.md`; this repo is the source catalog.
+Agents are spawnable once installed into a harness (see the README's Installation
+section); this repo is the source catalog.
 
 ## Writing a command
 
@@ -132,31 +150,34 @@ A command is a single Markdown file in `commands/` defining an invokable workflo
 ```markdown
 ---
 description: One line — what the command does and when to run it. # shown in the command list
-argument-hint: [ticket id] [PR url] # optional, documents expected arguments
+argument-hint: "[ticket id] [PR url]" # optional; quote it — brackets are YAML syntax
 ---
 
 <the workflow prompt; reference user input with `$ARGUMENTS`>
 ```
 
-- Keep the same token discipline: a command that fans work out to sub-agents should
-  have those agents return **compact briefs**, not raw files/diffs/tickets, and should
-  never read whole files into its own context.
-- **Prefer spawning a defined agent** from `agents/` over inlining a persona in the
-  command. Reference it by name; don't restate its instructions or override its model.
-- **The orchestrator persona is the one exception.** The command body _is_ the top-level
-  agent definition (e.g. Slowbro): it runs in the main conversation, so it can hard-stop
-  and wait for user replies — something a spawned agent cannot do. Entries in `agents/`
-  are workers that run to completion and return a brief; never move the orchestrator
-  there.
+- **A command is the prompt you'd otherwise retype.** It runs in the main session, which
+  does the work itself; it is not an orchestrator relaying briefs.
+- **Hard stops live in commands.** Only the main session can wait for the user; spawned
+  agents run to completion and return a compact result.
+- **Spawn a defined agent by name** (in backticks, e.g. `Mewtwo` — `npm test` checks every
+  name resolves and every agent has a caller). Don't restate its instructions or override
+  its model.
 - **Sub-agents don't auto-load skills or agent files.** A defined agent carries what it
   needs in its own body; if you spawn an ad-hoc sub-agent instead, paste the exact
   commands/instructions it needs into the spawn prompt.
 
+## Retiring an entry
+
+When you delete or rename an agent, command, or skill, add its old name (and its Norse name,
+if it had one) to `RETIRED` in `scripts/install.mjs`. Installs remove those names from every
+target dir, so users with pre-manifest installs don't keep stale copies.
+
 ## Validate before committing
 
 ```bash
-skills-ref validate ./skills/<skill-name>   # skills
-npm test                                     # catalog invariants (node --test)
+uvx --from skills-ref agentskills validate ./skills/<skill-name>   # skills
+npm test                                                            # catalog invariants + budgets
 ```
 
 ## Writing tests
@@ -199,7 +220,7 @@ All commits must follow [Conventional Commits](https://www.conventionalcommits.o
 - **type** — one of `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `build`, `ci`,
   `perf`, `style`, `revert`.
 - **scope** (optional) — the affected area, e.g. `skills`, `agents`, `commands`, or a
-  specific name like `review-orchestrator`.
+  specific name like `pr-review`.
 - **description** — imperative mood, lowercase, no trailing period.
 - **breaking changes** — append `!` after the type/scope and/or add a
   `BREAKING CHANGE:` footer.

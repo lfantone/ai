@@ -1,90 +1,45 @@
 # The workflow
 
-Three commands move one plan artifact through delivery; review is independent:
+One session does the work. Commands are the prompts you would otherwise retype; the few
+agents exist only where a separate context pays for itself.
 
 ```text
-/plan-orchestrator → /implement-orchestrator → /verify-orchestrator
-       │                       │                         │
-       └────────── <cache>/plan-<ticket>.md ────────────┘
-
-/review-orchestrator → reviews a PR and may feed review mode
+/ticket ──► /verify ──► /ship ──► /pr-review ⇄ /pr-feedback ──► merge ──► /verify <env>
 ```
 
-## Design premise
+| Step                          | Command                    | What happens                                                                                                                          |
+| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–3 Ticket, investigate, plan | `/ticket <key\|url\|text>` | Brief via `ticket-context`, read-only investigation, dependencies raised, options when contested, plan saved — **stops for approval** |
+| 4–5 Implement, unit tests     | (same session)             | Mirrors prior art, unit tests always, project gates; optional parallel `Machop`/`Machoke` workers for 3+ file-disjoint chunks         |
+| 5 Manual / integration checks | `/verify local`            | Scenarios from the ACs; API via `bruno-cli`, web via `Ditto`; PASS/FAIL per AC                                                        |
+| 6 Commit and PR               | `/ship`                    | Branch, Conventional Commit, push, PR linked to the ticket — each step confirmed                                                      |
+| 7 Review                      | `/pr-review [PR]`          | `Mewtwo` in a fresh context: coverage, correctness, security; incremental on reruns; publishing confirmed                             |
+| 8–9 Iterate                   | `/pr-feedback <PR>`        | Judge each unresolved thread at head, fix valid ones, draft replies; replies and resolutions confirmed                                |
+| 10 Merge                      | —                          | Yours                                                                                                                                 |
+| 11 Verify in an environment   | `/verify <env URL>`        | Same scenarios against a shared environment; non-mutating unless allowed                                                              |
 
-Spend judgment in planning, then route each implementation contract to the cheapest capable
-executor:
+## Why this shape
 
-- Precise plans contain exact contracts for Haiku/GPT-mini.
-- Fast plans may contain guided contracts for Sonnet.
-- Complete preconditions are checked during authoring and immediately before editing.
-- Structural plan verification is separate from PR line-anchor verification.
+The earlier plan → implement → verify orchestrators relayed briefs and exact edit
+contracts between 17 agents. Measured on real runs, the orchestrator's own context cost far
+more than the workers saved (39.7M vs 0.4M tokens in one planning run), retries dominated
+(16 Sonnet retries vs 7 Haiku runs on one ticket), and about half the agents scored no
+better than an unguided model in ablation evals. Plain plan mode kept winning because one
+model holds the investigation, design, and code together.
 
-No runtime scripts or patch applicators are shipped. The installed agents use their harness's
-native read/edit/shell tools under the plan's explicit boundaries.
+So an agent is added only when isolation pays:
 
-## Recommended cycle
+- **Fresh perspective:** Mewtwo reviews without the implementer's reasoning in its context.
+- **Bulky output:** Ditto keeps browser snapshots out of the main session.
+- **Parallel work:** Machop (Haiku) and Machoke (Sonnet) take file-disjoint chunks.
 
-### 1. Plan
+## State
 
-Use `/plan-orchestrator <ticket>` for the default precise path or add `--fast` for shorter,
-more adaptive planning. Requirements are normalized before code mapping. You approve the
-complete structurally valid plan; there is no intermediate direction-approval stop.
+Per project, in `.agents/work/` (added to `.git/info/exclude`):
 
-### 2. Implement
+- `<slug>/plan.md`: brief, approved plan, AC ticks, verification log.
+- `<slug>/bruno/`: the API scenarios as a re-runnable Bruno collection.
+- `pr-<index>/review.md`: `reviewed_sha` and findings, which drive incremental re-review.
 
-`/implement-orchestrator <ticket>` shows exact/guided costs, executes file-disjoint waves,
-and runs repository gates. Exact contracts route to Machop; guided contracts route to
-Machoke. Preconditions, not the saved HEAD alone, decide whether a contract applies.
-
-### 3. Verify
-
-`/verify-orchestrator <ticket>` derives runtime scenarios from acceptance criteria and checks
-the running UI/API/CLI. It proceeds normally only from `implemented`; repository-gate failures
-return to implementation remediation.
-
-### 4. Review
-
-`/review-orchestrator <PR>` fetches the active diff once, shares the temporary file between
-both reviewers, persists findings, then deletes the raw diff. Re-reviews validate profile
-freshness before reuse and review only the new delta.
-
-### 5. Feedback
-
-`/feedback-orchestrator <PR>` works the other direction — incoming comments from human
-reviewers: every unresolved thread is judged against head (a moved line never
-auto-invalidates a concern), straightforward fixes apply inline, bigger ones defer to
-implement/plan, and replies/resolutions post only after you approve each. Disagreements
-are replied to, never resolved by the agent.
-
-## Artifact lifecycle
-
-```text
-draft → approved
-          ├─→ partially-implemented
-          ├─→ implementation-failed → implemented
-          └─→ implemented → verified | verification-failed
-```
-
-Only Implement grants `implemented`; only Verify grants `verified`. A verification fix keeps
-`verification-failed` until runtime scenarios are rerun.
-
-## Failure routes
-
-| Symptom                          | Route                                    |
-| -------------------------------- | ---------------------------------------- |
-| Exact precondition drift         | Machoke retry or exact re-spec           |
-| Guided contract lacks a decision | Exact re-spec or plan revision           |
-| Contract is wrong locally        | Mew → Magneton structural check → Machop |
-| Design/scope is wrong            | Plan revision                            |
-| Repository gate fails            | `implementation-failed` remediation      |
-| Runtime scenario fails           | Verify fix loop or plan revision         |
-
-## Durable and temporary state
-
-Durable cache files include profiles, plans/ledgers, review findings, and Bruno collections.
-Raw review/planning diffs live only under `$CACHE/tmp` during the active run; they are deleted
-after durable state is written and cleaned on the next run after interruption.
-
-Outward actions remain gated: ticket/PR posting, commits, pushes, and PR creation each require
-explicit approval.
+Coding standards come from each project's own `AGENTS.md` / `CLAUDE.md`. Personal defaults
+come from the global instructions block (`instructions/AGENTS.md`).

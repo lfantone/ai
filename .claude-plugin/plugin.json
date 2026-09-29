@@ -1,7 +1,7 @@
 {
   "name": "ai",
   "version": "0.1.0",
-  "description": "Pokémon-named agent catalog and skills for plan → implement → verify and review workflows, plus the gh-cli, tea-cli, and bruno-cli skills.",
+  "description": "Single-session ticket workflow: /ticket, /verify, /ship, /pr-review, /pr-feedback, with Mewtwo (review), Ditto (browser QA), Machop/Machoke (parallel workers), and the gh-cli, tea-cli, bruno-cli, ticket-context skills.",
   "author": { "name": "Luciano Fantone" },
   "license": "MIT"
 }
