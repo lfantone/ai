@@ -14,9 +14,11 @@ that package focused capabilities any agent can load on demand.
   [Agent Skills](https://agentskills.io/home) format, so they work across any
   skills-compatible agent (Claude Code, Cursor, Gemini CLI, OpenCode, Goose, and
   many others) rather than being tied to a single tool.
-- **Commands** — invokable prompts (slash commands) that drive a specific workflow
-  end to end, orchestrating agents and skills. Each is a Markdown file with
-  frontmatter (`description`, `argument-hint`) and takes arguments via `$ARGUMENTS`.
+- **Commands** — the prompts you'd otherwise retype (slash commands). The main session
+  follows them itself, spawning an agent only where isolation pays. Each is a Markdown
+  file with frontmatter (`description`, `argument-hint`) and takes `$ARGUMENTS`.
+- **Instructions** — `instructions/AGENTS.md`, a short block of personal working defaults
+  that a global install keeps in your harness's user-level instructions file.
 
 ## Skill format
 
@@ -48,6 +50,7 @@ AI/
 ├── agents/     # One Markdown file per agent (spawnable definition) — canonical
 ├── skills/     # One directory per skill (Agent Skills format)
 ├── commands/   # One Markdown file per command (invokable workflow) — canonical
+├── instructions/ # Global working-defaults block (installed on --global)
 ├── docs/       # Human-facing documentation
 ├── scripts/    # install.mjs (harness installer) + rebrand-norse.sh (for the non-Pokémon fans)
 └── README.md
@@ -81,9 +84,15 @@ git clone git@github.com:lfantone/ai.git && cd ai
 The installer **builds at install time** from the canonical catalog: per-harness
 frontmatter (models, permissions/tools, colors, reasoning effort), commands adapted to
 each harness's invocation style (OpenCode commands, Copilot/Codex command-skills, Claude
-commands), and skills copied as-is. Re-run it after pulling catalog updates. Runtime
-caches are created by the flows in the harness's own config dir (see
-[Code review › Caching](./docs/code-review.md#caching)).
+commands), and skills copied as-is. A `--global` install also writes the
+`instructions/AGENTS.md` block between `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`
+markers in the harness's user-level instructions file, leaving the rest of that file alone.
+Every install also removes what earlier catalog versions left behind in its target dirs:
+entries it no longer ships (including installs that predate the manifest, under either naming
+set) and, on project installs, the old orchestrators' `cache/` artifacts. Other tools' files
+stay. Preview with `--dry-run` — stale entries print as `would remove stale …`.
+Re-run it after pulling catalog updates. Workflow state lives in each project's
+`.agents/work/` (see [the workflow](./docs/workflow.md#state)).
 
 OpenCode defaults to GitHub Copilot models. Pass `--provider claude` or
 `--provider openai` to use direct Anthropic or OpenAI/Codex models. Claude Code, GitHub
@@ -102,14 +111,8 @@ token-efficiency practices.
 
 ## Documentation
 
-- [**The workflow**](./docs/workflow.md) — how precise/fast planning, contract-routed
-  implementation, verification, and review fit together. **Start here.**
-- [Code review](./docs/code-review.md) — the `/review-orchestrator` command.
-- [Feedback](./docs/feedback.md) — the `/feedback-orchestrator` command (work incoming
-  review comments).
-- [Implementation planning](./docs/plan.md) — precise (default) and `--fast` planning.
-- [Implementation execution](./docs/implement.md) — the `/implement-orchestrator` command.
-- [Verification / QA](./docs/verify.md) — the `/verify-orchestrator` command.
+- [**The workflow**](./docs/workflow.md) — `/ticket` → `/verify` → `/ship` →
+  `/pr-review` ⇄ `/pr-feedback`, and why there is no orchestrator. **Start here.**
 - [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.
 - [Copilot setup](./docs/copilot.md) — the generated `.github/agents/` config.
 - [Codex setup](./docs/codex.md) — the generated `.codex/agents/` and `.agents/skills/` config.

@@ -1,66 +1,42 @@
 # OpenCode setup
 
-Install the catalog for [OpenCode](https://opencode.ai) with the harness installer — it
-builds from the canonical `agents/` and `commands/` at install time, so there is nothing
-generated to drift:
-
 ```bash
 ./scripts/install.mjs --harness opencode --project <project>   # → <project>/.opencode/
 ./scripts/install.mjs --harness opencode --global              # → ~/.config/opencode/
 ./scripts/install.mjs --harness opencode --project <p> --names norse
-./scripts/install.mjs --harness opencode --project <p> --provider claude
-./scripts/install.mjs --harness opencode --project <p> --provider openai
+./scripts/install.mjs --harness opencode --project <p> --provider claude   # or openai
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## What's installed
 
-- **`agents/*.md`** — the 17 agents with OpenCode frontmatter: `mode: subagent`, a selected
-  provider `model`, and a `permission` object derived from each agent's canonical `tools` list
-  (least-privilege: `edit: allow` only for executors and cache-writers).
-- **`commands/*.md`** — the 5 orchestrators (`$ARGUMENTS` works as-is); harness terms are
-  mapped (`Agent tool` → `task tool`, `TaskCreate`/`TaskUpdate` → `todowrite`).
-- **`skills/`** — copied as-is: OpenCode reads the agentskills `SKILL.md` format natively.
+- **`agents/*.md`**: the 4 agents with `mode: subagent`, the provider's `model`, and a
+  `permission` object derived from each agent's canonical `tools` (`edit: allow` only for
+  the Machop/Machoke workers).
+- **`commands/*.md`**: the 5 commands; `$ARGUMENTS` works as-is.
+- **`skills/`**: copied as-is (OpenCode reads `SKILL.md` natively).
+- **Global only:** the `instructions/AGENTS.md` block in `~/.config/opencode/AGENTS.md`,
+  between `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`. Everything else in that
+  file is left alone.
 
 ## Model mapping
 
-Select provider with `--provider`; default is `copilot`. `opencode models <provider>` lists
-valid ids.
+`--provider` selects the column (default `copilot`); `opencode models <provider>` lists ids.
 
-| Tier   | Copilot model                     | Claude model                 | OpenAI/Codex model           |
+| Tier   | Copilot                           | Claude                       | OpenAI/Codex                 |
 | ------ | --------------------------------- | ---------------------------- | ---------------------------- |
 | haiku  | `github-copilot/claude-haiku-4.5` | `anthropic/claude-haiku-4-5` | `openai/gpt-5.4-mini`        |
 | sonnet | `github-copilot/claude-sonnet-5`  | `anthropic/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
 | opus   | `github-copilot/claude-opus-5.5`  | `anthropic/claude-opus-5-5`  | `openai/gpt-5.6-sol`         |
 
-## Agent properties
-
-All three ride through from the **canonical agent frontmatter** (self-contained files —
-no installer-side maps, so renames can never orphan them):
-
-- **`temperature: 0.1`** — pinned in the deterministic verifiers/executors (Machop,
-  Machoke, Magneton, Magnemite).
-- **`color`** — a unique hex per agent so the TUI shows at a glance who's working: the
-  Pokémon **type color, shaded by evolution stage/tier**. The Fighting executor ladder
-  darkens as it escalates (`#E57373` Machop → `#C03028` Machoke → `#8E1B12` Machamp),
-  the five Psychics get distinct shades (light Abra → dark Mewtwo), and the
-  Magnemite/Magneton pair splits its Electric/Steel dual type. Norse names inherit their
-  colors automatically (Mimir wears Mewtwo's purple).
-- **`reasoningEffort`** — the canonical `reasoning:` field, renamed to the provider
-  pass-through option (e.g. Mewtwo/Alakazam `high`, Machop/Magneton `low`).
-
-Considered and deliberately **unset**: `top_p` (don't tune it and `temperature`
-together), `hidden` (workers are `mode: subagent` already — keeping them `@`-able helps
-debugging), `textVerbosity` (provider-specific; the compact-brief discipline lives in the
-agent prompts, where it's portable). Any other frontmatter key passes through to the
-provider as a model option if you need one later.
+`temperature`, `color`, and `reasoning` (→ `reasoningEffort`) come from the canonical
+agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E57373` →
+Machoke `#C03028`); Norse names keep them.
 
 ## Notes
 
-- The installer **copies** into a real `.opencode/` — it merges with whatever OpenCode or
-  you already keep there and never symlinks the whole directory.
-- MCP-dependent agents (Ditto → Chrome DevTools, Slowpoke → Jira) need those MCP servers
-  configured in your `opencode.json`; their permissions deny `bash`/`edit`, so they can
-  only act through their MCPs.
-- Verify with `opencode` in the project: agents appear in the `@` menu, commands under `/`.
+- The installer copies into a real `.opencode/`. It removes entries it installed before
+  (`.ai-catalog-manifest.json`) plus retired catalog names; other tools' entries stay.
+- Ditto needs the Chrome DevTools MCP configured in `opencode.json`; `/ticket` needs the
+  Atlassian MCP for Jira keys.
