@@ -1,67 +1,49 @@
 ---
 name: tea-cli
-description: Write, fix, or explain `tea` commands for Gitea — head SHA, diff, files at a commit (base64 `.content`), reviews and unresolved comments, posting reviews with inline `suggestion` blocks (`new_position`), replying in and resolving threads. Use for any tea command, Gitea shell snippet or sub-agent prompt, or a script that parses tea output. Standardizes on `tea api` + `jq` (never the lossy `tea pr ls -o json`), Gitea 1.21 fields, and single-line suggestions.
+description: Write, fix, or explain `tea` commands for Gitea — PR head SHA, diff, files at a commit, reviews and unresolved comments, inline `suggestion` reviews, replies, resolving threads, opening PRs. Use for any tea command, Gitea snippet, sub-agent prompt, or script parsing tea output.
 ---
 
 # tea CLI — reliable Gitea access
 
-`tea` is the Gitea CLI. Its convenience output is **lossy for machines**, so this skill
-standardizes on the raw REST API + `jq`. Pinned to the target server **Gitea 1.21.11**
-(field names verified against its swagger).
+Standard: raw REST API + `jq`. Pinned to **Gitea 1.21.11** (fields verified against its
+swagger); `tea` 0.16.
 
 ## The one rule
 
-- **Structured data → `tea api <endpoint> | jq`.** Raw Gitea REST JSON is complete and
-  jq-clean. Extract with `jq -r`.
-- **Never parse `tea <subcommand> -o json` or `-f` output.** It is lossy — e.g.
-  `tea pr ls -o json` returns `head: null`, silently dropping the SHA. Those forms are
-  fine for _actions_ (`tea pr resolve`, `tea comment`) but not for reading data.
-- **Diff / patch → the text endpoint**, parsed as text (hunk headers), never jq:
-  `tea api repos/{owner}/{repo}/pulls/<index>.diff`
-- **Avoid python/awk/sed** unless a transform genuinely can't be done in jq.
-- Outside the repo dir, pass `--repo <owner>/<repo>` (or use full endpoint paths). The
-  Gitea swagger lives at the server root: `tea api https://<host>/swagger.v1.json`.
+- **Structured data → `tea api <endpoint> | jq -r`.**
+- **Never parse `tea <subcommand> -o json` or `-f`** — lossy (`tea pr ls -o json` returns
+  `head: null`). Those forms are fine for actions, not reads.
+- **Diff → the text endpoint**, never jq: `tea api repos/{owner}/{repo}/pulls/<index>.diff`.
+- Outside the repo, pass `--repo <owner>/<repo>`. Swagger:
+  `tea api https://<host>/swagger.v1.json`.
 
-## Endpoint + jq cheat-sheet
+## Cheat-sheet
 
 ```bash
 R="repos/{owner}/{repo}"
 
-# Head SHA (change-detection, commit_id, verification)
-tea api "$R/pulls/<index>" | jq -r '.head.sha'
-
-# PR metadata in one shot
+tea api "$R/pulls/<index>" | jq -r '.head.sha'                  # head SHA
 tea api "$R/pulls/<index>" \
-  | jq '{n:.number, title, state, mergeable,
-         base:.base.ref, head:.head.ref, sha:.head.sha,
-         labels:[.labels[].name]}'
+  | jq '{n:.number, title, state, base:.base.ref, head:.head.ref, sha:.head.sha}'
+tea api "$R/pulls/<index>.diff"                                 # diff (TEXT)
+tea api "$R/contents/<path>?ref=<sha>" | jq -r '.content' | base64 -d   # file at commit
 
-# The diff (TEXT, not JSON)
-tea api "$R/pulls/<index>.diff"
-
-# A file at a specific commit — contents are base64, must decode
-tea api "$R/contents/<path>?ref=<sha>" | jq -r '.content' | base64 -d
-
-# Review threads: list reviews, then each review's comments
+# Threads: list reviews, then each review's comments; unresolved = resolver == null
 tea api "$R/pulls/<index>/reviews" | jq -r '.[].id'
 tea api "$R/pulls/<index>/reviews/<review_id>/comments" \
-  | jq -r '.[] | select(.resolver == null)
-           | [.id, .path, .position,
-              (.body|gsub("\n";" ")|.[0:60])] | @tsv'
+  | jq '[.[] | select(.resolver == null)
+         | {id, path, line: (.position // .original_position), user: .user.login, body, diff_hunk}]'
 ```
 
-## Field reference (Gitea 1.21.11)
+## Field gotchas
 
-- **PR:** `.number`, `.title`, `.state`, `.mergeable`, `.base.ref`, `.head.ref`,
-  `.head.sha`, `.labels[].name`.
-- **Review comment (read):** `id`, `path`, `position` / `original_position` (real file
-  line numbers), `resolver` (**null ⇒ unresolved**), `body`, `diff_hunk`, `user`.
-- **File contents:** `.content` is **base64** — always `| base64 -d`.
+- `position` / `original_position` are real file line numbers, not diff offsets.
+- `resolver` null ⇒ unresolved. File `.content` is always base64.
 
 ## Posting a review with inline suggestions
 
-`tea comment` and `tea pr review` cannot attach line-level suggestions; `tea pr review`
-is interactive-only. Post a review via the API instead:
+`tea comment` and `tea pr review` cannot attach line suggestions (`tea pr review` is
+interactive-only). Use the API:
 
 ````bash
 tea api -X POST "repos/{owner}/{repo}/pulls/<index>/reviews" -d @- <<'JSON'
@@ -69,56 +51,36 @@ tea api -X POST "repos/{owner}/{repo}/pulls/<index>/reviews" -d @- <<'JSON'
   "commit_id": "<head sha>",
   "body": "<overall summary>",
   "comments": [
-    { "path": "<file>",
-      "new_position": <new-file line number>,
+    { "path": "<file>", "new_position": <new-file line>,
       "body": "<comment text>\n\n```suggestion\n<replacement>\n```" }
   ] }
 JSON
 ````
 
-- `new_position` = **new-file line number** (Gitea field `NewLineNum`, "comment to new
-  file line"). Not a diff offset — pass the actual file line.
-- `event` = `"COMMENT"` leaves suggestions without approving/blocking.
-- `commit_id` = head SHA, so comments anchor to the reviewed commit.
-- The POST response returns the created comments with their `id`s — capture them if you
-  need to resolve the threads later.
-- **Multi-line caveat:** Gitea 1.21's review API anchors each comment to a _single_ line
-  (`new_position`); there is no start/end range. A `suggestion` there replaces only that
-  one line. Post single-line replacements inline; handle multi-line fixes another way
-  (summary comment, or split into clean single-line suggestions).
+- `new_position` is the new-file line number (Gitea `NewLineNum`).
+- `event: "COMMENT"` neither approves nor blocks; `commit_id` pins the reviewed commit.
+- **Single line only:** 1.21 has no range, so a suggestion replaces one line. Put
+  multi-line fixes in the summary or split them into single-line suggestions.
+- The response returns created comment `id`s — keep them to resolve threads later.
+
+## Replying to a thread
+
+No reply endpoint in 1.21: post a COMMENT review with one comment at the thread's **same
+`path` + `new_position`** (no `body` needed at review level) — Gitea groups it into the
+thread. If that line no longer exists at head, use a PR-level `tea comment` quoting the
+thread.
 
 ## Actions
 
 ```bash
-# Plain (non-inline) PR/issue comment
-tea comment <index> "<body>"            # or: tea comment <index> -d @- <<'EOF' ... EOF
-
-# Resolve a review thread by comment id
-tea pr resolve <comment id>
+tea comment <index> "$body"                          # PR-level comment (no stdin form in 0.16)
+tea pr resolve <comment id>                          # resolve a thread
+tea pr create --title '<title>' --description-file - [--draft] <<'EOF'   # open a PR
+...
+EOF
 ```
 
-## Replying to a review thread
+Resolve a thread only when the issue is actually gone — never because a line moved. Skip
+threads whose `resolver` is set.
 
-Gitea 1.21 has no dedicated reply endpoint. Post a new COMMENT review with a comment at
-the **same `path` + `new_position`** as the thread — Gitea groups review comments by
-location, so it lands in the thread:
-
-```bash
-tea api -X POST "repos/{owner}/{repo}/pulls/<index>/reviews" -d @- <<'JSON'
-{ "event": "COMMENT",
-  "commit_id": "<head sha>",
-  "comments": [ { "path": "<thread path>", "new_position": <thread line>,
-                  "body": "<reply text>" } ] }
-JSON
-```
-
-If the thread's line no longer exists at head (outdated thread), fall back to a PR-level
-`tea comment` quoting the thread (`> original comment` + reply).
-
-Only resolve a thread when the underlying issue is actually gone — never just because a
-line moved. Skip threads whose `resolver` is already set.
-
-## Using this from sub-agents
-
-Sub-agents don't auto-load this skill — paste the exact command(s) they need from the
-cheat-sheet into their spawn prompt.
+Sub-agents don't load skills: paste the exact commands they need into the spawn prompt.

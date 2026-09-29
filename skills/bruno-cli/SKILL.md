@@ -1,20 +1,18 @@
 ---
 name: bruno-cli
-description: Author and run Bruno API collections via the `bru` CLI — turn verification scenarios into persistent, re-runnable .bru files with declarative assertions, execute them against an environment, and parse the JSON report deterministically. Use when verifying APIs end-to-end, building a QA collection for a ticket, or re-running API verification cheaply (locally or in CI).
+description: Author and run Bruno API collections with the `bru` CLI — scenarios as re-runnable .bru files with declarative asserts, run against an environment, JSON report parsed with jq. Use when verifying an API end to end, building a ticket's QA collection, or re-running API checks locally or in CI.
 ---
 
 # Bruno CLI — API verification as artifacts
 
-[Bruno](https://usebruno.com) stores API scenarios as plain-text `.bru` files — a
-collection is a folder you can commit, re-run, and hand to CI. Verified against
-**`@usebruno/cli` 3.5** (run via `npx --yes @usebruno/cli` when `bru` isn't installed).
+A collection is a folder of plain-text `.bru` files you can commit, re-run, and hand to CI.
+Verified against **`@usebruno/cli` 3.5** (`npx --yes @usebruno/cli` when `bru` is missing).
 
 ## The one rule
 
-Scenarios live as **`.bru` artifacts with declarative assertions**; runs produce a
-**JSON report parsed with `jq`**. Never parse the human table output, and never re-derive
-assertions in prose — the collection is the source of truth, so a re-verification costs
-one `bru run`, not a re-authoring.
+Scenarios live as `.bru` files with declarative assertions; runs produce a JSON report
+parsed with `jq`. Never parse the human table output or re-derive assertions in prose — a
+re-verification is one `bru run`.
 
 ## Collection scaffold
 
@@ -26,7 +24,7 @@ one `bru run`, not a re-authoring.
 └── v1-create-user.bru      # one request per scenario
 ```
 
-Request file (one per scenario; `seq` orders the run):
+One request file per scenario (`seq` orders the run):
 
 ```
 meta {
@@ -61,47 +59,38 @@ tests {
 }
 ```
 
-- `assert` = declarative checks (`res.status`, `res.body.<path>`; operators like `eq`,
-  `neq`, `contains`, `gt`). Prefer these; drop to a `tests` block (chai `expect`) only
-  for checks assert can't express.
-- Chain scenarios with `vars:post-response { userId: res.body.id }` then `{{userId}}`
-  in later requests.
-- Prefix a key with `~` to disable it without deleting.
+- `assert` covers `res.status` and `res.body.<path>` with `eq`, `neq`, `contains`, `gt`…;
+  use `tests` (chai `expect`) only for what assert can't express.
+- Chain with `vars:post-response { userId: res.body.id }`, then `{{userId}}`.
+- Prefix a key with `~` to disable it.
 
 ## Running
 
 ```bash
-bru run --env local --reporter-json report.json          # whole collection, in seq order
-bru run v1-create-user.bru --env local                   # single request
+bru run --env local --reporter-json report.json          # whole collection, seq order
+bru run v1-create-user.bru --env local                   # one request
 bru run <folder> -r --env local                          # a folder, recursive
 bru run --env local --env-var baseUrl=https://stage.example.com   # override a var
-bru run --tests-only --bail                              # only asserted requests; stop on first failure
+bru run --tests-only --bail                              # asserted requests only; stop on first failure
 ```
 
-Exit code is non-zero when anything fails — usable as a gate directly.
+A non-zero exit code means something failed — usable as a gate.
 
-## Parsing the report (verified structure)
+## Parsing the report
 
 ```bash
-jq '.[0].summary' report.json          # totalRequests/passed/failed, totalAssertions, totalTests…
+jq '.[0].summary' report.json
 jq '.[0].results[]
     | {req: .request.url, status: .response.status,
        asserts: [.assertionResults[]? | {lhs: .lhsExpr, status, error}],
        tests:   [.testResults[]?      | {desc: .description, status, error}]}' report.json
 ```
 
-Failures carry `status: "fail"` + an `error` message — report those lines as evidence,
-never the full response bodies.
+Report failing lines (`status: "fail"` + `error`) as evidence, never full response bodies.
 
 ## Gotchas
 
-- **v3 runs in Safe Mode by default** — scripts/tests cannot use npm packages or the
-  filesystem. Only pass `--sandbox=developer` if a test genuinely needs it.
-- `bru run` must execute **inside the collection folder** (where `bruno.json` lives).
-- Environment files are just `vars { … }` — no secrets in committed collections; inject
-  them at run time with `--env-var key=value`.
-
-## Using this from sub-agents
-
-Sub-agents don't auto-load this skill — paste the exact scaffold and command(s) they need
-from this file into their spawn prompt.
+- v3 runs in Safe Mode: scripts can't use npm packages or the filesystem. Pass
+  `--sandbox=developer` only when a test truly needs it.
+- `bru run` must execute inside the collection folder (where `bruno.json` lives).
+- No secrets in committed environment files — inject them with `--env-var key=value`.

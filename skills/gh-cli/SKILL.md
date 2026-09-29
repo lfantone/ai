@@ -1,83 +1,55 @@
 ---
 name: gh-cli
-description: Write, fix, or explain `gh` commands for GitHub — a pull request's head SHA, diff, or files at a commit, review comments, unresolved threads, posting reviews with inline `suggestion` blocks, replying in and resolving threads. Use for any gh command, GitHub shell snippet or sub-agent prompt, or a script that parses gh output; not for plain git or other forges. Standardizes on `gh api` + `--jq`, REST 2022-11-28 fields, `line`/`side` addressing, `--paginate`, and the GraphQL-only thread operations.
+description: Write, fix, or explain `gh` commands for GitHub — PR head SHA, diff, files at a commit, review comments, unresolved threads, inline `suggestion` reviews, replies, resolving threads, opening PRs. Use for any gh command, GitHub snippet, sub-agent prompt, or script parsing gh output; not plain git.
 ---
 
 # gh CLI — reliable GitHub access
 
-`gh` is the GitHub CLI. Its human-readable output is for humans, so this skill
-standardizes on the raw REST API + `jq` (same standard as the `tea-cli` skill for Gitea).
-Pinned to REST API version **2022-11-28** (gh's default). Verified against `gh` 2.93.
+Standard: raw REST API + `jq`, like `tea-cli` for Gitea. REST **2022-11-28** (gh's default);
+verified against `gh` 2.93.
 
 ## The one rule
 
-- **Structured data → `gh api <endpoint> --jq '<filter>'`.** Raw GitHub REST JSON is
-  complete and jq-clean. `gh api` has jq built in (`--jq`); pipe to standalone `jq` only
-  for transforms `--jq` can't do.
-- **Never parse the human output** of `gh pr view` / `gh pr list` etc. (`--json` with
-  explicit fields is acceptable for _actions'_ prechecks, but standardize reads on
-  `gh api` for complete objects).
-- **Diff / patch → text, never jq:** `gh pr diff <number>` (or the api with the diff
-  media type: `gh api -H "Accept: application/vnd.github.diff" repos/{owner}/{repo}/pulls/<number>`).
-- **Avoid python/awk/sed** unless a transform genuinely can't be done in jq.
-- `{owner}/{repo}` placeholders in `gh api` paths auto-resolve from the current repo's
-  git remote. Outside the repo dir, write them literally (`repos/acme/app/...`) and add
-  `-R <owner>/<repo>` to `gh` subcommands like `pr diff`/`pr comment`.
+- **Structured data → `gh api <endpoint> --jq '<filter>'`.** Pipe to standalone `jq` only for
+  transforms `--jq` can't do. Never parse the human output of `gh pr view` / `gh pr list`.
+- **Diff → text, never jq:** `gh pr diff <number>`.
+- `{owner}/{repo}` in `gh api` paths resolves from the current git remote. Outside the repo,
+  write paths literally (`repos/acme/app/...`) and add `-R <owner>/<repo>` to subcommands.
 
-## Endpoint + jq cheat-sheet
+## Cheat-sheet
 
 ```bash
 R="repos/{owner}/{repo}"
 
-# Head SHA (change-detection, commit_id, verification)
-gh api "$R/pulls/<number>" --jq '.head.sha'
-
-# PR metadata in one shot
+gh api "$R/pulls/<number>" --jq '.head.sha'                    # head SHA
 gh api "$R/pulls/<number>" \
-  --jq '{n:.number, title, state, mergeable,
-         base:.base.ref, head:.head.ref, sha:.head.sha,
-         labels:[.labels[].name]}'
+  --jq '{n:.number, title, state, base:.base.ref, head:.head.ref, sha:.head.sha}'
+gh pr diff <number>                                            # diff (TEXT)
+gh api -H "Accept: application/vnd.github.raw" "$R/contents/<path>?ref=<sha>"  # file at commit
 
-# The diff (TEXT, not JSON)
-gh pr diff <number>
-
-# A file at a specific commit — use the raw media type (no base64 dance)
-gh api -H "Accept: application/vnd.github.raw" "$R/contents/<path>?ref=<sha>"
-
-# All review comments on a PR (flat; threads linked via in_reply_to_id)
+# Review comments (flat; threads linked via in_reply_to_id)
 gh api "$R/pulls/<number>/comments" --paginate \
-  --jq '.[] | [.id, .path, .line // .original_line,
-               (.body|gsub("\n";" ")|.[0:60])] | @tsv'
+  --jq '.[] | [.id, .path, .line // .original_line, (.body|gsub("\n";" ")|.[0:60])] | @tsv'
 
-# Thread RESOLUTION is GraphQL-only (REST has no isResolved) — list unresolved threads:
+# Unresolved threads — resolution is GraphQL-only
 gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr=<number> -f query='
   query($owner:String!,$repo:String!,$pr:Int!){
     repository(owner:$owner,name:$repo){ pullRequest(number:$pr){
       reviewThreads(first:100){ nodes{
-        id isResolved path
-        comments(first:1){ nodes{ databaseId body } } } } } } }' \
-  --jq '.data.repository.pullRequest.reviewThreads.nodes[]
-        | select(.isResolved|not)'
+        id isResolved isOutdated path
+        comments(first:20){ nodes{ databaseId author{login} body createdAt } } } } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved|not)'
 ```
 
-## Field reference (REST 2022-11-28)
+## Field gotchas
 
-- **PR:** `.number`, `.title`, `.state`, `.mergeable`, `.base.ref`, `.head.ref`,
-  `.head.sha`, `.labels[].name`.
-- **Review comment (read):** `id` (REST/database id), `path`, `line` / `original_line`
-  (real new-file line numbers; `line` is null when the comment is outdated — fall back to
-  `original_line`), `side` (`RIGHT` = new file), `in_reply_to_id` (thread linkage),
-  `body`, `diff_hunk`, `user.login`.
-- **Resolution status lives only in GraphQL** (`reviewThreads.nodes.isResolved`, thread
-  `id` is a GraphQL node id — not the REST comment id; match threads to REST comments via
-  `comments.nodes.databaseId`).
-- **File contents:** default JSON wraps content in base64 — skip it with
-  `Accept: application/vnd.github.raw`.
+- Comment `line` is null once outdated — fall back to `original_line`. `side: RIGHT` = new
+  file.
+- A thread `id` is a GraphQL node id, not the REST comment id; match them via
+  `comments.nodes.databaseId`. `isOutdated` does not mean the concern is gone.
+- File contents default to base64 JSON — the raw media type above skips that.
 
 ## Posting a review with inline suggestions
-
-Post one review via the API (mirrors the `tea-cli` payload, with GitHub's `line`/`side`
-addressing — `position` is deprecated):
 
 ````bash
 gh api -X POST "repos/{owner}/{repo}/pulls/<number>/reviews" --input - <<'JSON'
@@ -85,43 +57,33 @@ gh api -X POST "repos/{owner}/{repo}/pulls/<number>/reviews" --input - <<'JSON'
   "commit_id": "<head sha>",
   "body": "<overall summary>",
   "comments": [
-    { "path": "<file>",
-      "line": <new-file line number>,
-      "side": "RIGHT",
+    { "path": "<file>", "line": <new-file line>, "side": "RIGHT",
       "body": "<comment text>\n\n```suggestion\n<replacement>\n```" }
   ] }
 JSON
 ````
 
-- `line` = **new-file line number** on `side: "RIGHT"`. Must be a line the diff touches.
-- `event` = `"COMMENT"` leaves suggestions without approving/blocking.
-- `commit_id` = head SHA, so comments anchor to the reviewed commit.
-- **Multi-line suggestions ARE supported** (unlike Gitea 1.21): add
-  `"start_line": <first line>, "start_side": "RIGHT"` and keep `line` as the last line;
-  the `suggestion` block then replaces the whole range.
-- The POST response returns the created comments with their `id`s — capture them if you
-  need to resolve the threads later.
+- `line` is a new-file line the diff touches (`position` is deprecated).
+- `event: "COMMENT"` neither approves nor blocks and requires the top-level `body`;
+  `commit_id` pins the reviewed commit.
+- Multi-line: add `"start_line": <first>, "start_side": "RIGHT"`; `line` stays the last line.
+- The response returns created comment `id`s — keep them to resolve threads later.
 
 ## Actions
 
 ```bash
-# Plain (non-inline) PR comment
-gh pr comment <number> --body "<body>"    # or: --body-file - <<'EOF' ... EOF
-
-# Reply INSIDE a review thread — the dedicated replies endpoint (REST id, not node id)
+gh pr comment <number> --body-file - <<'EOF'        # PR-level comment
+...
+EOF
 gh api -X POST "repos/{owner}/{repo}/pulls/<number>/comments/<comment_id>/replies" \
-  -f body='<reply text>'
-
-# Resolve a review thread — GraphQL only, needs the thread's GraphQL id
+  -f body='<reply>'                                  # reply in a thread (REST id)
 gh api graphql -F id='<thread node id>' -f query='
-  mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){
-    thread{ isResolved } } }'
+  mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread{ isResolved } } }'
+gh pr create --title '<title>' --body-file - [--draft] <<'EOF'   # open a PR
+...
+EOF
 ```
 
-Only resolve a thread when the underlying issue is actually gone — never just because a
-line moved. Skip threads already `isResolved: true`.
+Resolve a thread only when the issue is actually gone — never because a line moved.
 
-## Using this from sub-agents
-
-Sub-agents don't auto-load this skill — paste the exact command(s) they need from the
-cheat-sheet into their spawn prompt.
+Sub-agents don't load skills: paste the exact commands they need into the spawn prompt.
