@@ -771,3 +771,22 @@ test("commands and the reviewer retain their explicit safety gates", () => {
     "every workflow must keep its explicit safety gates",
   );
 });
+
+test("every agent installs under a Norse name with --names norse", () => {
+  // Arrange
+  const canonical = agentFiles().map((file) => file.replace(/\.md$/, ""));
+
+  // Act
+  const project = install("opencode", "norse");
+  const installed = fs
+    .readdirSync(path.join(project, ".opencode/agents"))
+    .map((file) => file.replace(/\.md$/, ""));
+
+  // Assert
+  assert.deepEqual(
+    installed.filter((name) => canonical.includes(name)),
+    [],
+    "every agent needs a NORSE entry in scripts/install.mjs",
+  );
+  assert.equal(installed.length, canonical.length);
+});

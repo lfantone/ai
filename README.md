@@ -52,7 +52,7 @@ AI/
 ├── commands/   # One Markdown file per command (invokable workflow) — canonical
 ├── instructions/ # Global working-defaults block (installed on --global)
 ├── docs/       # Human-facing documentation
-├── scripts/    # install.mjs (harness installer) + rebrand-norse.sh (for the non-Pokémon fans)
+├── scripts/    # install.mjs (harness installer; --names norse for the non-Pokémon fans)
 └── README.md
 ```
 
