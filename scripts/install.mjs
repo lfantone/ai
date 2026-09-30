@@ -29,12 +29,12 @@ const MODEL_MAP = {
   opencode: {
     copilot: {
       haiku: "github-copilot/claude-haiku-4.5",
-      sonnet: "github-copilot/claude-sonnet-5",
+      sonnet: "github-copilot/claude-sonnet-5.5",
       opus: "github-copilot/claude-opus-5.5",
     },
     claude: {
       haiku: "anthropic/claude-haiku-4-5",
-      sonnet: "anthropic/claude-sonnet-5",
+      sonnet: "anthropic/claude-sonnet-5-5",
       opus: "anthropic/claude-opus-5-5",
     },
     openai: {
@@ -45,7 +45,7 @@ const MODEL_MAP = {
   },
   github: {
     haiku: "claude-haiku-4.5",
-    sonnet: "claude-sonnet-5",
+    sonnet: "claude-sonnet-5.5",
     opus: "claude-opus-5.5",
   },
   codex: {
