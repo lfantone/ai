@@ -346,25 +346,56 @@ test("canonical and installed agent frontmatter is valid YAML", () => {
   assert.deepEqual(failures, [], "every agent frontmatter must parse as YAML");
 });
 
-test("installed Opus agents use the current model generation", () => {
-  // Arrange
-  const agent = "mewtwo";
+test("installed Sonnet and Opus agents use the current model generation", () => {
+  // Arrange — one agent per pinned tier, with the id each harness must emit
+  const expected = [
+    {
+      dir: ".opencode/agents",
+      suffix: ".md",
+      agent: "machoke",
+      model: "github-copilot/claude-sonnet-5.5",
+    },
+    {
+      dir: ".opencode/agents",
+      suffix: ".md",
+      agent: "mewtwo",
+      model: "github-copilot/claude-opus-5.5",
+    },
+    {
+      dir: ".github/agents",
+      suffix: ".agent.md",
+      agent: "machoke",
+      model: "claude-sonnet-5.5",
+    },
+    {
+      dir: ".github/agents",
+      suffix: ".agent.md",
+      agent: "mewtwo",
+      model: "claude-opus-5.5",
+    },
+  ];
 
   // Act
-  const opencodeProject = install("opencode");
-  const githubProject = install("github");
-  const opencodeAgent = fs.readFileSync(
-    path.join(opencodeProject, ".opencode/agents", `${agent}.md`),
-    "utf8",
-  );
-  const githubAgent = fs.readFileSync(
-    path.join(githubProject, ".github/agents", `${agent}.agent.md`),
-    "utf8",
-  );
+  const projects = {
+    ".opencode/agents": install("opencode"),
+    ".github/agents": install("github"),
+  };
+  const rows = expected.map((row) => ({
+    ...row,
+    source: fs.readFileSync(
+      path.join(projects[row.dir], row.dir, row.agent + row.suffix),
+      "utf8",
+    ),
+  }));
 
   // Assert
-  assert.match(opencodeAgent, /^model: github-copilot\/claude-opus-5\.5$/m);
-  assert.match(githubAgent, /^model: claude-opus-5\.5$/m);
+  assert.deepEqual(
+    rows
+      .filter(({ model, source }) => !source.includes(`\nmodel: ${model}\n`))
+      .map(({ dir, agent, model }) => `${dir}/${agent} ≠ ${model}`),
+    [],
+    "every pinned tier must install the current Claude generation",
+  );
 });
 
 test("OpenCode providers map every capability tier", () => {
@@ -378,7 +409,7 @@ test("OpenCode providers map every capability tier", () => {
     {
       provider: "claude",
       agent: "machoke",
-      model: "anthropic/claude-sonnet-5",
+      model: "anthropic/claude-sonnet-5-5",
     },
     {
       provider: "claude",

@@ -27,11 +27,11 @@ committed, so gitignore the installed entries if they shouldn't land in the proj
 
 Valid ids are listed under `model` in `copilot help config`.
 
-| Tier   | Copilot model      |
-| ------ | ------------------ |
-| haiku  | `claude-haiku-4.5` |
-| sonnet | `claude-sonnet-5`  |
-| opus   | `claude-opus-5.5`  |
+| Tier   | Copilot model       |
+| ------ | ------------------- |
+| haiku  | `claude-haiku-4.5`  |
+| sonnet | `claude-sonnet-5.5` |
+| opus   | `claude-opus-5.5`   |
 
 ## Tools
 

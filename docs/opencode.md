@@ -24,11 +24,11 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 `--provider` selects the column (default `copilot`); `opencode models <provider>` lists ids.
 
-| Tier   | Copilot                           | Claude                       | OpenAI/Codex                 |
-| ------ | --------------------------------- | ---------------------------- | ---------------------------- |
-| haiku  | `github-copilot/claude-haiku-4.5` | `anthropic/claude-haiku-4-5` | `openai/gpt-5.4-mini`        |
-| sonnet | `github-copilot/claude-sonnet-5`  | `anthropic/claude-sonnet-5`  | `openai/gpt-5.3-codex-spark` |
-| opus   | `github-copilot/claude-opus-5.5`  | `anthropic/claude-opus-5-5`  | `openai/gpt-5.6-sol`         |
+| Tier   | Copilot                            | Claude                        | OpenAI/Codex                 |
+| ------ | ---------------------------------- | ----------------------------- | ---------------------------- |
+| haiku  | `github-copilot/claude-haiku-4.5`  | `anthropic/claude-haiku-4-5`  | `openai/gpt-5.4-mini`        |
+| sonnet | `github-copilot/claude-sonnet-5.5` | `anthropic/claude-sonnet-5-5` | `openai/gpt-5.3-codex-spark` |
+| opus   | `github-copilot/claude-opus-5.5`   | `anthropic/claude-opus-5-5`   | `openai/gpt-5.6-sol`         |
 
 `temperature`, `color`, and `reasoning` (→ `reasoningEffort`) come from the canonical
 agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E57373` →
