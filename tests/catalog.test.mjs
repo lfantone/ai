@@ -733,6 +733,10 @@ test("commands and the reviewer retain their explicit safety gates", () => {
         { name: "the plan waits for approval", pattern: /Plan — HARD STOP/ },
         { name: "no edits before approval", pattern: /No edits before that/ },
         { name: "never commits", pattern: /Never commit\./ },
+        {
+          name: "the plan records the security surface",
+          pattern: /- Security surface —/,
+        },
       ],
     },
     {
@@ -766,6 +770,10 @@ test("commands and the reviewer retain their explicit safety gates", () => {
           pattern: /Publish — HARD STOP/,
         },
         { name: "human threads stay open", pattern: /never human threads/ },
+        {
+          name: "the reviewer gets the security surface",
+          pattern: /the criteria,\s+the security surface/,
+        },
       ],
     },
     {
@@ -788,6 +796,10 @@ test("commands and the reviewer retain their explicit safety gates", () => {
         {
           name: "review stays on the delta",
           pattern: /Never audit untouched code/,
+        },
+        {
+          name: "the given security surface is checked first",
+          pattern: /the given\s+surface first/,
         },
       ],
     },

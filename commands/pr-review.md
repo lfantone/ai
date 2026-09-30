@@ -10,14 +10,14 @@ before `/ship`).
    github, else gitea); owner, repo, index, and head SHA via the forge skill. For a PR, HEAD
    must equal its head SHA; otherwise stop and offer `gh pr checkout <index>` /
    `tea pr checkout <index>`.
-2. **Criteria** — the plan's ACs (`.agents/work/<slug>/plan.md`), else the ticket via
-   `ticket-context`, else the PR description.
+2. **Criteria** — the plan's ACs and security surface (`.agents/work/<slug>/plan.md`), else
+   the ticket via `ticket-context`, else the PR description.
 3. **State** — `.agents/work/pr-<index>/review.md`: `reviewed_sha` differs from head →
    re-review; equals head → show the stored report and offer only publishing.
 4. **Review** — spawn `Mewtwo` with forge, owner/repo, index (or base branch), the criteria,
-   and on re-review `reviewed_sha` plus prior findings. Present its output as-is, then a
-   verdict: approve / approve-with-nits / request-changes (any must-fix or MISSING forces
-   request-changes). On re-review group findings as Resolved, Still outstanding, New.
+   the security surface, and on re-review `reviewed_sha` plus prior findings. Present its
+   output as-is, then a verdict: approve / approve-with-nits / request-changes (any must-fix
+   or MISSING forces request-changes). On re-review group findings as Resolved, Still outstanding, New.
 5. **Save** — write `review.md`: `reviewed_sha`, and per finding its id, severity, file,
    anchor text, status, and comment id once posted.
 6. **Publish — HARD STOP** — ask: all / must-fix only / summary-only / no. Post one review
