@@ -7,16 +7,16 @@ agents exist only where a separate context pays for itself.
 /ticket ──► /verify ──► /ship ──► /pr-review ⇄ /pr-feedback ──► merge ──► /verify <env>
 ```
 
-| Step                          | Command                    | What happens                                                                                                                          |
-| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 1–3 Ticket, investigate, plan | `/ticket <key\|url\|text>` | Brief via `ticket-context`, read-only investigation, dependencies raised, options when contested, plan saved — **stops for approval** |
-| 4–5 Implement, unit tests     | (same session)             | Mirrors prior art, unit tests always, project gates; optional parallel `Machop`/`Machoke` workers for 3+ file-disjoint chunks         |
-| 5 Manual / integration checks | `/verify local`            | Scenarios from the ACs; API via `bruno-cli`, web via `Ditto`; PASS/FAIL per AC                                                        |
-| 6 Commit and PR               | `/ship`                    | Branch, Conventional Commit, push, PR linked to the ticket — each step confirmed                                                      |
-| 7 Review                      | `/pr-review [PR]`          | `Mewtwo` in a fresh context: coverage, correctness, security; incremental on reruns; publishing confirmed                             |
-| 8–9 Iterate                   | `/pr-feedback <PR>`        | Judge each unresolved thread at head, fix valid ones, draft replies; replies and resolutions confirmed                                |
-| 10 Merge                      | —                          | Yours                                                                                                                                 |
-| 11 Verify in an environment   | `/verify <env URL>`        | Same scenarios against a shared environment; non-mutating unless allowed                                                              |
+| Step                          | Command                    | What happens                                                                                                                                               |
+| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–3 Ticket, investigate, plan | `/ticket <key\|url\|text>` | Brief via `ticket-context`, read-only investigation, dependencies and security surface raised, options when contested, plan saved — **stops for approval** |
+| 4–5 Implement, unit tests     | (same session)             | Mirrors prior art, unit tests always, project gates; optional parallel `Machop`/`Machoke` workers for 3+ file-disjoint chunks                              |
+| 5 Manual / integration checks | `/verify local`            | Scenarios from the ACs; API via `bruno-cli`, web via `Ditto`; PASS/FAIL per AC                                                                             |
+| 6 Commit and PR               | `/ship`                    | Branch, Conventional Commit, push, PR linked to the ticket — each step confirmed                                                                           |
+| 7 Review                      | `/pr-review [PR]`          | `Mewtwo` in a fresh context: coverage, correctness, security; incremental on reruns; publishing confirmed                                                  |
+| 8–9 Iterate                   | `/pr-feedback <PR>`        | Judge each unresolved thread at head, fix valid ones, draft replies; replies and resolutions confirmed                                                     |
+| 10 Merge                      | —                          | Yours                                                                                                                                                      |
+| 11 Verify in an environment   | `/verify <env URL>`        | Same scenarios against a shared environment; non-mutating unless allowed                                                                                   |
 
 ## Why this shape
 

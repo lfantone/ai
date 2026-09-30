@@ -17,6 +17,8 @@ there, resume from it.
 - Read the project's AGENTS.md / CLAUDE.md, then the code the ticket touches. Use a read-only
   search sub-agent (Explore) for wide sweeps and keep only its conclusions.
 - Find the prior art to mirror and the tests covering the area.
+- Map the security surface: entry points and their authz checks, sensitive data (PII, tokens,
+  secrets), and the safe paths new code must use (validation, parameterised queries, redaction).
 - List dependencies: other tickets or PRs, services and teams, migrations, feature flags,
   per-environment config and secrets, API contracts. Raise blockers now.
 
@@ -30,6 +32,7 @@ trade-offs and a recommendation, and iterate until one meets every criterion. Wr
 - Approach, plus one line per rejected option
 - Files to change — path and responsibility
 - Test plan: each AC → unit / integration / manual check
+- Security surface — from the investigation, or `none` with the reason
 - Dependencies, risks, out of scope
 
 Present it and wait for explicit approval. No edits before that.
