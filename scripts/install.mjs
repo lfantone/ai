@@ -5,14 +5,15 @@
  * instructions/AGENTS.md block in the harness's user-level instructions file.
  * Zero dependencies.
  *
- *   ./scripts/install.mjs --harness <opencode|github|claude|codex> [options]
+ *   ./scripts/install.mjs --harness <opencode|opencode-v2|github|claude|codex> [options]
  *
  * Options:
- *   --harness <name>      opencode | github (Copilot CLI/VS Code/coding agent) | claude | codex
+ *   --harness <name>      opencode | opencode-v2 | github (Copilot CLI/VS Code/coding agent) |
+ *                         claude | codex
  *   --global              install to the user-level config dir (default: project)
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
- *   --provider <name>     OpenCode only: copilot (default) | claude | openai
+ *   --provider <name>     OpenCode (v1/v2) only: copilot (default) | claude | openai
  *   --dry-run             print what would be written, write nothing
  */
 import fs from "node:fs";
@@ -57,6 +58,13 @@ const MODEL_MAP = {
 
 // color and temperature live in the canonical agent frontmatter (self-contained files —
 // no name-keyed maps here, so renames/rebrands can never orphan them).
+
+// OpenCode v2 sends `request.body` verbatim and takes effort as a model variant (`#high`).
+// Checked with `opencode models <provider> --verbose` (2026-09-30): only the haiku-tier models
+// accept sampling params, and Claude Haiku 4.5 has no low/medium variant (it runs unthinking).
+const V2_SAMPLING_TIERS = ["haiku"];
+const lacksVariant = (model, variant) =>
+  /claude-haiku-4/.test(model) && ["low", "medium"].includes(variant);
 
 // Pokémon → Norse. Order matters: longest-overlapping first.
 const NORSE = [
@@ -107,6 +115,8 @@ const TARGETS = {
     },
   },
 };
+// v2 reads the same dirs as v1; only the agent frontmatter differs.
+TARGETS["opencode-v2"] = TARGETS.opencode;
 
 // User-level instructions file per harness; global installs only — a project owns its own.
 const INSTRUCTIONS = {
@@ -115,6 +125,7 @@ const INSTRUCTIONS = {
   claude: "{h}/.claude/CLAUDE.md",
   codex: "{h}/.codex/AGENTS.md",
 };
+INSTRUCTIONS["opencode-v2"] = INSTRUCTIONS.opencode;
 const BLOCK_BEGIN = "<!-- ai-catalog-begin -->";
 const BLOCK_END = "<!-- ai-catalog-end -->";
 
@@ -164,18 +175,16 @@ const opt = (name, fallback) => {
 const has = (name) => args.includes(`--${name}`);
 
 const harness = opt("harness");
+const isOpencode = harness === "opencode" || harness === "opencode-v2";
 const scope = has("global") ? "global" : "project";
 const names = opt("names", "pokemon");
-const provider = opt(
-  "provider",
-  harness === "opencode" ? "copilot" : undefined,
-);
+const provider = opt("provider", isOpencode ? "copilot" : undefined);
 const dryRun = has("dry-run");
 const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
   console.error(
-    `usage: install.mjs --harness <opencode|github|claude|codex> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
+    `usage: install.mjs --harness <opencode|opencode-v2|github|claude|codex> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
   );
   process.exit(1);
 }
@@ -183,17 +192,16 @@ if (!["pokemon", "norse"].includes(names)) {
   console.error(`--names must be "pokemon" or "norse"`);
   process.exit(1);
 }
-if (harness !== "opencode" && has("provider")) {
-  console.error(`--provider is only supported by the opencode harness`);
+if (!isOpencode && has("provider")) {
+  console.error(`--provider is only supported by the opencode harnesses`);
   process.exit(1);
 }
-if (harness === "opencode" && !MODEL_MAP.opencode[provider]) {
+if (isOpencode && !MODEL_MAP.opencode[provider]) {
   console.error(`--provider must be "copilot", "claude", or "openai"`);
   process.exit(1);
 }
 
-const modelMap =
-  harness === "opencode" ? MODEL_MAP.opencode[provider] : MODEL_MAP[harness];
+const modelMap = isOpencode ? MODEL_MAP.opencode[provider] : MODEL_MAP[harness];
 
 const resolveDirs = (h) =>
   Object.fromEntries(
@@ -312,6 +320,33 @@ for (const f of agents) {
       `  webfetch: deny`,
     ];
     out = `---\n${lines.join("\n")}\n---\n${body}`;
+  } else if (harness === "opencode-v2") {
+    // Ordered rules, last match wins, on top of v2's allow-all base.
+    const rule = (action, allowed) => [
+      `  - action: ${action}`,
+      `    resource: "*"`,
+      `    effect: ${allowed ? "allow" : "deny"}`,
+    ];
+    const model = modelMap[fm.model] ?? modelMap.sonnet;
+    const variant =
+      fm.reasoning && !lacksVariant(model, fm.reasoning)
+        ? `#${fm.reasoning}`
+        : "";
+    const lines = [
+      `description: ${yamlStr(fm.description)}`,
+      `mode: subagent`,
+      `model: ${model}${variant}`,
+      ...(fm.color ? [`color: ${fm.color}`] : []),
+      ...(fm.temperature && V2_SAMPLING_TIERS.includes(fm.model)
+        ? [`request:`, `  body:`, `    temperature: ${fm.temperature}`]
+        : []),
+      `permissions:`,
+      ...rule("edit", write),
+      ...rule("shell", bash),
+      ...(lsp ? rule("lsp", true) : []),
+      ...rule("webfetch", false),
+    ];
+    out = `---\n${lines.join("\n")}\n---\n${body}`;
   } else if (harness === "codex") {
     const lines = [
       `name = ${tomlStr(outName(name))}`,
@@ -354,10 +389,14 @@ for (const f of commands) {
 
   if (harness === "claude") {
     emit(path.join(dirs.commands, f), transform(raw));
-  } else if (harness === "opencode") {
+  } else if (isOpencode) {
+    // v2 renamed the task tool to subagent.
     const out = raw
       .replace(/^argument-hint:.*\n/m, "")
-      .replaceAll("the Agent tool", "the task tool")
+      .replaceAll(
+        "the Agent tool",
+        harness === "opencode-v2" ? "the subagent tool" : "the task tool",
+      )
       .replaceAll(/TaskCreate|TaskUpdate/g, "todowrite");
     emit(path.join(dirs.commands, f), transform(out));
   } else if (harness === "github" || harness === "codex") {
@@ -485,20 +524,22 @@ const retiredCaches =
     : [];
 const written = new Set(currentWrites);
 const stale = [
-  // This harness: every name ever shipped that this install doesn't write.
-  ...catalogPaths(harness, everShipped),
-  // Other harnesses: retired names only; their current entries belong to their own install.
-  ...Object.keys(TARGETS)
-    .filter((h) => h !== harness)
-    .flatMap((h) => catalogPaths(h, RETIRED)),
-  ...retiredCaches
-    .filter((dir) => fs.existsSync(dir))
-    .flatMap((dir) =>
-      fs
-        .readdirSync(dir)
-        .filter((entry) => RETIRED_CACHE_ENTRY.test(entry))
-        .map((entry) => path.join(dir, entry)),
-    ),
+  ...new Set([
+    // This harness: every name ever shipped that this install doesn't write.
+    ...catalogPaths(harness, everShipped),
+    // Other harnesses: retired names only; their current entries belong to their own install.
+    ...Object.keys(TARGETS)
+      .filter((h) => h !== harness)
+      .flatMap((h) => catalogPaths(h, RETIRED)),
+    ...retiredCaches
+      .filter((dir) => fs.existsSync(dir))
+      .flatMap((dir) =>
+        fs
+          .readdirSync(dir)
+          .filter((entry) => RETIRED_CACHE_ENTRY.test(entry))
+          .map((entry) => path.join(dir, entry)),
+      ),
+  ]),
 ].filter((file) => !written.has(file) && present(file));
 
 for (const { cleanup } of installStates) {

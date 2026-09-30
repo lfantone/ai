@@ -5,6 +5,7 @@
 ./scripts/install.mjs --harness opencode --global              # → ~/.config/opencode/
 ./scripts/install.mjs --harness opencode --project <p> --names norse
 ./scripts/install.mjs --harness opencode --project <p> --provider claude   # or openai
+./scripts/install.mjs --harness opencode-v2 --project <project>   # OpenCode v2 (`@opencode/cli`)
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview.
@@ -33,6 +34,22 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 `temperature`, `color`, and `reasoning` (→ `reasoningEffort`) come from the canonical
 agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E57373` →
 Machoke `#C03028`); Norse names keep them.
+
+## OpenCode v2
+
+`--harness opencode-v2` writes the same dirs, commands, skills, and instructions block, but
+emits agents in the v2 schema (verified with `opencode debug agents` on 2.0.20). `--provider`
+works the same.
+
+- `permission` → an ordered `permissions` list (`action` / `resource: "*"` / `effect`;
+  `bash` → `shell`), appended after v2's allow-all base.
+- `reasoning:` → a model variant (`claude-opus-5.5#high`), only where the model has that
+  variant — Claude Haiku 4.5 has no `low`, so Machop runs on its default.
+- `temperature` → `request.body.temperature`, only for the haiku tier: v2 sends the body as-is,
+  and the Sonnet/Opus-tier models reject sampling params.
+
+v2 still loads v1 agent files, but copies `reasoningEffort` and `temperature` into the raw
+request body — install with `opencode-v2` once you switch.
 
 ## Notes
 
