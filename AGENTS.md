@@ -120,8 +120,9 @@ Conventions:
   Never split work that needs shared context — every handoff loses information, and the
   caller pays to relay it.
 - **Names are Generation I Pokémon only** (the original 151). Pick one whose flavor
-  matches the role; evolution lines map nicely onto model tiers (Machop → Machoke).
-  Commands carry no persona; any future one follows the same rule.
+  matches the role; evolution lines map nicely onto model tiers (Machop → Machoke). Add
+  its Norse name to `NORSE` in `scripts/install.mjs` — `--names norse` renames at install
+  time, and `npm test` fails for an agent without one.
 - **Self-contained.** A sub-agent only sees its spawn prompt — it does **not** auto-load
   skills or other agents. So an agent that uses a skill embeds the few exact commands it
   needs and cites the skill as the source of truth (don't make the caller paste them).
