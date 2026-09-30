@@ -70,6 +70,7 @@ git clone git@github.com:lfantone/ai.git && cd ai
 
 ./scripts/install.mjs --harness claude   --project ~/work/my-app   # → .claude/
 ./scripts/install.mjs --harness opencode --project ~/work/my-app   # → .opencode/
+./scripts/install.mjs --harness opencode-v2 --project ~/work/my-app # → .opencode/ (v2 format)
 ./scripts/install.mjs --harness github   --project ~/work/my-app   # → .github/
 ./scripts/install.mjs --harness codex    --project ~/work/my-app   # → .codex/ + .agents/
 

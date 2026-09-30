@@ -320,6 +320,7 @@ test("canonical and installed agent frontmatter is valid YAML", () => {
   const files = agentFiles();
   const claude = install("claude");
   const opencode = install("opencode");
+  const opencodeV2 = install("opencode-v2");
   const github = install("github");
   const targets = files.flatMap((file) => {
     const name = file.replace(/\.md$/, "");
@@ -329,6 +330,10 @@ test("canonical and installed agent frontmatter is valid YAML", () => {
       {
         id: `opencode/${name}`,
         path: path.join(opencode, ".opencode/agents", `${name}.md`),
+      },
+      {
+        id: `opencode-v2/${name}`,
+        path: path.join(opencodeV2, ".opencode/agents", `${name}.md`),
       },
       {
         id: `github/${name}`,
@@ -820,4 +825,95 @@ test("every agent installs under a Norse name with --names norse", () => {
     "every agent needs a NORSE entry in scripts/install.mjs",
   );
   assert.equal(installed.length, canonical.length);
+});
+
+test("OpenCode v2 agents use permission rules, effort variants, and only supported sampling", () => {
+  // Arrange — expectations checked against `opencode debug agents` on OpenCode 2.0.20
+  const expected = [
+    {
+      provider: "copilot",
+      agent: "machop",
+      model: "github-copilot/claude-haiku-4.5",
+      temperature: 0.1,
+    },
+    {
+      provider: "copilot",
+      agent: "machoke",
+      model: "github-copilot/claude-sonnet-5.5#medium",
+    },
+    {
+      provider: "copilot",
+      agent: "mewtwo",
+      model: "github-copilot/claude-opus-5.5#high",
+    },
+    {
+      provider: "copilot",
+      agent: "ditto",
+      model: "github-copilot/claude-sonnet-5.5",
+    },
+    {
+      provider: "openai",
+      agent: "machop",
+      model: "openai/gpt-5.4-mini#low",
+      temperature: 0.1,
+    },
+    { provider: "openai", agent: "mewtwo", model: "openai/gpt-5.6-sol#high" },
+  ];
+  const rules = {
+    machop: ["edit=allow", "shell=allow", "lsp=allow", "webfetch=deny"],
+    ditto: ["edit=deny", "shell=deny", "webfetch=deny"],
+  };
+
+  // Act
+  const projects = {
+    copilot: install("opencode-v2"),
+    openai: install("opencode-v2", "pokemon", "openai"),
+  };
+  const frontmatter = (provider, agent) =>
+    splitDoc(
+      fs.readFileSync(
+        path.join(projects[provider], ".opencode/agents", `${agent}.md`),
+        "utf8",
+      ),
+    ).frontmatter;
+  const rows = expected.map((row) => ({
+    ...row,
+    fm: frontmatter(row.provider, row.agent),
+  }));
+  const permissions = Object.keys(rules).map((agent) => ({
+    agent,
+    actual: frontmatter("copilot", agent).permissions.map(
+      (rule) => `${rule.action}=${rule.effect}`,
+    ),
+  }));
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ fm, model, temperature }) =>
+          fm.model !== model || fm.request?.body?.temperature !== temperature,
+      )
+      .map(({ provider, agent }) => `${provider}/${agent}`),
+    [],
+    "effort maps to a variant only where the model has one; sampling only where supported",
+  );
+  assert.deepEqual(
+    rows
+      .filter(({ fm }) =>
+        ["permission", "reasoningEffort", "temperature"].some(
+          (key) => key in fm,
+        ),
+      )
+      .map(({ provider, agent }) => `${provider}/${agent}`),
+    [],
+    "no v1 frontmatter keys in v2 agents",
+  );
+  assert.deepEqual(
+    permissions
+      .filter(({ agent, actual }) => actual.join() !== rules[agent].join())
+      .map(({ agent }) => agent),
+    [],
+    "v2 permission rules mirror the canonical tools",
+  );
 });
