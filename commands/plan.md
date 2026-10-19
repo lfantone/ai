@@ -18,8 +18,10 @@ otherwise stop and suggest `/investigate`. Read-only — never edit code. Resume
 
 ## 1. Study
 
-- Read the project's AGENTS.md / CLAUDE.md, the ticket's Context, then the code the change
-  touches; sweep wide areas with Explore and keep only its conclusions.
+- Read the guidance for each path the change touches — the nearest `AGENTS.md` or
+  `CLAUDE.md`, plus any `.github/instructions/*.instructions.md` whose `applyTo` matches —
+  then the ticket's Context and the code; sweep wide areas with Explore and keep only its
+  conclusions.
 - Find the prior art to mirror and the tests that cover the area.
 - Map the security surface: entry points and their authz checks, sensitive data (PII, tokens,
   secrets), and the safe paths new code must use (validation, parameterised queries,

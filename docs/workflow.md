@@ -23,6 +23,15 @@ The loop: verify failures and open review findings (including valid human PR thr
 to `/implement`; `/ship` then pushes to the open PR and `/review` re-reviews only the new
 delta, replying to and resolving threads on a yes. Merging stays yours.
 
+## Project guidance
+
+Commands read the guidance for each path they touch: the nearest `AGENTS.md` or `CLAUDE.md`,
+plus `.github/instructions/*.instructions.md` whose `applyTo` matches. `/review` adds a root
+`REVIEW.md`, the file Copilot's built-in review also reads, so both reviews apply one set of
+rules. When a run uncovers a reusable rule the guidance lacks, `/implement` offers to add it
+there as one line, on a yes, so guidance grows through code review instead of private notes.
+`/verify` signs in first when the project's `AGENTS.md` declares a sign-in for the target.
+
 ## Why this shape
 
 The earlier plan → implement → verify orchestrators relayed briefs and exact edit

@@ -18,7 +18,7 @@ allowed.
 Per scenario:
 
 1. `navigate_page` to the route, then `take_snapshot` and act on element uids — never guess
-   selectors.
+   selectors. A sign-in page instead of the app → stop and return `blocked: signed out`.
 2. Follow the steps exactly; `wait_for` the expected text or state instead of sleeping.
 3. Assert the `expect` line literally: observed → PASS; otherwise FAIL with what appeared.
 4. On FAIL: `take_screenshot`, plus console errors and 4xx/5xx requests as evidence.

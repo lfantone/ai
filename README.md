@@ -78,6 +78,7 @@ git clone git@github.com:lfantone/ai.git && cd ai
 ./scripts/install.mjs --harness opencode --global --names norse    # Norse-named roster
 ./scripts/install.mjs --harness codex --global                     # → ~/.codex/ + ~/.agents/
 ./scripts/install.mjs --harness opencode --project . --provider openai
+./scripts/install.mjs --harness github --project . --prefix oct- --skip tea-cli  # /oct-plan …, no Gitea skill
 
 ./scripts/install.mjs --harness github --project . --dry-run       # preview only
 ```
@@ -91,7 +92,8 @@ markers in the harness's user-level instructions file, leaving the rest of that 
 Every install also removes what earlier catalog versions left behind in its target dirs:
 entries it no longer ships (including installs that predate the manifest, under either naming
 set) and, on project installs, the old orchestrators' `cache/` artifacts. Other tools' files
-stay. Preview with `--dry-run` — stale entries print as `would remove stale …`.
+stay. Preview with `--dry-run` — stale entries print as `would remove stale …`. `--prefix` namespaces
+the commands (`/oct-plan`) and every reference to them; `--skip` leaves catalog entries out.
 Re-run it after pulling catalog updates. Workflow state lives in `~/.agents/work/<repo>/`,
 shared by every worktree; allow that folder once per harness (see
 [the workflow](./docs/workflow.md#state)).

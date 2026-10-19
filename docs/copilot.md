@@ -6,6 +6,7 @@ Copilot CLI, VS Code, and the coding agent read the same files.
 ./scripts/install.mjs --harness github --project <project>   # → <project>/.github/
 ./scripts/install.mjs --harness github --global              # → ~/.copilot/
 ./scripts/install.mjs --harness github --project <p> --names norse
+./scripts/install.mjs --harness github --project <p> --prefix oct- --skip tea-cli
 ```
 
 Re-run after pulling catalog updates. Add `--dry-run` to preview. `.github/` is usually
@@ -16,9 +17,11 @@ committed, so gitignore the installed entries if they shouldn't land in the proj
 - **3 agents** (`.github/agents/*.agent.md`, `user-invocable: false`): Copilot `model` id and
   a `tools` array derived from the canonical tools list.
 - **6 command-skills** (`.github/skills/<name>/SKILL.md`): Copilot runs workflows as skills,
-  so each command ships in the agentskills format. Ask for it by name ("run investigate
-  for IE-1234"); `$ARGUMENTS` becomes "the user's request". Command model and effort pins
-  don't carry over.
+  and both VS Code chat and Copilot CLI list skills as slash commands, so each runs as
+  `/<name>` (`/oct-plan` with `--prefix oct-`); `$ARGUMENTS` becomes "the user's request".
+  They are marked user-run (`disable-model-invocation: true` and a description saying so):
+  agent mode and Copilot code review otherwise activate any repo skill that looks relevant.
+  Command model and effort pins don't carry over.
 - **Catalog skills**: copied as-is.
 - **Global only:** the `instructions/AGENTS.md` block in
   `~/.copilot/copilot-instructions.md` (verified against Copilot CLI 0.0.418), between
@@ -43,6 +46,25 @@ one project, add the absolute path to that project's entry in
 ```
 
 Untested on VS Code and the cloud coding agent.
+
+## Copilot code review
+
+Copilot's built-in PR review reads, from the PR's head branch, the root `AGENTS.md`, a root
+`REVIEW.md`, `.github/copilot-instructions.md`, and `.github/instructions/**/*.instructions.md`
+whose `applyTo` matches a reviewed file. It does not follow links, so rules it must enforce
+belong inline. It also activates repo skills that look relevant, and can use:
+
+- **MCP servers** — GitHub and Playwright by default; more through the repository's Copilot
+  MCP settings, shared with the cloud agent. Allow read-only tools only; secrets are Agents
+  secrets named `COPILOT_MCP_*`; remote servers that need OAuth are not supported.
+- **An environment** — `.github/workflows/copilot-setup-steps.yml` (job
+  `copilot-setup-steps`), or `copilot-code-review.yml` for review alone, prepares the runner,
+  e.g. installs dependencies. It only runs from the default branch, and the integrated
+  firewall needs GitHub-hosted runners.
+
+The review session's "Setting up environment" log shows which skills and MCP tools it used.
+See [Use Copilot code review](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-code-review)
+and [Configure MCP servers](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers).
 
 ## Model mapping
 

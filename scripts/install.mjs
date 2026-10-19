@@ -14,6 +14,8 @@
  *                         Claude Code's is $CLAUDE_CONFIG_DIR when set, else ~/.claude
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
+ *   --prefix <p>          namespace the commands and every reference to them (e.g. oct-)
+ *   --skip <a,b>          leave these catalog entries out (e.g. tea-cli)
  *   --provider <name>     OpenCode (v1/v2) only: copilot (default) | claude | openai
  *   --dry-run             print what would be written, write nothing
  */
@@ -189,18 +191,29 @@ const harness = opt("harness");
 const isOpencode = harness === "opencode" || harness === "opencode-v2";
 const scope = has("global") ? "global" : "project";
 const names = opt("names", "pokemon");
+const prefix = opt("prefix", "") ?? "";
+const skip = new Set(
+  (opt("skip", "") ?? "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean),
+);
 const provider = opt("provider", isOpencode ? "copilot" : undefined);
 const dryRun = has("dry-run");
 const projectDir = path.resolve(opt("project", process.cwd()));
 
 if (!TARGETS[harness]) {
   console.error(
-    `usage: install.mjs --harness <opencode|opencode-v2|github|claude|codex> [--global] [--project <dir>] [--names <pokemon|norse>] [--provider <copilot|claude|openai>] [--dry-run]`,
+    `usage: install.mjs --harness <opencode|opencode-v2|github|claude|codex> [--global] [--project <dir>] [--names <pokemon|norse>] [--prefix <p>] [--skip <a,b>] [--provider <copilot|claude|openai>] [--dry-run]`,
   );
   process.exit(1);
 }
 if (!["pokemon", "norse"].includes(names)) {
   console.error(`--names must be "pokemon" or "norse"`);
+  process.exit(1);
+}
+if (!/^[a-z0-9-]*$/.test(prefix)) {
+  console.error(`--prefix may only use lowercase letters, digits, and hyphens`);
   process.exit(1);
 }
 if (!isOpencode && has("provider")) {
@@ -265,7 +278,19 @@ const norsify = (text) => {
     .replaceAll(/\bPokémon\b/g, "Norse mythology");
 };
 
-const transform = (text) => (names === "norse" ? norsify(text) : text);
+// `/plan` → `/oct-plan`, but never a path (`docs/plan`, `plan.md`) or an already-prefixed name.
+const commandNames = fs
+  .readdirSync(path.join(ROOT, "commands"))
+  .filter((f) => f.endsWith(".md"))
+  .map((f) => f.replace(/\.md$/, ""));
+const COMMAND_REF = new RegExp(
+  `(?<![\\w./-])/(${commandNames.join("|")})(?![\\w-]|\\.md)`,
+  "g",
+);
+const withPrefix = (text) =>
+  prefix ? text.replace(COMMAND_REF, `/${prefix}$1`) : text;
+const transform = (text) =>
+  withPrefix(names === "norse" ? norsify(text) : text);
 const outName = (base) => transform(base);
 
 // JSON is a valid YAML subset, so JSON.stringify yields a safe double-quoted scalar for any
@@ -302,19 +327,33 @@ const toolFlags = (tools) => {
 // ---------------------------------------------------------------------------
 // Builders
 // ---------------------------------------------------------------------------
-const agents = fs
+const allAgents = fs
   .readdirSync(path.join(ROOT, "agents"))
   .filter((f) => f.endsWith(".md"));
-const commands = fs
-  .readdirSync(path.join(ROOT, "commands"))
-  .filter((f) => f.endsWith(".md"));
-const skills = fs
+const allCommands = commandNames.map((name) => `${name}.md`);
+const allSkills = fs
   .readdirSync(path.join(ROOT, "skills"), { withFileTypes: true })
   .filter(
     (d) =>
       d.isDirectory() &&
       fs.existsSync(path.join(ROOT, "skills", d.name, "SKILL.md")),
   );
+const known = [
+  ...allAgents.map((f) => f.replace(/\.md$/, "")),
+  ...commandNames,
+  ...allSkills.map((d) => d.name),
+];
+const unknown = [...skip].filter((name) => !known.includes(name));
+if (unknown.length) {
+  console.error(
+    `--skip: unknown ${unknown.join(", ")} (catalog: ${known.join(", ")})`,
+  );
+  process.exit(1);
+}
+const kept = (name) => !skip.has(name.replace(/\.md$/, ""));
+const agents = allAgents.filter(kept);
+const commands = allCommands.filter(kept);
+const skills = allSkills.filter((d) => kept(d.name));
 
 for (const f of agents) {
   const name = f.replace(/\.md$/, "");
@@ -402,11 +441,12 @@ for (const f of agents) {
 
 for (const f of commands) {
   const name = f.replace(/\.md$/, "");
+  const command = prefix + name;
   const raw = fs.readFileSync(path.join(ROOT, "commands", f), "utf8");
   const { fm, body } = parseDoc(path.join(ROOT, "commands", f));
 
   if (harness === "claude") {
-    emit(path.join(dirs.commands, f), transform(raw));
+    emit(path.join(dirs.commands, `${command}.md`), transform(raw));
   } else if (isOpencode) {
     // OpenCode commands take a provider model id and have no argument hint or effort.
     const front = raw
@@ -420,18 +460,22 @@ for (const f of commands) {
         harness === "opencode-v2" ? "the subagent tool" : "the task tool",
       )
       .replaceAll(/TaskCreate|TaskUpdate/g, "todowrite");
-    emit(path.join(dirs.commands, f), transform(out));
+    emit(path.join(dirs.commands, `${command}.md`), transform(out));
   } else if (harness === "github" || harness === "codex") {
     // Copilot and Codex invoke workflows as skills → agentskills SKILL.md per command.
+    // Copilot code review activates any repo skill that looks relevant, so a workflow skill
+    // must say it is user-run and opt out of model invocation.
+    const invoke = `${harness === "codex" ? "$" : "/"}${command}`;
     const out = body
       .replaceAll(/`\$ARGUMENTS`|\$ARGUMENTS/g, "the user's request")
       .replaceAll("via the Agent tool", "as subagents")
       .replaceAll("the Agent tool", "your subagent mechanism")
       .replaceAll(/TaskCreate|TaskUpdate/g, "your task list");
+    const description = `Interactive workflow the user starts with ${invoke}; never activate it yourself. ${fm.description}`;
     emit(
-      path.join(dirs.skills, name, "SKILL.md"),
+      path.join(dirs.skills, command, "SKILL.md"),
       transform(
-        `---\nname: ${name}\ndescription: ${yamlStr(fm.description)}\n---\n${out}`,
+        `---\nname: ${command}\ndescription: ${yamlStr(description)}\ndisable-model-invocation: true\n---\n${out}`,
       ),
     );
   }
@@ -532,9 +576,11 @@ const everShipped = {
     ...RETIRED.agents,
     ...agents.map((f) => f.replace(/\.md$/, "")),
   ].flatMap(bothSets),
+  // Current commands under this install's prefix only: a bare `plan` or `review` next to a
+  // prefixed install may belong to the user, and the manifest already covers our old copies.
   commands: [
     ...RETIRED.commands,
-    ...commands.map((f) => f.replace(/\.md$/, "")),
+    ...commands.map((f) => prefix + f.replace(/\.md$/, "")),
   ],
   skills: RETIRED.skills,
 };
@@ -587,12 +633,12 @@ for (const w of writes) {
   if (w.dir) {
     fs.mkdirSync(path.dirname(w.file), { recursive: true });
     fs.cpSync(w.dir, w.file, { recursive: true });
-    if (names === "norse") {
-      // Skill bodies may reference agent names.
+    if (names === "norse" || prefix) {
+      // Skill bodies may reference agent or command names.
       for (const sk of fs.readdirSync(w.file, { recursive: true })) {
         const p = path.join(w.file, String(sk));
         if (p.endsWith(".md"))
-          fs.writeFileSync(p, norsify(fs.readFileSync(p, "utf8")));
+          fs.writeFileSync(p, transform(fs.readFileSync(p, "utf8")));
       }
     }
   } else {
@@ -614,7 +660,7 @@ if (instructionsFile) {
     console.log(`would update ${BLOCK_BEGIN} block in ${instructionsFile}`);
   else {
     fs.mkdirSync(path.dirname(instructionsFile), { recursive: true });
-    fs.writeFileSync(instructionsFile, withBlock(existing, block));
+    fs.writeFileSync(instructionsFile, withBlock(existing, transform(block)));
   }
 }
 
@@ -629,7 +675,7 @@ if (!dryRun) {
 }
 
 console.log(
-  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names}${provider ? ` · provider=${provider}` : ""}` +
+  `${dryRun ? "[dry-run] " : ""}${harness} · ${scope}${scope === "project" ? ` (${projectDir})` : ""} · names=${names}${prefix ? ` · prefix=${prefix}` : ""}${skip.size ? ` · skip=${[...skip].join(",")}` : ""}${provider ? ` · provider=${provider}` : ""}` +
     `\n  agents: ${agents.length} → ${dirs.agents}` +
     (dirs.commands
       ? `\n  commands: ${commands.length} → ${dirs.commands}`

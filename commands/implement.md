@@ -22,7 +22,9 @@ marked `fixed`, then the `open` findings in `review.md`. Criteria come from `tic
 
 ## 2. Build
 
-- Follow the plan: keep its decisions, mirror the cited prior art, make the smallest change.
+- Follow the plan and the touched paths' guidance (nearest `AGENTS.md` / `CLAUDE.md`,
+  matching `.github/instructions/*.instructions.md`): keep its decisions, mirror the cited
+  prior art, make the smallest change.
 - Unit tests for every behaviour change; integration tests where the project has them.
 - Ready units whose executor is `Machop`: spawn them in one message, at most five, files
   disjoint, each briefed with goal, owned files, prior art, the decisions and signatures to
@@ -35,5 +37,9 @@ marked `fixed`, then the `open` findings in `review.md`. Criteria come from `tic
 Run the project's test, lint, typecheck, and build. Fix the failures this change caused;
 report any others verbatim. Tick done units in `plan.md`; mark fixed FAIL lines and
 findings `fixed`. Never commit.
+
+If the work, or a review finding it fixed, revealed a reusable rule for a path that its
+guidance lacks, offer to add it as one line to that guidance (the file `AGENTS.md` names for
+the path, else the nearest `AGENTS.md`) — only on a yes.
 
 Next: `/verify local <slug>`, then `/ship <slug>`.
