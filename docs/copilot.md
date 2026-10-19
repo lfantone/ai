@@ -21,6 +21,8 @@ committed, so gitignore the installed entries if they shouldn't land in the proj
   `/<name>` (`/oct-plan` with `--prefix oct-`); `$ARGUMENTS` becomes "the user's request".
   They are marked user-run (`disable-model-invocation: true` and a description saying so):
   agent mode and Copilot code review otherwise activate any repo skill that looks relevant.
+  That field is a Copilot extension, so strict `agentskills validate` rejects these generated
+  skills; Copilot honours it.
   Command model and effort pins don't carry over.
 - **Catalog skills**: copied as-is.
 - **Global only:** the `instructions/AGENTS.md` block in
