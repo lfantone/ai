@@ -279,7 +279,9 @@ def udiff(path: str, old: str, new: str) -> str:
         new.splitlines(keepends=True),
         fromfile=f"a/{path}" if old else "/dev/null",
         tofile=f"b/{path}",
-        n=3,
+        # The middleware's `clock` parameter sits above the change; keep it in the hunk, since
+        # the diff is the reviewer's only source.
+        n=7 if path == MW_PATH else 3,
     )
     body = "".join(lines)
     return f"diff --git a/{path} b/{path}\n{body}"
@@ -638,7 +640,7 @@ Summarize what this diff changes in five bullets for the changelog. Describe the
         "changelog-only": llm("""
 The answer is a changelog summary of a diff. All claims must hold to pass.
 
-1. It contains about five bullets (four to six) describing the changes: a configurable idle TTL constant, a `lastSeenAt` field on sessions, `touch` and `evictIdle` on the store, the middleware evicting idle sessions and refreshing `lastSeenAt` on each request, and new store tests.
+1. It contains about five bullets (four to six) that, in plain language, together cover: idle sessions now expire after a configurable timeout (`SESSION_IDLE_TTL_MS`, default 30 minutes); sessions track their last activity, refreshed on each request; the middleware removes idle sessions on each request; and new tests. Exact function names are not required, and extra accurate details from the diff (the 401 response, the debug log line, middleware tests) are fine.
 2. It contains no review findings, no severity labels, no `**Anchor:**` lines, and no suggestion blocks.
 """),
     },
