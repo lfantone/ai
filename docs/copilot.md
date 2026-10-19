@@ -3,31 +3,41 @@
 Copilot CLI, VS Code, and the coding agent read the same files.
 
 ```bash
-./scripts/install.mjs --harness github --project <project>   # → <project>/.github/
+./scripts/install.mjs --harness github --project <project>   # → .github/agents, .agents/skills
 ./scripts/install.mjs --harness github --global              # → ~/.copilot/
 ./scripts/install.mjs --harness github --project <p> --names norse
 ./scripts/install.mjs --harness github --project <p> --prefix oct- --skip tea-cli
 ```
 
-Re-run after pulling catalog updates. Add `--dry-run` to preview. `.github/` is usually
-committed, so gitignore the installed entries if they shouldn't land in the project repo.
+Re-run after pulling catalog updates. Add `--dry-run` to preview. `.github/` and `.agents/` are
+usually committed, so gitignore the installed entries if they shouldn't land in the project repo.
 
 ## What's installed
 
 - **3 agents** (`.github/agents/*.agent.md`, `user-invocable: false`): Copilot `model` id and
   a `tools` array derived from the canonical tools list.
-- **6 command-skills** (`.github/skills/<name>/SKILL.md`): Copilot runs workflows as skills,
+- **6 command-skills** (`.agents/skills/<name>/SKILL.md`): Copilot runs workflows as skills,
   and both VS Code chat and Copilot CLI list skills as slash commands, so each runs as
   `/<name>` (`/oct-plan` with `--prefix oct-`); `$ARGUMENTS` becomes "the user's request".
   They are marked user-run (`disable-model-invocation: true` and a description saying so):
   agent mode and Copilot code review otherwise activate any repo skill that looks relevant.
   That field is a Copilot extension, so strict `agentskills validate` rejects these generated
-  skills; Copilot honours it.
-  Command model and effort pins don't carry over.
-- **Catalog skills**: copied as-is.
+  skills; Copilot honours it. `metadata` `opencode/slash` and `opencode/autoinvoke` do the same
+  for OpenCode. Command model and effort pins don't carry over.
+- **Catalog skills** (`.agents/skills/`): copied as-is.
 - **Global only:** the `instructions/AGENTS.md` block in
   `~/.copilot/copilot-instructions.md` (verified against Copilot CLI 0.0.418), between
   `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`.
+
+## Skills folder
+
+Project skills go to `.agents/skills`, the cross-tool folder: VS Code, Copilot CLI, the cloud
+agent, and code review read it
+([About agent skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills)),
+and so do OpenCode and Codex — one copy serves them all. Copilot CLI 0.0.398 still read only
+`.github/skills`: update older CLIs. A re-install removes the catalog's earlier copies from
+`.github/skills` and leaves the project's own skills there; move those to `.agents/skills` too,
+so each skill lives in one folder.
 
 ## State folder
 

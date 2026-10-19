@@ -51,6 +51,18 @@ works the same.
 v2 still loads v1 agent files, but copies `reasoningEffort` and `temperature` into the raw
 request body — install with `opencode-v2` once you switch.
 
+## Next to a Copilot install
+
+A project with the Copilot install already has the skills and the workflow in `.agents/skills`,
+which OpenCode reads: the workflow skills carry `opencode/slash` and `opencode/autoinvoke`, so
+they run as `/<name>` and are never picked on their own. Install only the agents:
+
+```bash
+./scripts/install.mjs --harness opencode-v2 --project <p> --names norse --skip commands,skills
+```
+
+A slash-command skill can't pin a model, so pick a strong one for `/investigate` and `/plan`.
+
 ## State folder
 
 OpenCode asks before touching paths outside the project (`external_directory`, default `ask`).

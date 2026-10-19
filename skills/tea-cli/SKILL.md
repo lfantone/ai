@@ -1,6 +1,6 @@
 ---
 name: tea-cli
-description: Write, fix, or explain `tea` commands for Gitea — PR head SHA, diff, files at a commit, reviews and unresolved comments, inline `suggestion` reviews, replies, resolving threads, opening PRs. Use for any tea command, Gitea snippet, sub-agent prompt, or script parsing tea output.
+description: Write or fix `tea` commands for Gitea (any remote not on github.com) — PR head SHA, diff, files at a commit, reviews and unresolved comments, inline `suggestion` reviews, replies, resolving threads, opening PRs, issues. Use for any tea command, Gitea snippet, or script parsing tea output.
 ---
 
 # tea CLI — reliable Gitea access
@@ -80,6 +80,8 @@ tea pr resolve <comment id>                          # resolve a thread
 tea pr create --title '<title>' --description-file - [--draft] <<'EOF'   # open a PR
 ...
 EOF
+tea api "repos/{owner}/{repo}/issues/<n>" | jq '{title, body}'  # issue; then .../comments
+tea issues create --title '<title>' --description-file -       # or: tea issues edit <n>
 ```
 
 Resolve a thread only when the issue is actually gone — never because a line moved. Skip

@@ -22,8 +22,8 @@ marked `fixed`, then the `open` findings in `review.md`. Criteria come from `tic
 
 ## 2. Build
 
-- Follow the plan and the touched paths' guidance (nearest `AGENTS.md` / `CLAUDE.md`,
-  matching `.github/instructions/*.instructions.md`): keep its decisions, mirror the cited
+- Follow the plan and the touched paths' guidance (nearest `AGENTS.md`, matching
+  `.github/instructions/*.instructions.md`): keep its decisions, mirror the cited
   prior art, make the smallest change.
 - Unit tests for every behaviour change; integration tests where the project has them.
 - Ready units whose executor is `Machop`: spawn them in one message, at most five, files

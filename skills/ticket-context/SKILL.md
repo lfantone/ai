@@ -1,6 +1,6 @@
 ---
 name: ticket-context
-description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams thread into a compact brief — goal, explicit acceptance criteria, scope, links, dependencies, open questions — and publish a written ticket back. Use when starting work on a ticket or creating or updating one.
+description: Turn a Jira key, a repository issue, or a pasted Slack/Teams thread into a compact brief — goal, explicit acceptance criteria, scope, links, dependencies, open questions — and publish a written ticket back. Use when starting work on a ticket or creating or updating one.
 ---
 
 # Ticket context
@@ -12,10 +12,7 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
   `fields: ["summary","description","status","issuetype","labels","comment","issuelinks","parent","subtasks"]`;
   `getJiraIssueRemoteIssueLinks` for linked PRs and docs; `getConfluencePage` only for a
   linked spec.
-- **GitHub issue:** `gh api repos/<owner>/<repo>/issues/<n> --jq '{title,body}'`, then
-  `.../comments`.
-- **Gitea issue:** `tea api repos/<owner>/<repo>/issues/<n> | jq '{title,body}'`, then
-  `.../comments`.
+- **Repository issue:** its body and comments, through the forge skill.
 - **Slack / Teams thread:** the pasted text. Never invent a ticket around it.
 - **Jira without the Atlassian MCP:** `acli` — read `references/acli.md`.
 - No tool access → ask for pasted text; never guess requirements.
@@ -36,9 +33,7 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
 - **Jira:** `createJiraIssue` with `projectKey`, `issueTypeName`, `summary`, `description`,
   or `editJiraIssue` with `fields: {"description": …}` — both with
   `contentFormat: "markdown"`. Without the MCP: `references/acli.md`.
-- **GitHub:** `gh issue create --title <t> --body-file -` · `gh issue edit <n> --body-file -`.
-- **Gitea:** `tea issues create --title <t> --description-file -` ·
-  `tea issues edit <n> --description-file -`.
+- **Repository issue:** create or edit it through the forge skill.
 
 ## Gotchas
 
@@ -51,4 +46,4 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
 - A thin ticket: read the parent or epic before asking the user.
 - In a chat thread the latest agreed message wins over earlier ones. Note who agreed.
 - Editing replaces the whole description. Carry over what the original said, or add the
-  ticket as a comment (`addCommentToJiraIssue`, `gh issue comment`) instead.
+  ticket as a comment (`addCommentToJiraIssue`, or the forge skill's issue comment) instead.

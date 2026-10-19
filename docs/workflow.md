@@ -25,8 +25,8 @@ delta, replying to and resolving threads on a yes. Merging stays yours.
 
 ## Project guidance
 
-Commands read the guidance for each path they touch: the nearest `AGENTS.md` or `CLAUDE.md`,
-plus `.github/instructions/*.instructions.md` whose `applyTo` matches. `/review` adds a root
+Commands read the guidance for each path they touch: the nearest `AGENTS.md` (Claude Code
+loads `CLAUDE.md` files itself), plus `.github/instructions/*.instructions.md` whose `applyTo` matches. `/review` adds a root
 `REVIEW.md`, the file Copilot's built-in review also reads, so both reviews apply one set of
 rules. When a run uncovers a reusable rule the guidance lacks, `/implement` offers to add it
 there as one line, on a yes, so guidance grows through code review instead of private notes.
@@ -83,7 +83,7 @@ W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's
 mkdir -p "$W" && mv .agents/work/* "$W"/ && rmdir .agents/work
 ```
 
-Coding standards come from each project's own `AGENTS.md` / `CLAUDE.md`. Personal defaults
+Coding standards come from each project's own instructions. Personal defaults
 come from the global instructions block (`instructions/AGENTS.md`).
 
 ## Harness setup
