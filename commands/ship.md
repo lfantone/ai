@@ -21,8 +21,7 @@ and ask whether to ship anyway.
    else Conventional Commits. Commit on yes.
 4. **Push** — `git push -u origin HEAD` on yes. If the branch already has a PR (forge skill),
    report it and stop.
-5. **PR** — forge from `git remote get-url origin`: github.com → `gh-cli`, else `tea-cli`.
-   Use the repo's PR template if it has one, else:
+5. **PR** — with the forge skill. Use the repo's PR template if it has one, else:
 
    ```markdown
    ## What

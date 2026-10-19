@@ -15,7 +15,8 @@
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
  *   --prefix <p>          namespace the commands and every reference to them (e.g. oct-)
- *   --skip <a,b>          leave these catalog entries out (e.g. tea-cli)
+ *   --skip <a,b>          leave these catalog entries out (e.g. tea-cli), or whole kinds
+ *                         (`commands,skills` installs only the agents)
  *   --provider <name>     OpenCode (v1/v2) only: copilot (default) | claude | openai
  *   --dry-run             print what would be written, write nothing
  */
@@ -92,7 +93,8 @@ const TARGETS = {
     },
   },
   github: {
-    project: { agents: "{p}/.github/agents", skills: "{p}/.github/skills" },
+    // .agents/skills is the cross-tool folder: Copilot, OpenCode, and Codex all read it.
+    project: { agents: "{p}/.github/agents", skills: "{p}/.agents/skills" },
     global: { agents: "{h}/.copilot/agents", skills: "{h}/.copilot/skills" },
   },
   claude: {
@@ -120,6 +122,10 @@ const TARGETS = {
 };
 // v2 reads the same dirs as v1; only the agent frontmatter differs.
 TARGETS["opencode-v2"] = TARGETS.opencode;
+
+// Skill dirs a harness installed into before. Nothing goes there now, so a catalog name found
+// there is our old copy, and Copilot would list it twice.
+const LEGACY_SKILLS = { github: { project: "{p}/.github/skills" } };
 
 // User-level instructions file per harness; global installs only — a project owns its own.
 const INSTRUCTIONS = {
@@ -343,17 +349,21 @@ const known = [
   ...commandNames,
   ...allSkills.map((d) => d.name),
 ];
-const unknown = [...skip].filter((name) => !known.includes(name));
+const KINDS = ["agents", "commands", "skills"];
+const unknown = [...skip].filter(
+  (name) => !known.includes(name) && !KINDS.includes(name),
+);
 if (unknown.length) {
   console.error(
     `--skip: unknown ${unknown.join(", ")} (catalog: ${known.join(", ")})`,
   );
   process.exit(1);
 }
-const kept = (name) => !skip.has(name.replace(/\.md$/, ""));
-const agents = allAgents.filter(kept);
-const commands = allCommands.filter(kept);
-const skills = allSkills.filter((d) => kept(d.name));
+const kept = (kind) => (name) =>
+  !skip.has(kind) && !skip.has(name.replace(/\.md$/, ""));
+const agents = allAgents.filter(kept("agents"));
+const commands = allCommands.filter(kept("commands"));
+const skills = allSkills.filter((d) => kept("skills")(d.name));
 
 for (const f of agents) {
   const name = f.replace(/\.md$/, "");
@@ -464,7 +474,8 @@ for (const f of commands) {
   } else if (harness === "github" || harness === "codex") {
     // Copilot and Codex invoke workflows as skills → agentskills SKILL.md per command.
     // Copilot code review activates any repo skill that looks relevant, so a workflow skill
-    // must say it is user-run and opt out of model invocation.
+    // must say it is user-run and opt out of model invocation. OpenCode reads .agents/skills
+    // too; its metadata keys make the skill a slash command it never picks on its own.
     const invoke = `${harness === "codex" ? "$" : "/"}${command}`;
     const out = body
       .replaceAll(/`\$ARGUMENTS`|\$ARGUMENTS/g, "the user's request")
@@ -475,7 +486,7 @@ for (const f of commands) {
     emit(
       path.join(dirs.skills, command, "SKILL.md"),
       transform(
-        `---\nname: ${command}\ndescription: ${yamlStr(description)}\ndisable-model-invocation: true\n---\n${out}`,
+        `---\nname: ${command}\ndescription: ${yamlStr(description)}\ndisable-model-invocation: true\nmetadata:\n  opencode/slash: "true"\n  opencode/autoinvoke: "false"\n---\n${out}`,
       ),
     );
   }
@@ -559,6 +570,7 @@ const catalogPaths = (
   { agents: agentNames, commands: commandNames, skills: skillNames },
 ) => {
   const d = resolveDirs(h);
+  const legacy = LEGACY_SKILLS[h]?.[scope];
   const suffix = h === "github" ? ".agent.md" : h === "codex" ? ".toml" : ".md";
   return [
     ...agentNames.map((name) => path.join(d.agents, name + suffix)),
@@ -569,6 +581,11 @@ const catalogPaths = (
         : path.join(d.skills, name),
     ),
     ...skillNames.map((name) => path.join(d.skills, name)),
+    ...(legacy
+      ? [...commandNames, ...skillNames].map((name) =>
+          path.join(expand(legacy), name),
+        )
+      : []),
   ];
 };
 const everShipped = {
@@ -593,6 +610,12 @@ const stale = [
   ...new Set([
     // This harness: every name ever shipped that this install doesn't write.
     ...catalogPaths(harness, everShipped),
+    // ...and the current skills in its old skill dir: they live in the new one now.
+    ...(LEGACY_SKILLS[harness]?.[scope]
+      ? allSkills.map((d) =>
+          path.join(expand(LEGACY_SKILLS[harness][scope]), d.name),
+        )
+      : []),
     // Other harnesses: retired names only; their current entries belong to their own install.
     ...Object.keys(TARGETS)
       .filter((h) => h !== harness)

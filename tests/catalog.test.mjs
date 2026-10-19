@@ -583,7 +583,7 @@ test("--prefix namespaces every command and every reference to one", () => {
   );
   const reviewSkill = splitDoc(
     fs.readFileSync(
-      path.join(github, ".github/skills/oct-review/SKILL.md"),
+      path.join(github, ".agents/skills/oct-review/SKILL.md"),
       "utf8",
     ),
   ).frontmatter;
@@ -612,9 +612,10 @@ test("--prefix namespaces every command and every reference to one", () => {
 });
 
 test("Copilot and Codex workflow skills are user-run, never model-invoked", () => {
-  // Arrange — Copilot code review activates any repo skill that looks relevant
+  // Arrange — Copilot code review activates any repo skill that looks relevant, and OpenCode
+  // reads the same .agents/skills, so each tool needs its own opt-out
   const projects = { github: install("github"), codex: install("codex") };
-  const skillDirs = { github: ".github/skills", codex: ".agents/skills" };
+  const skillDirs = { github: ".agents/skills", codex: ".agents/skills" };
 
   // Act
   const rows = Object.keys(projects).flatMap((harness) =>
@@ -638,6 +639,8 @@ test("Copilot and Codex workflow skills are user-run, never model-invoked", () =
       .filter(
         ({ frontmatter }) =>
           frontmatter["disable-model-invocation"] !== true ||
+          frontmatter.metadata?.["opencode/slash"] !== "true" ||
+          frontmatter.metadata?.["opencode/autoinvoke"] !== "false" ||
           !/^Interactive workflow the user starts with [/$]/.test(
             frontmatter.description,
           ),
@@ -664,14 +667,106 @@ test("--skip leaves catalog entries out and rejects unknown names", () => {
 
   // Assert
   assert.equal(
-    fs.existsSync(path.join(project, ".github/skills/tea-cli")),
+    fs.existsSync(path.join(project, ".agents/skills/tea-cli")),
     false,
   );
   assert.ok(
-    fs.existsSync(path.join(project, ".github/skills/gh-cli/SKILL.md")),
+    fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
   );
   assert.notEqual(typo.status, 0);
   assert.match(typo.stderr, /unknown tea-clie/);
+});
+
+test("--skip takes whole kinds: commands,skills installs only the agents", () => {
+  // Arrange — OpenCode shares a Copilot install's .agents/skills and only needs its agents
+  const options = { args: ["--skip", "commands,skills"] };
+
+  // Act
+  const project = install(
+    "opencode-v2",
+    "norse",
+    undefined,
+    undefined,
+    options,
+  );
+
+  // Assert
+  assert.deepEqual(
+    fs.readdirSync(path.join(project, ".opencode/agents")).sort(),
+    ["brokkr.md", "loki.md", "mimir.md"],
+  );
+  assert.deepEqual(
+    [".opencode/commands", ".opencode/skills"].filter((dir) =>
+      fs.existsSync(path.join(project, dir)),
+    ),
+    [],
+  );
+});
+
+test("a Copilot install moves its old .github/skills copies and keeps the project's own", () => {
+  // Arrange — an install from before the manifest, plus a skill the project owns
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-github-legacy-"));
+  const seed = (relative) => {
+    const file = path.join(project, relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "old");
+  };
+  seed(".github/skills/gh-cli/SKILL.md");
+  seed(".github/skills/oct-plan/SKILL.md");
+  seed(".github/skills/team-skill/SKILL.md");
+
+  // Act
+  install("github", "norse", undefined, project, {
+    args: ["--prefix", "oct-"],
+  });
+
+  // Assert
+  assert.deepEqual(
+    [".github/skills/gh-cli", ".github/skills/oct-plan"].filter((relative) =>
+      fs.existsSync(path.join(project, relative)),
+    ),
+    [],
+    "catalog copies in the old dir would show twice in Copilot",
+  );
+  assert.ok(
+    fs.existsSync(path.join(project, ".github/skills/team-skill/SKILL.md")),
+  );
+  assert.ok(
+    fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
+  );
+  assert.ok(
+    fs.existsSync(path.join(project, ".agents/skills/oct-plan/SKILL.md")),
+  );
+});
+
+test("a GitHub-only install names no other forge and no other tool's instructions file", () => {
+  // Arrange — a project that skips tea-cli must not point at Gitea, tea, or CLAUDE.md
+  const project = install("github", "norse", undefined, undefined, {
+    args: ["--prefix", "oct-", "--skip", "tea-cli"],
+  });
+  const files = (dir) =>
+    fs
+      .readdirSync(dir, { withFileTypes: true })
+      .flatMap((entry) =>
+        entry.isDirectory()
+          ? files(path.join(dir, entry.name))
+          : [path.join(dir, entry.name)],
+      );
+
+  // Act
+  const installed = [".github", ".agents"].flatMap((dir) =>
+    files(path.join(project, dir)),
+  );
+
+  // Assert
+  assert.deepEqual(
+    installed
+      .filter((file) =>
+        /tea-cli|gitea|\btea\b|CLAUDE\.md/i.test(fs.readFileSync(file, "utf8")),
+      )
+      .map((file) => path.relative(project, file)),
+    [],
+  );
 });
 
 test("installer rejects unsupported provider combinations", () => {

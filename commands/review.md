@@ -5,8 +5,7 @@ argument-hint: "[PR url | index] [lenses…]"
 
 $ARGUMENTS: an optional PR, then extra lenses (e.g. performance, accessibility).
 
-1. **Target** — forge from the PR host or `git remote get-url origin` (github.com → github,
-   else gitea). The given PR, else the branch's PR (forge skill), else the local change. For a
+1. **Target** — the given PR, else the branch's PR (forge skill), else the local change. For a
    PR, HEAD must equal its head SHA; otherwise stop and offer to check the PR out.
 2. **State** — work dir `<work root>/<slug>/`, with the work root:
 
@@ -41,10 +40,9 @@ $ARGUMENTS: an optional PR, then extra lenses (e.g. performance, accessibility).
    `wontfix`.
 7. **Publish — HARD STOP** (PR only) — ask: all / must-fix only / summary-only / no. Post
    findings without a comment id as one review with the forge skill's inline-suggestion
-   payload, `commit_id` = head; those without an inline anchor, and multi-line fixes on
-   gitea, go in the summary body. Show every thread reply verbatim, plus "fixed in `<sha>`"
-   for threads whose finding is now `resolved`, and post on yes. Resolve, on yes, those
-   threads and human threads judged `addressed`. Never resolve `disagree` or `question`
-   threads.
+   payload, `commit_id` = head; those it can't anchor inline go in the summary body. Show
+   every thread reply verbatim, plus "fixed in `<sha>`" for threads whose finding is now
+   `resolved`, and post on yes. Resolve, on yes, those threads and human threads judged
+   `addressed`. Never resolve `disagree` or `question` threads.
 
 Open findings → `/implement <slug>` in a fresh session, `/ship`, then `/review` again.

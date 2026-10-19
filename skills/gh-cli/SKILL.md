@@ -1,11 +1,11 @@
 ---
 name: gh-cli
-description: Write, fix, or explain `gh` commands for GitHub — PR head SHA, diff, files at a commit, review comments, unresolved threads, inline `suggestion` reviews, replies, resolving threads, opening PRs. Use for any gh command, GitHub snippet, sub-agent prompt, or script parsing gh output; not plain git.
+description: Write or fix `gh` commands for GitHub — PR head SHA, diff, files at a commit, review comments, unresolved threads, inline `suggestion` reviews, replies, resolving threads, opening PRs, issues. Use for any gh command, GitHub snippet, sub-agent prompt, or script parsing gh output; not plain git.
 ---
 
 # gh CLI — reliable GitHub access
 
-Standard: raw REST API + `jq`, like `tea-cli` for Gitea. REST **2022-11-28** (gh's default);
+Standard: raw REST API + `jq`. REST **2022-11-28** (gh's default);
 verified against `gh` 2.93.
 
 ## The one rule
@@ -84,6 +84,9 @@ gh api graphql -F id='<thread node id>' -f query='
 gh pr create --title '<title>' --body-file - [--draft] <<'EOF'   # open a PR
 ...
 EOF
+gh api "repos/{owner}/{repo}/issues/<n>" --jq '{title, body}'    # issue; then .../comments
+gh issue create --title '<title>' --body-file -              # or: gh issue edit <n>
+gh issue comment <n> --body-file -
 ```
 
 Resolve a thread only when the issue is actually gone — never because a line moved.
