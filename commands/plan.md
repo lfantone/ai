@@ -31,7 +31,15 @@ otherwise stop and suggest `/investigate`. Read-only — never edit code. Resume
 
 Settle every real decision — architecture, data model, contracts, error handling,
 migrations, flags — with its reason. When one is contested, give 2–3 options with
-trade-offs and a recommendation. Ask blocking questions in one bundle.
+trade-offs and a recommendation.
+
+Never assume. Anything the ticket or the repo leaves unclear, contradicts (ticket vs code,
+docs vs code), or may mislead — a criterion with two readings, a missing role, value, or
+contract — is a question, not a guess. Then rate your confidence: **high** when every
+decision rests on the ticket, the code, or the user's word; **low** when any rests on a
+guess. When low, ask one round of questions in one bundle — only those whose answers change
+the plan, each with your default — and wait. Record each answer as a decision. Still low
+after it: say why and offer `/investigate` instead of planning on guesses.
 
 ## 3. Plan — HARD STOP
 
@@ -50,6 +58,7 @@ Size each unit so a mid-tier model finishes it without making a design choice. E
 `Machop` (a cheaper model) for mechanical sweeps that mirror a pattern, `main` for the rest;
 `Machop` units that may run in parallel own disjoint files.
 
-Present the plan and wait for explicit approval, then set `Status: approved`.
+Present the plan with its confidence and wait for explicit approval, then set
+`Status: approved`.
 
 Next: `/implement <slug>` in a fresh session.
