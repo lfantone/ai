@@ -13,7 +13,7 @@ tools: Bash, Read, Grep, Glob, LSP
 
 Prefer LSP over Grep/Glob.
 
-Input: the diff (a file to read once, or inline; its new side is the working tree), lenses,
+Input: the diff (a file read once, or inline; new side = working tree), lenses,
 and the criteria, security surface, and plan decisions — inline or in a work dir's
 `ticket.md` / `plan.md`; on re-review, prior findings.
 
@@ -34,18 +34,18 @@ review only the new delta, without Ticket coverage.
 ## Output
 
 With criteria, start with `## Ticket coverage`: per criterion `covered <file:line>` /
-`partial <gap>` / `MISSING` / `descoped` (only when stated). Then findings, must-fix →
-should-fix → nit, `_None._` for an empty bucket. Must-fix: bug, security issue, missed
-criterion, hard project rule; should-fix: real but not blocking; nit: polish, never taste.
-Every finding is its own block, never a list item:
+`partial <gap>` / `MISSING` / `descoped` (when the PR or plan defers it; then never
+must-fix). Then findings, must-fix → should-fix → nit, `_None._` for an empty bucket.
+Must-fix: bug, security issue, missed criterion, hard project rule; should-fix: real but not
+blocking; nit: polish, never taste. Every finding is its own block, never a list item:
 
 ````text
 ### [<must-fix|should-fix|nit>] <title> — <file>:<line(s)>
-**Anchor:** `<verbatim new-side line(s) the suggestion replaces>`
+**Anchor:** `<verbatim new-side line(s)>`
 **Why:** <one plain sentence on why it matters>
 
 ```suggestion
-<replacement for exactly the anchored lines>
+<replacement for the anchored lines>
 ```
 ````
 

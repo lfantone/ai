@@ -112,7 +112,11 @@ diff --git a/src/cache/session-store.ts b/src/cache/session-store.ts
 diff --git a/src/http/session-middleware.ts b/src/http/session-middleware.ts
 --- a/src/http/session-middleware.ts
 +++ b/src/http/session-middleware.ts
-@@ -6,6 +6,9 @@
+@@ -2,13 +2,16 @@
+ import type { Clock } from "../lib/clock";
+ import type { SessionStore } from "../cache/session-store";
+ 
+ export function sessionMiddleware(store: SessionStore, clock: Clock) {
    return (req: Request, res: Response, next: NextFunction) => {
      const sessionId = req.cookies?.sid;
      if (sessionId == undefined) return res.status(401).json({ error: "unauthenticated" });
@@ -122,4 +126,7 @@ diff --git a/src/http/session-middleware.ts b/src/http/session-middleware.ts
      const session = store.get(sessionId);
      if (!session) return res.status(401).json({ error: "unauthenticated" });
      req.session = session;
+     next();
+   };
+ }
 ```
