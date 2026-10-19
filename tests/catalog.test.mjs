@@ -1104,6 +1104,14 @@ test("commands and the reviewer retain their explicit safety gates", () => {
           name: "the plan records the security surface",
           pattern: /- \*\*Security surface\*\* —/,
         },
+        {
+          name: "gaps in the ticket or the repo become questions",
+          pattern: /Never assume\./,
+        },
+        {
+          name: "low confidence triggers one round of questions",
+          pattern: /When\s+low,\s+ask\s+one\s+round\s+of\s+questions/,
+        },
       ],
     },
     {
