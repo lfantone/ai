@@ -8,9 +8,9 @@ runs: 3
 Review this pull request delta for security with a sub-agent, through the project's security rules. Do not review it yourself. There is no checkout in this environment; the full diff is inline in the brief and is the only source. Return the sub-agent's findings verbatim and nothing else. Findings only (no general code-quality review), each as its own block:
 
 ````text
-### [<must-fix|recommended|cosmetic>] <short title> — <file>:<new-file line(s)>
+### [<must-fix|should-fix|nit>] <short title> — <file>:<new-file line(s)>
 **Anchor:** `<verbatim line copied from the + side of the diff>`
-**What's wrong:** <1–2 sentences>
+**Why:** <one plain sentence on why it matters>
 
 ```suggestion
 <replacement lines only>

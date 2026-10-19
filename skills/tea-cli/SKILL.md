@@ -25,6 +25,8 @@ R="repos/{owner}/{repo}"
 tea api "$R/pulls/<index>" | jq -r '.head.sha'                  # head SHA
 tea api "$R/pulls/<index>" \
   | jq '{n:.number, title, state, base:.base.ref, head:.head.ref, sha:.head.sha}'
+tea api "$R/pulls?state=open&limit=50" | jq --arg b "$(git branch --show-current)" \
+  '.[] | select(.head.ref == $b) | {number, url: .html_url, sha: .head.sha}'  # PR for the current branch
 tea api "$R/pulls/<index>.diff"                                 # diff (TEXT)
 tea api "$R/contents/<path>?ref=<sha>" | jq -r '.content' | base64 -d   # file at commit
 

@@ -1,7 +1,9 @@
 {
   "name": "ai",
   "version": "0.1.0",
-  "description": "Single-session ticket workflow: /ticket, /verify, /ship, /pr-review, /pr-feedback, with Mewtwo (review), Ditto (browser QA), Machop/Machoke (parallel workers), and the gh-cli, tea-cli, bruno-cli, ticket-context skills.",
-  "author": { "name": "Luciano Fantone" },
+  "description": "Phase workflow: /investigate, /plan, /implement, /verify, /ship, /review, with Mewtwo (review), Ditto (browser QA), Machop (Haiku worker), and the gh-cli, tea-cli, bruno-cli, ticket-context skills.",
+  "author": {
+    "name": "Luciano Fantone"
+  },
   "license": "MIT"
 }

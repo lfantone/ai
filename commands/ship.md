@@ -1,45 +1,47 @@
 ---
-description: Commit, push, and open a PR for the current work — Conventional Commit, PR body linked to the ticket, each outward step confirmed.
-argument-hint: "[ticket] [--draft]"
+description: Commit, push, and open a PR — what, how, and how to test. Each outward step on a yes.
+argument-hint: "[slug] [--draft]"
 ---
 
-Ticket: $ARGUMENTS, else the slug from the branch or `.agents/work/`.
+Work root, one folder per repo shared by every worktree:
 
-1. **Branch** — on the default branch, propose `<type>/<ticket>-<short-slug>`; create it on
+```bash
+W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+```
+
+Work dir: `<work root>/<slug>/`. Slug: $ARGUMENTS, else the one in the branch name, else the
+newest folder in the work root. If `verify.md` is missing or its latest run has a FAIL, say so
+and ask whether to ship anyway.
+
+1. **Branch** — on the default branch, propose `<type>/<slug>-<short-name>`; create it on
    yes.
 2. **Gates** — run the project's test, lint, and typecheck; on failure stop with the output.
-3. **Commit** — show `git status` and the diff stat; stage only this ticket's changes. Draft a
-   Conventional Commit (`type(scope): imperative lowercase summary`, body only when it adds
-   why), following the repo's own rules (AGENTS.md, commitlint, history) over this default —
-   including how it references ticket keys. Commit on yes.
-4. **Push** — `git push -u origin HEAD` on yes.
-5. **PR** — forge from `git remote get-url origin`: github.com → `gh-cli`, else `tea-cli`. Use
-   the repo's PR template if it has one, else:
+3. **Commit** — show `git status` and the diff stat; stage only this work. Follow the repo's
+   commit rules (AGENTS.md, commitlint, history), including how they reference ticket keys,
+   else Conventional Commits. Commit on yes.
+4. **Push** — `git push -u origin HEAD` on yes. If the branch already has a PR (forge skill),
+   report it and stop.
+5. **PR** — forge from `git remote get-url origin`: github.com → `gh-cli`, else `tea-cli`.
+   Use the repo's PR template if it has one, else:
 
    ```markdown
-   ## Summary
+   ## What
 
-   <1–3 bullets>
+   <1–3 sentences: the change and why>
 
-   ## Ticket
+   ## How
 
-   <link>
+   <1–3 bullets: approach and key decisions>
 
-   ## Changes
+   ## How to test
 
-   <file-level bullets>
+   <one paragraph: setup, steps, expected result — from verify.md>
 
-   ## How tested
-
-   <tests run, verification results>
-
-   ## Acceptance criteria
-
-   - [x] AC1 …
+   Ticket: <link>
    ```
 
    Show the title and body; create on yes (draft if asked). Report the URL.
 
 6. **Ticket** — offer the transition and a PR-link comment; only on yes.
 
-Merging stays with the user.
+Next: `/review`. Merging stays with the user.

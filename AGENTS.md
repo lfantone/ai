@@ -62,11 +62,12 @@ Rules that keep token cost low:
   prose the agent must re-derive each run.
 - **Stay inside the size budgets** — `npm test` fails past them:
 
-  | File                     | Description | Body                |
-  | ------------------------ | ----------- | ------------------- |
-  | agent, command           | ≤ 160 chars | ≤ 300 / ≤ 450 words |
-  | skill                    | ≤ 300 chars | ≤ 600 words         |
-  | `instructions/AGENTS.md` | —           | ≤ 120 words         |
+  | File                     | Description | Body        |
+  | ------------------------ | ----------- | ----------- |
+  | agent                    | ≤ 160 chars | ≤ 300 words |
+  | command                  | ≤ 100 chars | ≤ 450 words |
+  | skill                    | ≤ 300 chars | ≤ 600 words |
+  | `instructions/AGENTS.md` | —           | ≤ 120 words |
 
 - **Each fact lives once.** Forge detection and payloads live only in `gh-cli` / `tea-cli`;
   commands run in the main session, where skills load, so they point at the skill.
@@ -104,7 +105,7 @@ agent's system prompt:
 name: Machop # spawnable display name (file: machop.md — lowercase filename)
 description: What the agent produces and when to spawn it. # how the caller picks it
 model: haiku | sonnet | opus # pin the model deliberately — the intelligence tier is a design choice
-reasoning: low | medium | high # optional thinking-effort hint (add a `# escalate to xhigh …` note where it applies)
+effort: low | medium | high # optional thinking effort, Claude Code's own key (add a `# escalate to xhigh …` note where it applies)
 temperature: 0.1 # optional — pin ONLY for deterministic executors/verifiers
 color: "#E57373" # identity hex, unique per agent (harnesses with a TUI show it; type color shaded by tier)
 tools: Bash, Read, Write # least-privilege list of what it may use
@@ -123,6 +124,9 @@ Conventions:
   matches the role; evolution lines map nicely onto model tiers (Machop → Machoke). Add
   its Norse name to `NORSE` in `scripts/install.mjs` — `--names norse` renames at install
   time, and `npm test` fails for an agent without one.
+- **Never pin an MCP server name** — it differs per install. An agent that needs MCP tools
+  omits `tools:` (it inherits the session's servers under any name) and lists what it must not
+  use in `disallowedTools`; refer to the tools by their base names. `npm test` checks it.
 - **Self-contained.** A sub-agent only sees its spawn prompt — it does **not** auto-load
   skills or other agents. So an agent that uses a skill embeds the few exact commands it
   needs and cites the skill as the source of truth (don't make the caller paste them).
@@ -132,8 +136,8 @@ Conventions:
   gathering/synthesis → Sonnet, open-ended reasoning → Opus. A task being _critical_ isn't
   a reason to over-provision — reliability comes from deterministic instructions (e.g. have
   the agent find a line with `grep -n` rather than counting by eye). Keep `tools`
-  least-privilege, and set `reasoning` to match: every Haiku agent pins `reasoning: low`
-  (the deterministic floor); Sonnet/Opus agents pin `reasoning` only when the role's load
+  least-privilege, and set `effort` to match: every Haiku agent pins `effort: low`
+  (the deterministic floor); Sonnet/Opus agents pin `effort` only when the role's load
   exceeds the tier's default (authors, reviewers, executors), so a pure gatherer that omits
   it is inheriting the default on purpose. Add a `# escalate to xhigh …` note where a
   larger input should bump it.
@@ -152,6 +156,8 @@ A command is a single Markdown file in `commands/` defining an invokable workflo
 ---
 description: One line — what the command does and when to run it. # shown in the command list
 argument-hint: "[ticket id] [PR url]" # optional; quote it — brackets are YAML syntax
+model: sonnet # optional tier pin (haiku | sonnet | opus) — OpenCode maps it, Copilot/Codex drop it
+effort: medium # optional, Claude Code only
 ---
 
 <the workflow prompt; reference user input with `$ARGUMENTS`>
@@ -161,6 +167,9 @@ argument-hint: "[ticket id] [PR url]" # optional; quote it — brackets are YAML
   does the work itself; it is not an orchestrator relaying briefs.
 - **Hard stops live in commands.** Only the main session can wait for the user; spawned
   agents run to completion and return a compact result.
+- **One phase, one artifact.** A workflow command resolves its work dir with the shared `W=` line
+  (`npm test` checks it), reads its inputs there, writes its own artifact, and ends by naming the
+  next command with the slug — never invoking it.
 - **Spawn a defined agent by name** (in backticks, e.g. `Mewtwo` — `npm test` checks every
   name resolves and every agent has a caller). Don't restate its instructions or override
   its model.
@@ -173,6 +182,14 @@ argument-hint: "[ticket id] [PR url]" # optional; quote it — brackets are YAML
 When you delete or rename an agent, command, or skill, add its old name (and its Norse name,
 if it had one) to `RETIRED` in `scripts/install.mjs`. Installs remove those names from every
 target dir, so users with pre-manifest installs don't keep stale copies.
+
+## Gotchas
+
+- Prettier reads two `$` in one Markdown paragraph as inline math and strips the spaces around
+  the code spans between them. Keep shell snippets that use `$` in fenced blocks; a lone
+  `$ARGUMENTS` is fine.
+- macOS filesystems are case-insensitive, so a doc named `claude.md` loads in Claude Code as a
+  `CLAUDE.md` instructions file. Name harness docs after the product (`claude-code.md`).
 
 ## Validate before committing
 

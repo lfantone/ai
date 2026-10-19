@@ -10,7 +10,8 @@
  * Options:
  *   --harness <name>      opencode | opencode-v2 | github (Copilot CLI/VS Code/coding agent) |
  *                         claude | codex
- *   --global              install to the user-level config dir (default: project)
+ *   --global              install to the user-level config dir (default: project);
+ *                         Claude Code's is $CLAUDE_CONFIG_DIR when set, else ~/.claude
  *   --project <dir>       target project dir for a project install (default: cwd)
  *   --names <set>         pokemon (default) | norse
  *   --provider <name>     OpenCode (v1/v2) only: copilot (default) | claude | openai
@@ -69,12 +70,12 @@ const lacksVariant = (model, variant) =>
 // Pokémon → Norse. Order matters: longest-overlapping first.
 const NORSE = [
   ["Mewtwo", "Mimir"],
-  ["Machoke", "Sindri"],
   ["Machop", "Brokkr"],
   ["Ditto", "Loki"],
 ];
 
-// Where things land, per harness × scope. {p} = project dir, {h} = home.
+// Where things land, per harness × scope. {p} = project dir, {h} = home,
+// {c} = Claude Code's config dir.
 const TARGETS = {
   opencode: {
     project: {
@@ -99,9 +100,9 @@ const TARGETS = {
       skills: "{p}/.claude/skills",
     },
     global: {
-      agents: "{h}/.claude/agents",
-      commands: "{h}/.claude/commands",
-      skills: "{h}/.claude/skills",
+      agents: "{c}/agents",
+      commands: "{c}/commands",
+      skills: "{c}/skills",
     },
   },
   codex: {
@@ -122,7 +123,7 @@ TARGETS["opencode-v2"] = TARGETS.opencode;
 const INSTRUCTIONS = {
   opencode: "{h}/.config/opencode/AGENTS.md",
   github: "{h}/.copilot/copilot-instructions.md",
-  claude: "{h}/.claude/CLAUDE.md",
+  claude: "{c}/CLAUDE.md",
   codex: "{h}/.codex/AGENTS.md",
 };
 INSTRUCTIONS["opencode-v2"] = INSTRUCTIONS.opencode;
@@ -144,13 +145,23 @@ const RETIRED = {
       "mew",
       "pichu",
     ],
-    ...["pikachu", "porygon", "porygon2", "raichu", "slowpoke"],
+    ...["pikachu", "porygon", "porygon2", "raichu", "slowpoke", "machoke"],
     ...["bragi", "forseti", "heimdall", "hermod", "huginn", "kraken", "muninn"],
-    ...["ratatoskr", "skadi", "skuld", "tyr", "urd", "verdandi", "volund"],
+    ...[
+      "ratatoskr",
+      "skadi",
+      "skuld",
+      "tyr",
+      "urd",
+      "verdandi",
+      "volund",
+      "sindri",
+    ],
   ],
   commands: [
     ...["feedback-orchestrator", "implement-orchestrator", "plan-orchestrator"],
     ...["review-orchestrator", "verify-orchestrator"],
+    ...["ticket", "pr-review", "pr-feedback"],
   ],
   skills: ["repo-learnings"],
 };
@@ -203,12 +214,23 @@ if (isOpencode && !MODEL_MAP.opencode[provider]) {
 
 const modelMap = isOpencode ? MODEL_MAP.opencode[provider] : MODEL_MAP[harness];
 
+// Claude Code relocates its whole config dir (agents, commands, skills, CLAUDE.md) to
+// $CLAUDE_CONFIG_DIR when set.
+const claudeHome = path.resolve(
+  (process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude")).replace(
+    /^~(?=$|\/)/,
+    os.homedir(),
+  ),
+);
+const expand = (template) =>
+  template
+    .replace("{p}", projectDir)
+    .replace("{h}", os.homedir())
+    .replace("{c}", claudeHome);
+
 const resolveDirs = (h) =>
   Object.fromEntries(
-    Object.entries(TARGETS[h][scope]).map(([k, v]) => [
-      k,
-      v.replace("{p}", projectDir).replace("{h}", os.homedir()),
-    ]),
+    Object.entries(TARGETS[h][scope]).map(([k, v]) => [k, expand(v)]),
   );
 const dirs = resolveDirs(harness);
 
@@ -311,7 +333,7 @@ for (const f of agents) {
       `mode: subagent`,
       `model: ${modelMap[fm.model] ?? modelMap.sonnet}`,
       ...(fm.temperature ? [`temperature: ${fm.temperature}`] : []),
-      ...(fm.reasoning ? [`reasoningEffort: ${fm.reasoning}`] : []),
+      ...(fm.effort ? [`reasoningEffort: ${fm.effort}`] : []),
       ...(fm.color ? [`color: ${fm.color}`] : []),
       `permission:`,
       `  edit: ${write ? "allow" : "deny"}`,
@@ -329,9 +351,7 @@ for (const f of agents) {
     ];
     const model = modelMap[fm.model] ?? modelMap.sonnet;
     const variant =
-      fm.reasoning && !lacksVariant(model, fm.reasoning)
-        ? `#${fm.reasoning}`
-        : "";
+      fm.effort && !lacksVariant(model, fm.effort) ? `#${fm.effort}` : "";
     const lines = [
       `description: ${yamlStr(fm.description)}`,
       `mode: subagent`,
@@ -352,9 +372,7 @@ for (const f of agents) {
       `name = ${tomlStr(outName(name))}`,
       `description = ${tomlStr(fm.description)}`,
       `model = ${tomlStr(modelMap[fm.model] ?? modelMap.sonnet)}`,
-      ...(fm.reasoning
-        ? [`model_reasoning_effort = ${tomlStr(fm.reasoning)}`]
-        : []),
+      ...(fm.effort ? [`model_reasoning_effort = ${tomlStr(fm.effort)}`] : []),
       `sandbox_mode = ${tomlStr(write ? "workspace-write" : "read-only")}`,
       `developer_instructions = ${tomlStr(body)}`,
     ];
@@ -390,9 +408,13 @@ for (const f of commands) {
   if (harness === "claude") {
     emit(path.join(dirs.commands, f), transform(raw));
   } else if (isOpencode) {
+    // OpenCode commands take a provider model id and have no argument hint or effort.
+    const front = raw
+      .slice(0, raw.length - body.length)
+      .replace(/^(argument-hint|effort):.*\n/gm, "")
+      .replace(/^model: (\w+)$/m, (line, tier) => `model: ${modelMap[tier]}`);
     // v2 renamed the task tool to subagent.
-    const out = raw
-      .replace(/^argument-hint:.*\n/m, "")
+    const out = (front + body)
       .replaceAll(
         "the Agent tool",
         harness === "opencode-v2" ? "the subagent tool" : "the task tool",
@@ -421,9 +443,7 @@ for (const d of skills) {
 
 // Kept out of `writes` on purpose: the manifest cleanup must never delete a file the user owns.
 const instructionsFile =
-  scope === "global"
-    ? INSTRUCTIONS[harness].replace("{h}", os.homedir())
-    : undefined;
+  scope === "global" ? expand(INSTRUCTIONS[harness]) : undefined;
 const withBlock = (existing, block) => {
   const wrapped = `${BLOCK_BEGIN}\n${block.trim()}\n${BLOCK_END}`;
   const start = existing.indexOf(BLOCK_BEGIN);
@@ -620,6 +640,13 @@ console.log(
       ? `\n  stale: ${stale.length} ${dryRun ? "to remove" : "removed"}`
       : "") +
     `\n  ${dryRun ? "planned" : "installed"}: ${files || writes.length} entries`,
+);
+const setupDoc =
+  { claude: "claude-code", "opencode-v2": "opencode", github: "copilot" }[
+    harness
+  ] ?? harness;
+console.log(
+  `note: workflow state lives in ~/.agents/work — allow it once: docs/${setupDoc}.md#state-folder`,
 );
 if (harness === "github" && scope === "global") {
   console.log(

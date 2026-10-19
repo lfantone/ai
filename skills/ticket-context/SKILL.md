@@ -1,6 +1,6 @@
 ---
 name: ticket-context
-description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams thread into a compact brief — goal, explicit acceptance criteria, scope, links, dependencies, open questions. Use when starting work on a ticket or asked what a ticket requires.
+description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams thread into a compact brief — goal, explicit acceptance criteria, scope, links, dependencies, open questions — and publish a written ticket back. Use when starting work on a ticket or creating or updating one.
 ---
 
 # Ticket context
@@ -30,6 +30,15 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
   environment config or secrets, API contracts.
 - **Open questions** — only ambiguities that change the implementation.
 
+## Publish — only on an explicit yes
+
+- **Jira:** `createJiraIssue` with `projectKey`, `issueTypeName`, `summary`, `description`,
+  or `editJiraIssue` with `fields: {"description": …}` — both with
+  `contentFormat: "markdown"`.
+- **GitHub:** `gh issue create --title <t> --body-file -` · `gh issue edit <n> --body-file -`.
+- **Gitea:** `tea issues create --title <t> --description-file -` ·
+  `tea issues edit <n> --description-file -`.
+
 ## Gotchas
 
 - Jira calls need `cloudId` (UUID or site URL). If unknown, call
@@ -40,3 +49,5 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
   line from them, under Scope, when they bound the work.
 - A thin ticket: read the parent or epic before asking the user.
 - In a chat thread the latest agreed message wins over earlier ones. Note who agreed.
+- Editing replaces the whole description. Carry over what the original said, or add the
+  ticket as a comment (`addCommentToJiraIssue`, `gh issue comment`) instead.

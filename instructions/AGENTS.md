@@ -8,5 +8,5 @@
 - Report failures with the real output; never claim a check you didn't run.
 - The project's AGENTS.md / CLAUDE.md and existing code patterns beat these defaults.
 - Raise dependencies and blockers as soon as you find them.
-- Workflow state lives in `.agents/work/`, kept out of git.
-- Flow: `/ticket` → `/verify` → `/ship` → `/pr-review` ⇄ `/pr-feedback`.
+- Workflow state lives in `~/.agents/work/<repo>/<slug>/`, shared by every worktree.
+- Flow: `/investigate` → `/plan` → `/implement` → `/verify` → `/ship` → `/review`.

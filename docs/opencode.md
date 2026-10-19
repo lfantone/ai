@@ -12,10 +12,11 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 ## What's installed
 
-- **`agents/*.md`**: the 4 agents with `mode: subagent`, the provider's `model`, and a
+- **`agents/*.md`**: the 3 agents with `mode: subagent`, the provider's `model`, and a
   `permission` object derived from each agent's canonical `tools` (`edit: allow` only for
-  the Machop/Machoke workers).
-- **`commands/*.md`**: the 5 commands; `$ARGUMENTS` works as-is.
+  the Machop worker).
+- **`commands/*.md`**: the 6 commands; `$ARGUMENTS` works as-is. A command's `model` tier
+  becomes the provider's id; `effort` is dropped (OpenCode commands have none).
 - **`skills/`**: copied as-is (OpenCode reads `SKILL.md` natively).
 - **Global only:** the `instructions/AGENTS.md` block in `~/.config/opencode/AGENTS.md`,
   between `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`. Everything else in that
@@ -31,9 +32,8 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 | sonnet | `github-copilot/claude-sonnet-5.5` | `anthropic/claude-sonnet-5-5` | `openai/gpt-5.3-codex-spark` |
 | opus   | `github-copilot/claude-opus-5.5`   | `anthropic/claude-opus-5-5`   | `openai/gpt-5.6-sol`         |
 
-`temperature`, `color`, and `reasoning` (→ `reasoningEffort`) come from the canonical
-agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E57373` →
-Machoke `#C03028`); Norse names keep them.
+`temperature`, `color`, and `effort` (→ `reasoningEffort`) come from the canonical
+agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E57373`); Norse names keep them.
 
 ## OpenCode v2
 
@@ -43,7 +43,7 @@ works the same.
 
 - `permission` → an ordered `permissions` list (`action` / `resource: "*"` / `effect`;
   `bash` → `shell`), appended after v2's allow-all base.
-- `reasoning:` → a model variant (`claude-opus-5.5#high`), only where the model has that
+- `effort:` → a model variant (`claude-opus-5.5#high`), only where the model has that
   variant — Claude Haiku 4.5 has no `low`, so Machop runs on its default.
 - `temperature` → `request.body.temperature`, only for the haiku tier: v2 sends the body as-is,
   and the Sonnet/Opus-tier models reject sampling params.
@@ -51,9 +51,21 @@ works the same.
 v2 still loads v1 agent files, but copies `reasoningEffort` and `temperature` into the raw
 request body — install with `opencode-v2` once you switch.
 
+## State folder
+
+OpenCode asks before touching paths outside the project (`external_directory`, default `ask`).
+Allow the workflow folder once in your global config, `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": { "external_directory": { "~/.agents/work/**": "allow" } }
+}
+```
+
 ## Notes
 
 - The installer copies into a real `.opencode/`. It removes entries it installed before
   (`.ai-catalog-manifest.json`) plus retired catalog names; other tools' entries stay.
-- Ditto needs the Chrome DevTools MCP configured in `opencode.json`; `/ticket` needs the
-  Atlassian MCP for Jira keys.
+- Ditto needs the Chrome DevTools MCP configured in `opencode.json`; `/investigate` needs
+  the Atlassian MCP for Jira keys.

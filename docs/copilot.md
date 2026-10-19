@@ -13,15 +13,36 @@ committed, so gitignore the installed entries if they shouldn't land in the proj
 
 ## What's installed
 
-- **4 agents** (`.github/agents/*.agent.md`, `user-invocable: false`): Copilot `model` id and
+- **3 agents** (`.github/agents/*.agent.md`, `user-invocable: false`): Copilot `model` id and
   a `tools` array derived from the canonical tools list.
-- **5 command-skills** (`.github/skills/<name>/SKILL.md`): Copilot runs workflows as skills,
-  so each command ships in the agentskills format. Ask for it by name ("run ticket for
-  IE-1234"); `$ARGUMENTS` becomes "the user's request".
+- **6 command-skills** (`.github/skills/<name>/SKILL.md`): Copilot runs workflows as skills,
+  so each command ships in the agentskills format. Ask for it by name ("run investigate
+  for IE-1234"); `$ARGUMENTS` becomes "the user's request". Command model and effort pins
+  don't carry over.
 - **Catalog skills**: copied as-is.
 - **Global only:** the `instructions/AGENTS.md` block in
   `~/.copilot/copilot-instructions.md` (verified against Copilot CLI 0.0.418), between
   `<!-- ai-catalog-begin -->` / `<!-- ai-catalog-end -->`.
+
+## State folder
+
+Copilot CLI asks before touching a directory outside the project, and edits there can still
+ask for write approval. Grant the workflow folder per session with `/add-dir ~/.agents/work`,
+or at launch with `copilot --add-dir ~/.agents/work` (an alias makes it stick). To save it for
+one project, add the absolute path to that project's entry in
+`$COPILOT_HOME/permissions-config.json` (default `~/.copilot`):
+
+```json
+{
+  "locations": {
+    "/Users/<you>/work/my-app": {
+      "allowed_directories": ["/Users/<you>/.agents/work"]
+    }
+  }
+}
+```
+
+Untested on VS Code and the cloud coding agent.
 
 ## Model mapping
 

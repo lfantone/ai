@@ -74,7 +74,7 @@ git clone git@github.com:lfantone/ai.git && cd ai
 ./scripts/install.mjs --harness github   --project ~/work/my-app   # → .github/
 ./scripts/install.mjs --harness codex    --project ~/work/my-app   # → .codex/ + .agents/
 
-./scripts/install.mjs --harness claude --global                    # → ~/.claude/
+./scripts/install.mjs --harness claude --global                    # → $CLAUDE_CONFIG_DIR or ~/.claude/
 ./scripts/install.mjs --harness opencode --global --names norse    # Norse-named roster
 ./scripts/install.mjs --harness codex --global                     # → ~/.codex/ + ~/.agents/
 ./scripts/install.mjs --harness opencode --project . --provider openai
@@ -92,14 +92,16 @@ Every install also removes what earlier catalog versions left behind in its targ
 entries it no longer ships (including installs that predate the manifest, under either naming
 set) and, on project installs, the old orchestrators' `cache/` artifacts. Other tools' files
 stay. Preview with `--dry-run` — stale entries print as `would remove stale …`.
-Re-run it after pulling catalog updates. Workflow state lives in each project's
-`.agents/work/` (see [the workflow](./docs/workflow.md#state)).
+Re-run it after pulling catalog updates. Workflow state lives in `~/.agents/work/<repo>/`,
+shared by every worktree; allow that folder once per harness (see
+[the workflow](./docs/workflow.md#state)).
 
 OpenCode defaults to GitHub Copilot models. Pass `--provider claude` or
 `--provider openai` to use direct Anthropic or OpenAI/Codex models. Claude Code, GitHub
 Copilot, and Codex use their native model configuration and do not need provider selection.
 
-Harness details: [OpenCode](./docs/opencode.md) · [Copilot](./docs/copilot.md) · [Codex](./docs/codex.md).
+Harness details: [Claude Code](./docs/claude-code.md) · [OpenCode](./docs/opencode.md) ·
+[Copilot](./docs/copilot.md) · [Codex](./docs/codex.md).
 
 ## Conventions
 
@@ -112,8 +114,9 @@ token-efficiency practices.
 
 ## Documentation
 
-- [**The workflow**](./docs/workflow.md) — `/ticket` → `/verify` → `/ship` →
-  `/pr-review` ⇄ `/pr-feedback`, and why there is no orchestrator. **Start here.**
+- [**The workflow**](./docs/workflow.md) — `/investigate` → `/plan` → `/implement` →
+  `/verify` → `/ship` → `/review`, and why there is no orchestrator. **Start here.**
+- [Claude Code setup](./docs/claude-code.md) — config dir, the state-folder settings, command names.
 - [OpenCode setup](./docs/opencode.md) — the generated `.opencode/` config.
 - [Copilot setup](./docs/copilot.md) — the generated `.github/agents/` config.
 - [Codex setup](./docs/codex.md) — the generated `.codex/agents/` and `.agents/skills/` config.

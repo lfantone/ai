@@ -182,9 +182,9 @@ def impl_brief(files: list[str]) -> str:
 REVIEW = """Review this pull request delta for security with a sub-agent, through the project's security rules. Do not review it yourself. There is no checkout in this environment; the full diff is inline in the brief and is the only source. Return the sub-agent's findings verbatim and nothing else. Findings only (no general code-quality review), each as its own block:
 
 ````text
-### [<must-fix|recommended|cosmetic>] <short title> — <file>:<new-file line(s)>
+### [<must-fix|should-fix|nit>] <short title> — <file>:<new-file line(s)>
 **Anchor:** `<verbatim line copied from the + side of the diff>`
-**What's wrong:** <1–2 sentences>
+**Why:** <one plain sentence on why it matters>
 
 ```suggestion
 <replacement lines only>
@@ -231,8 +231,8 @@ def llm(rubric: str) -> str:
 
 
 ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Mewtwo\nmin: 1\narm: with-only\nweight: 0.01\n---\n"
-SEV = r"(must-fix|recommended|cosmetic)"
-MISSING_SUGGESTION = r"^### \[(must-fix|recommended|cosmetic)\] [^\n]*\n(?:(?!### |## |```suggestion)[^\n]*\n)*(?:(?=### |## )|(?!### |## |```suggestion)[^\n]*(?![\s\S]))"
+SEV = r"(must-fix|should-fix|nit)"
+MISSING_SUGGESTION = r"^### \[(must-fix|should-fix|nit)\] [^\n]*\n(?:(?!### |## |```suggestion)[^\n]*\n)*(?:(?=### |## )|(?!### |## |```suggestion)[^\n]*(?![\s\S]))"
 EMPTY_SUGGESTION = r"```suggestion\s*\n\s*```"
 
 
@@ -312,7 +312,7 @@ fire_case(
 The answer is a security review of a diff that follows every project security rule: `requireAdmin` is called, the id is zod-validated, the query is parameterised, the response is redacted, the token is not logged, login verifies the password via `verifyPassword`, and the cookie keeps `httpOnly/secure/sameSite`. All claims must hold to pass.
 
 1. There are no must-fix findings and the must-fix bucket is written as `_None._`. A review whose three buckets are all `_None._` is the ideal answer and PASSES.
-2. If any recommended or cosmetic finding is present, it is a defensible hardening suggestion anchored to an added line (for example rate-limiting the export, or `sameSite: "strict"`), not an invented vulnerability.
+2. If any should-fix or nit finding is present, it is a defensible hardening suggestion anchored to an added line (for example rate-limiting the export, or `sameSite: "strict"`), not an invented vulnerability.
 3. `createdAt: Date.now()` in the login handler is not reported as a security issue (it is a code-convention matter for the general reviewer, if anything).
 """),
     },
@@ -334,7 +334,7 @@ fire_case(
 The answer is a security review of a diff with two planted defects. All claims must hold to pass.
 
 1. The `sid` cookie set with `httpOnly: false, secure: false, sameSite: "none"` is reported as must-fix (the security rules say weakening any attribute is a must-fix); the suggestion restores `httpOnly: true, secure: true` and a `lax` or `strict` sameSite.
-2. The unvalidated `req.params.id` is reported (must-fix or recommended) as bypassing the `sessionIdSchema` safe path; the suggestion uses `sessionIdSchema.parse(req.params.id)`. The query itself is parameterised, so the answer does not claim SQL injection here.
+2. The unvalidated `req.params.id` is reported (must-fix or should-fix) as bypassing the `sessionIdSchema` safe path; the suggestion uses `sessionIdSchema.parse(req.params.id)`. The query itself is parameterised, so the answer does not claim SQL injection here.
 3. No other must-fix is invented (the login handler verifies the password via `verifyPassword`, so "no credential check" would be an invented finding).
 """),
     },

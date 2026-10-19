@@ -24,6 +24,8 @@ R="repos/{owner}/{repo}"
 gh api "$R/pulls/<number>" --jq '.head.sha'                    # head SHA
 gh api "$R/pulls/<number>" \
   --jq '{n:.number, title, state, base:.base.ref, head:.head.ref, sha:.head.sha}'
+gh api "$R/pulls?head={owner}:{branch}" \
+  --jq '.[] | {number, url: .html_url, sha: .head.sha}'       # PR for the current branch
 gh pr diff <number>                                            # diff (TEXT)
 gh api -H "Accept: application/vnd.github.raw" "$R/contents/<path>?ref=<sha>"  # file at commit
 

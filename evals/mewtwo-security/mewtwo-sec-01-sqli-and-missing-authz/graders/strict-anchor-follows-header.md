@@ -4,4 +4,4 @@ target: last_message
 match: not_contains
 flags: m
 ---
-^### \[(must-fix|recommended|cosmetic)\] (?![^\n]*\(not in diff)[^\n]*\n\n?(?!\*\*Anchor:\*\*)
+^### \[(must-fix|should-fix|nit)\] (?![^\n]*\(not in diff)[^\n]*\n\n?(?!\*\*Anchor:\*\*)
