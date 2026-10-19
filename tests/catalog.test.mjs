@@ -51,7 +51,7 @@ const wordCount = (text) => text.split(/\s+/).filter(Boolean).length;
 // Size budgets: descriptions load in every session, bodies on every activation.
 const BUDGETS = {
   agents: { words: 300, description: 160 },
-  commands: { words: 450, description: 160 },
+  commands: { words: 450, description: 100 },
   skills: { words: 600, description: 300 },
 };
 const INSTRUCTIONS_WORD_BUDGET = 120;
@@ -69,6 +69,9 @@ const frontmatterError = (filePath) => {
     return error.message.split("\n")[0];
   }
 };
+
+// The developer's own Claude config dir must never receive a test install.
+const { CLAUDE_CONFIG_DIR: _developerClaudeHome, ...testEnv } = process.env;
 
 const install = (
   harness,
@@ -93,7 +96,7 @@ const install = (
     {
       cwd: ROOT,
       stdio: "pipe",
-      env: { ...process.env, ...(options.env ?? {}) },
+      env: { ...testEnv, ...(options.env ?? {}) },
     },
   );
   return project;
@@ -150,11 +153,11 @@ test("Codex installs TOML agents and skills in Codex discovery roots", () => {
   assert.match(machop, /^sandbox_mode = "workspace-write"$/m);
   assert.match(machop, /^developer_instructions = /m);
   assert.doesNotMatch(machop, /^---$/m);
-  const machoke = fs.readFileSync(
-    path.join(project, ".codex/agents/machoke.toml"),
+  const ditto = fs.readFileSync(
+    path.join(project, ".codex/agents/ditto.toml"),
     "utf8",
   );
-  assert.match(machoke, /^model = "gpt-5.6-terra"$/m);
+  assert.match(ditto, /^model = "gpt-5.6-terra"$/m);
   const mewtwo = fs.readFileSync(
     path.join(project, ".codex/agents/mewtwo.toml"),
     "utf8",
@@ -163,12 +166,12 @@ test("Codex installs TOML agents and skills in Codex discovery roots", () => {
   assert.ok(
     fs.existsSync(path.join(project, ".agents/skills/gh-cli/SKILL.md")),
   );
-  const ticketSkill = fs.readFileSync(
-    path.join(project, ".agents/skills/ticket/SKILL.md"),
+  const investigateSkill = fs.readFileSync(
+    path.join(project, ".agents/skills/investigate/SKILL.md"),
     "utf8",
   );
-  assert.match(ticketSkill, /^name: ticket$/m);
-  assert.doesNotMatch(ticketSkill, /\$ARGUMENTS/);
+  assert.match(investigateSkill, /^name: investigate$/m);
+  assert.doesNotMatch(investigateSkill, /\$ARGUMENTS/);
   assert.equal(fs.existsSync(path.join(project, ".codex/commands")), false);
 });
 
@@ -233,7 +236,7 @@ test("installer removes legacy Porygon agents without removing external agents",
 test("code-aware agents receive LSP access and navigation guidance", () => {
   // Arrange
   const project = install("opencode");
-  const names = ["machoke", "machop", "mewtwo"];
+  const names = ["machop", "mewtwo"];
 
   // Act
   const rows = names.map((name) => ({
@@ -272,6 +275,44 @@ test("GitHub agents with portable tools retain a least-privilege tool list", () 
   assert.match(machop, /^tools: \[.*"read".*"write".*\]$/m);
 });
 
+test("agents never pin an MCP server name, and the MCP agent stays read-only", () => {
+  // Arrange — server names differ per install, so MCP access comes from inheriting tools
+  const agents = agentFiles().map((file) => ({
+    file,
+    frontmatter: splitDoc(read(`agents/${file}`)).frontmatter,
+  }));
+  const ditto = agents.find(({ file }) => file === "ditto.md").frontmatter;
+
+  // Act
+  const pinned = agents.filter(({ frontmatter }) =>
+    /mcp__/.test(
+      `${frontmatter.tools ?? ""} ${frontmatter.disallowedTools ?? ""}`,
+    ),
+  );
+  const denied = String(ditto.disallowedTools ?? "")
+    .split(",")
+    .map((name) => name.trim());
+
+  // Assert
+  assert.deepEqual(
+    pinned.map(({ file }) => file),
+    [],
+    "no agent may name an MCP server in its tool lists",
+  );
+  assert.equal(
+    ditto.tools,
+    undefined,
+    "Ditto inherits the session's MCP tools",
+  );
+  assert.deepEqual(
+    ["Bash", "PowerShell", "Edit", "Write", "NotebookEdit"].filter(
+      (tool) => !denied.includes(tool),
+    ),
+    [],
+    "Ditto must not edit files or run commands",
+  );
+});
+
 test("canonical agent identities are unique and match their filenames", () => {
   // Arrange
   const files = agentFiles();
@@ -290,7 +331,7 @@ test("canonical agent identities are unique and match their filenames", () => {
   const colors = rows.map((row) => row.color);
 
   // Assert — offenders are collected into a list and that list must be empty.
-  assert.equal(files.length, 4);
+  assert.equal(files.length, 3);
   assert.deepEqual(
     rows
       .filter((row) => row.name?.toLowerCase() !== row.file)
@@ -357,7 +398,7 @@ test("installed Sonnet and Opus agents use the current model generation", () => 
     {
       dir: ".opencode/agents",
       suffix: ".md",
-      agent: "machoke",
+      agent: "ditto",
       model: "github-copilot/claude-sonnet-5.5",
     },
     {
@@ -369,7 +410,7 @@ test("installed Sonnet and Opus agents use the current model generation", () => 
     {
       dir: ".github/agents",
       suffix: ".agent.md",
-      agent: "machoke",
+      agent: "ditto",
       model: "claude-sonnet-5.5",
     },
     {
@@ -413,7 +454,7 @@ test("OpenCode providers map every capability tier", () => {
     },
     {
       provider: "claude",
-      agent: "machoke",
+      agent: "ditto",
       model: "anthropic/claude-sonnet-5-5",
     },
     {
@@ -428,7 +469,7 @@ test("OpenCode providers map every capability tier", () => {
     },
     {
       provider: "openai",
-      agent: "machoke",
+      agent: "ditto",
       model: "openai/gpt-5.3-codex-spark",
     },
     {
@@ -465,6 +506,66 @@ test("OpenCode providers map every capability tier", () => {
   );
 });
 
+test("command model pins: Claude keeps them, OpenCode maps them, command-skills drop them", () => {
+  // Arrange — the commands that pin a tier, and OpenCode's default (Copilot) id per tier
+  const copilot = {
+    haiku: "github-copilot/claude-haiku-4.5",
+    sonnet: "github-copilot/claude-sonnet-5.5",
+    opus: "github-copilot/claude-opus-5.5",
+  };
+  const pinned = commandFiles()
+    .map((file) => ({
+      name: file.replace(/\.md$/, ""),
+      canonical: splitDoc(read(`commands/${file}`)).frontmatter,
+    }))
+    .filter(({ canonical }) => canonical.model);
+  const projects = {
+    claude: install("claude"),
+    opencode: install("opencode"),
+    codex: install("codex"),
+  };
+  const frontmatterAt = (file) =>
+    splitDoc(fs.readFileSync(file, "utf8")).frontmatter;
+
+  // Act
+  const rows = pinned.map(({ name, canonical }) => ({
+    name,
+    canonical,
+    claude: frontmatterAt(
+      path.join(projects.claude, ".claude/commands", `${name}.md`),
+    ),
+    opencode: frontmatterAt(
+      path.join(projects.opencode, ".opencode/commands", `${name}.md`),
+    ),
+    codex: frontmatterAt(
+      path.join(projects.codex, ".agents/skills", name, "SKILL.md"),
+    ),
+  }));
+
+  // Assert
+  assert.deepEqual(
+    pinned.map(({ name }) => name).sort(),
+    ["implement", "investigate", "plan"],
+    "the phases that size their own model",
+  );
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ canonical, claude, opencode, codex }) =>
+          !copilot[canonical.model] ||
+          claude.model !== canonical.model ||
+          claude.effort !== canonical.effort ||
+          opencode.model !== copilot[canonical.model] ||
+          "effort" in opencode ||
+          "model" in codex ||
+          "effort" in codex,
+      )
+      .map(({ name }) => name),
+    [],
+    "every pin must be a known tier that each harness keeps, maps, or drops",
+  );
+});
+
 test("installer rejects unsupported provider combinations", () => {
   // Arrange
   const installer = path.join(ROOT, "scripts/install.mjs");
@@ -479,7 +580,7 @@ test("installer rejects unsupported provider combinations", () => {
     const result = spawnSync(
       process.execPath,
       [installer, "--harness", harness, "--provider", provider, "--dry-run"],
-      { cwd: ROOT, encoding: "utf8" },
+      { cwd: ROOT, encoding: "utf8", env: testEnv },
     );
     return { harness, message, result };
   });
@@ -595,6 +696,56 @@ test("global install maintains one instructions block and keeps user content", (
   assert.match(content, /^# Mine\n\nKeep me\.\n/);
   assert.equal(content.split("<!-- ai-catalog-begin -->").length - 1, 1);
   assert.ok(content.includes(read("instructions/AGENTS.md").trim()));
+});
+
+test("Claude global install honours CLAUDE_CONFIG_DIR", () => {
+  // Arrange
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ai-claude-home-"));
+  const config = fs.mkdtempSync(path.join(os.tmpdir(), "ai-claude-config-"));
+  const expected = [
+    "agents/mewtwo.md",
+    "commands/review.md",
+    "skills/gh-cli/SKILL.md",
+    "CLAUDE.md",
+  ];
+
+  // Act
+  install("claude", "pokemon", undefined, undefined, {
+    global: true,
+    env: { HOME: home, CLAUDE_CONFIG_DIR: config },
+  });
+
+  // Assert
+  assert.deepEqual(
+    expected.filter((relative) => !fs.existsSync(path.join(config, relative))),
+    [],
+    "the catalog and the instructions block land in CLAUDE_CONFIG_DIR",
+  );
+  assert.equal(fs.existsSync(path.join(home, ".claude")), false);
+});
+
+test("every command resolves one shared work dir, never a per-worktree path", () => {
+  // Arrange — the exact line, so every worktree and every command lands in the same folder
+  const workDir =
+    "W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\\.git$||')";
+  const commands = commandFiles().map((file) => ({
+    file,
+    source: read(`commands/${file}`),
+  }));
+
+  // Act
+  const offenders = commands.filter(
+    ({ source }) =>
+      !source.includes(workDir) ||
+      /(?<!~\/)\.agents\/work|info\/exclude/.test(source),
+  );
+
+  // Assert
+  assert.deepEqual(
+    offenders.map(({ file }) => file),
+    [],
+    "every command needs the shared W= line and no repo-relative state path",
+  );
 });
 
 test("project installs leave instruction files to the project", () => {
@@ -728,15 +879,43 @@ test("commands and the reviewer retain their explicit safety gates", () => {
   // Arrange
   const guardrails = [
     {
-      file: "commands/ticket.md",
+      file: "commands/investigate.md",
+      requirements: [
+        {
+          name: "the ticket waits for approval",
+          pattern: /Ticket — HARD STOP/,
+        },
+        { name: "investigation never edits code", pattern: /never edit code/ },
+        {
+          name: "tracker posts need a yes",
+          pattern: /only on an explicit yes/,
+        },
+      ],
+    },
+    {
+      file: "commands/plan.md",
       requirements: [
         { name: "the plan waits for approval", pattern: /Plan — HARD STOP/ },
-        { name: "no edits before approval", pattern: /No edits before that/ },
-        { name: "never commits", pattern: /Never commit\./ },
+        { name: "planning never edits code", pattern: /never edit code/ },
         {
           name: "the plan records the security surface",
-          pattern: /- Security surface —/,
+          pattern: /- \*\*Security surface\*\* —/,
         },
+      ],
+    },
+    {
+      file: "commands/implement.md",
+      requirements: [
+        {
+          name: "only an approved plan is implemented",
+          pattern: /`plan\.md`\s+with\s+`Status: approved`/,
+        },
+        {
+          name: "a changed decision stops for the user",
+          pattern:
+            /changes\s+a\s+decision\s+or\s+a\s+criterion\s+→\s+stop\s+and\s+ask/,
+        },
+        { name: "never commits", pattern: /Never commit\./ },
       ],
     },
     {
@@ -750,6 +929,7 @@ test("commands and the reviewer retain their explicit safety gates", () => {
           name: "shared environments are not disposable",
           pattern: /Never assume a shared environment is disposable/,
         },
+        { name: "verification fixes nothing", pattern: /Fix nothing here/ },
         { name: "ticket posts need a yes", pattern: /only on an explicit yes/ },
       ],
     },
@@ -763,30 +943,27 @@ test("commands and the reviewer retain their explicit safety gates", () => {
       ],
     },
     {
-      file: "commands/pr-review.md",
+      file: "commands/review.md",
       requirements: [
         {
           name: "publishing waits for a reply",
           pattern: /Publish — HARD STOP/,
         },
-        { name: "human threads stay open", pattern: /never human threads/ },
         {
-          name: "the reviewer gets the security surface",
-          pattern: /the criteria,\s+the security surface/,
-        },
-      ],
-    },
-    {
-      file: "commands/pr-feedback.md",
-      requirements: [
-        { name: "verdicts are confirmed", pattern: /Checkpoint — HARD STOP/ },
-        {
-          name: "replies are confirmed",
-          pattern: /Reply and resolve — HARD STOP/,
+          name: "replies need a yes",
+          pattern: /reply\s+verbatim[^.]*post\s+on\s+yes/,
         },
         {
           name: "disagreements stay open",
-          pattern: /Never resolve `disagree`/,
+          pattern: /Never\s+resolve\s+`disagree`\s+or\s+`question`/,
+        },
+        {
+          name: "the reviewer gets the security surface",
+          pattern: /criteria\s+and\s+security\s+surface/,
+        },
+        {
+          name: "posted findings are not posted twice",
+          pattern: /findings\s+without\s+a\s+comment\s+id/,
         },
       ],
     },
@@ -795,11 +972,15 @@ test("commands and the reviewer retain their explicit safety gates", () => {
       requirements: [
         {
           name: "review stays on the delta",
-          pattern: /Never audit untouched code/,
+          pattern: /Never\s+audit\s+untouched\s+code/,
         },
         {
           name: "the given security surface is checked first",
           pattern: /the given\s+surface first/,
+        },
+        {
+          name: "unlogged plan departures are flagged",
+          pattern: /plan\s+departures\s+not\s+logged/,
         },
       ],
     },
@@ -847,11 +1028,6 @@ test("OpenCode v2 agents use permission rules, effort variants, and only support
       agent: "machop",
       model: "github-copilot/claude-haiku-4.5",
       temperature: 0.1,
-    },
-    {
-      provider: "copilot",
-      agent: "machoke",
-      model: "github-copilot/claude-sonnet-5.5#medium",
     },
     {
       provider: "copilot",

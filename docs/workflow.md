@@ -1,22 +1,27 @@
 # The workflow
 
-One session does the work. Commands are the prompts you would otherwise retype; the few
-agents exist only where a separate context pays for itself.
+Five phases, one command each, plus `/ship`. Every phase reads its inputs from disk and writes
+one artifact, so each can start in a fresh session: the cheapest context is the one you don't
+carry.
 
 ```text
-/ticket ──► /verify ──► /ship ──► /pr-review ⇄ /pr-feedback ──► merge ──► /verify <env>
+/investigate ──► /plan ──► /implement ──► /verify ──► /ship ──► /review
+                               ▲             │                     │
+                               └─ failures ──┴── open findings ◄───┘
 ```
 
-| Step                          | Command                    | What happens                                                                                                                                               |
-| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1–3 Ticket, investigate, plan | `/ticket <key\|url\|text>` | Brief via `ticket-context`, read-only investigation, dependencies and security surface raised, options when contested, plan saved — **stops for approval** |
-| 4–5 Implement, unit tests     | (same session)             | Mirrors prior art, unit tests always, project gates; optional parallel `Machop`/`Machoke` workers for 3+ file-disjoint chunks                              |
-| 5 Manual / integration checks | `/verify local`            | Scenarios from the ACs; API via `bruno-cli`, web via `Ditto`; PASS/FAIL per AC                                                                             |
-| 6 Commit and PR               | `/ship`                    | Branch, Conventional Commit, push, PR linked to the ticket — each step confirmed                                                                           |
-| 7 Review                      | `/pr-review [PR]`          | `Mewtwo` in a fresh context: coverage, correctness, security; incremental on reruns; publishing confirmed                                                  |
-| 8–9 Iterate                   | `/pr-feedback <PR>`        | Judge each unresolved thread at head, fix valid ones, draft replies; replies and resolutions confirmed                                                     |
-| 10 Merge                      | —                          | Yours                                                                                                                                                      |
-| 11 Verify in an environment   | `/verify <env URL>`        | Same scenarios against a shared environment; non-mutating unless allowed                                                                                   |
+| Phase       | Command                         | Model           | Writes                                                                             | Stops for you                        |
+| ----------- | ------------------------------- | --------------- | ---------------------------------------------------------------------------------- | ------------------------------------ |
+| Investigate | `/investigate <key\|url\|text>` | Opus · xhigh    | `ticket.md`: why, what, acceptance criteria, scope, how to drive it                | approve the ticket; publish it       |
+| Plan        | `/plan`                         | Opus · high     | `plan.md`: decisions, design, work units, test plan, security surface              | approve the plan                     |
+| Implement   | `/implement`                    | Sonnet · medium | code and unit tests; ticks units, logs deviations; parallel `Machop` (Haiku) units | a decision or criterion would change |
+| Verify      | `/verify [local\|env URL]`      | session         | `verify.md` + `bruno/`: scenarios, PASS/FAIL per criterion; web via `Ditto`        | environment; scenarios               |
+| Ship        | `/ship`                         | session         | commit, push, PR with what, how, and how to test                                   | each outward step                    |
+| Review      | `/review [PR] [lenses]`         | session         | `review.md`: `Mewtwo` findings, PR-thread verdicts, `reviewed_sha`                 | publishing, replies, resolutions     |
+
+The loop: verify failures and open review findings (including valid human PR threads) go back
+to `/implement`; `/ship` then pushes to the open PR and `/review` re-reviews only the new
+delta, replying to and resolving threads on a yes. Merging stays yours.
 
 ## Why this shape
 
@@ -27,19 +32,53 @@ more than the workers saved (39.7M vs 0.4M tokens in one planning run), retries 
 better than an unguided model in ablation evals. Plain plan mode kept winning because one
 model holds the investigation, design, and code together.
 
-So an agent is added only when isolation pays:
+So effort goes where the decisions are: investigation and planning get the strongest model,
+and a precise plan lets a cheaper one implement. An agent is added only when isolation pays:
 
 - **Fresh perspective:** Mewtwo reviews without the implementer's reasoning in its context.
 - **Bulky output:** Ditto keeps browser snapshots out of the main session.
-- **Parallel work:** Machop (Haiku) and Machoke (Sonnet) take file-disjoint chunks.
+- **Cheaper work:** Machop (Haiku) takes the plan's mechanical units off the Sonnet session,
+  in parallel when their files are disjoint.
 
 ## State
 
-Per project, in `.agents/work/` (added to `.git/info/exclude`):
+One folder per repository, outside it and shared by every worktree:
+`~/.agents/work/<repo>/<slug>/`, where `<repo>` is the main checkout's path. Every command
+resolves it with the same line, so a phase started in another worktree or a fresh session finds
+the previous phase's files:
 
-- `<slug>/plan.md`: brief, approved plan, AC ticks, verification log.
-- `<slug>/bruno/`: the API scenarios as a re-runnable Bruno collection.
-- `pr-<index>/review.md`: `reviewed_sha` and findings, which drive incremental re-review.
+```bash
+W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+```
+
+- `ticket.md`: the investigated ticket; `Status: approved` unlocks `/plan`.
+- `plan.md`: the plan; `Status: approved` unlocks `/implement`, which ticks units and logs
+  deviations here.
+- `verify.md` + `bruno/`: scenarios and dated runs; the API collection reruns with one `bru run`.
+- `review.md` + `review.diff`: `reviewed_sha`, findings with status, thread verdicts.
+
+The slug is the Jira key, `gh-<n>`, or a kebab-case title, and each command ends by naming the
+next one with it (`/plan IE-123`). Without it, commands read the slug from the branch name, else
+take the newest folder, and say which.
+
+No place inside the repo works everywhere: Claude Code blocks worktree sessions from writing to
+the main checkout and prompts on every `.git` write, and Codex keeps `.git` and `.agents`
+read-only. So allow the folder once in each harness you use:
+[Claude Code](./claude-code.md#state-folder) · [OpenCode](./opencode.md#state-folder) ·
+[Codex](./codex.md#state-folder) · [Copilot](./copilot.md#state-folder).
+
+Coming from the old per-worktree `.agents/work/`? Run this in each checkout that has one:
+
+```bash
+W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+mkdir -p "$W" && mv .agents/work/* "$W"/ && rmdir .agents/work
+```
 
 Coding standards come from each project's own `AGENTS.md` / `CLAUDE.md`. Personal defaults
 come from the global instructions block (`instructions/AGENTS.md`).
+
+## Harness setup
+
+Install, model pins, command names, and the state-folder allowance:
+[Claude Code](./claude-code.md) · [OpenCode](./opencode.md) · [Codex](./codex.md) ·
+[Copilot](./copilot.md).

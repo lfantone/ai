@@ -4,13 +4,13 @@ description: Web E2E verifier — drives Chrome DevTools MCP through web scenari
 model: sonnet
 temperature: 0.1
 color: "#BA68C8"
-tools: new_page, navigate_page, take_snapshot, click, fill, fill_form, press_key, wait_for, evaluate_script, list_console_messages, list_network_requests, take_screenshot, Read # Chrome DevTools MCP tools — harnesses may namespace them (e.g. mcp__chrome-devtools__navigate_page); grant whichever variant yours exposes
+disallowedTools: Bash, PowerShell, Edit, Write, NotebookEdit, WebFetch, WebSearch # no tools: list, so it inherits the session's MCP servers under any name
 ---
 
 # Ditto — Web E2E verifier
 
-Needs the Chrome DevTools MCP; without its tools return `blocked: chrome-devtools MCP not
-available` immediately.
+Needs the Chrome DevTools MCP tools (`navigate_page`, `take_snapshot`, …) under whatever server
+name they carry; without them return `blocked: chrome-devtools MCP not available` immediately.
 
 Input: `BASE_URL`, web scenarios (id, pre, steps, expect, mutating), whether mutating runs are
 allowed.

@@ -330,9 +330,9 @@ runs: 3
 REVIEW = """Review this pull request delta with a sub-agent: correctness, ticket coverage, and repository conventions. Do not review it yourself. There is no checkout in this environment; the full diff is inline in the brief and is the only source. Return the sub-agent's output verbatim and nothing else. It must start with a `## Ticket coverage` section (one line per acceptance criterion: covered / partial / MISSING) and then give findings, each as its own block:
 
 ````text
-### [<must-fix|recommended|cosmetic>] <short title> — <file>:<new-file line(s)>
+### [<must-fix|should-fix|nit>] <short title> — <file>:<new-file line(s)>
 **Anchor:** `<verbatim line copied from the + side of the diff>`
-**What's wrong:** <1–2 sentences>
+**Why:** <one plain sentence on why it matters>
 
 ```suggestion
 <replacement lines only>
@@ -385,19 +385,19 @@ def llm(rubric: str) -> str:
 ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Mewtwo\nmin: 1\narm: with-only\nweight: 0.01\n---\n"
 NOT_ROUTED = "---\ntype: tool_used\ntool: Agent\ninput_match: Mewtwo\nmin: 0\nmax: 0\narm: both\n---\n"
 
-SEV = r"(must-fix|recommended|cosmetic)"
+SEV = r"(must-fix|should-fix|nit)"
 SCOPE_BUCKETS = """
 The answer is a code review of a pull request diff. Judge only the two claims below; both must hold to pass.
 
 1. Scope: every finding block whose header ends in `<file>:<line(s)>` has an `**Anchor:**` whose text is a line the diff ADDS (a `+` line in the diff). A finding anchored to an unchanged context line (no leading `+`), or to code that is not in the diff at all, fails this claim. Findings whose header location is `(not in diff — missing)` are exempt: they report an omission and need no anchor.
-2. Buckets: the review lists findings under severity headings. If a severity (must-fix, recommended, or cosmetic) has no findings, that heading is present with the literal text `_None._` under it. A severity with one or more findings does not need `_None._`.
+2. Buckets: the review lists findings under severity headings. If a severity (must-fix, should-fix, or nit) has no findings, that heading is present with the literal text `_None._` under it. A severity with one or more findings does not need `_None._`.
 
 Do not judge finding quality, severity choice, or verbosity here; other graders do that.
 """
 
 # A finding header followed, before the next header/section, by no ```suggestion fence.
 # Each repetition consumes exactly one full line, so the scan is linear (no backtracking).
-MISSING_SUGGESTION = r"^### \[(must-fix|recommended|cosmetic)\][^\n]*\n(?:(?!### \[|## |```suggestion)[^\n]*\n)*(?:(?=### \[|## )|(?!### \[|## |```suggestion)[^\n]*(?![\s\S]))"
+MISSING_SUGGESTION = r"^### \[(must-fix|should-fix|nit)\][^\n]*\n(?:(?!### \[|## |```suggestion)[^\n]*\n)*(?:(?=### \[|## )|(?!### \[|## |```suggestion)[^\n]*(?![\s\S]))"
 EMPTY_SUGGESTION = r"```suggestion\s*\n\s*```"
 
 
@@ -497,7 +497,7 @@ The answer reviews a diff that contains exactly two planted correctness bugs. Al
 1. It reports as must-fix that `evictIdle` compares `now - record.createdAt` (session age) instead of `now - record.lastSeenAt` (idle time), so an active session is evicted after the TTL regardless of activity, breaking AC3. The suggestion replaces `createdAt` with `lastSeenAt` on that line.
 2. It reports as must-fix that the middleware calls `store.touch(sessionId, now)` before `store.evictIdle(now)`, which refreshes an idle session so it is never evicted, breaking AC1. The suggestion reorders the calls (evict, get, then touch) or equivalent.
 3. It does not report the pre-existing `sessionId == undefined` check (an unchanged context line) as a finding block; a one-line `Beyond the diff` mention is acceptable.
-4. Any additional must-fix finding corresponds to a real defect in the diff. Missing tests may be reported, but at recommended severity (Mewtwo's own severity table), not must-fix.
+4. Any additional must-fix finding corresponds to a real defect in the diff. Missing tests may be reported, but at should-fix severity (Mewtwo's own severity table), not must-fix.
 """),
     },
 )
@@ -541,7 +541,7 @@ The answer reviews a diff whose only defect is an omission: AC1 requires a `debu
 
 1. The ticket coverage marks AC1 as partial or MISSING and explains that the eviction log line is absent.
 2. There is exactly one must-fix finding, for that omission. Either shape is correct: an inline finding anchored to the eviction block inside `evictIdle` (which the diff adds) whose suggestion inserts `logger.debug(`session evicted: ${id}`)` after the delete, or a finding located `(not in diff — missing)` with a `(not inline — sketch)` suggestion sketching the same call.
-3. No other must-fix finding is reported; the rest of the diff is correct. Recommended or cosmetic findings, if any, describe something real (for example the now-unused `logger` import, the test title promising a log assertion it does not make, or missing middleware tests reported as `(not in diff — missing)`).
+3. No other must-fix finding is reported; the rest of the diff is correct. Should-fix or nit findings, if any, describe something real (for example the now-unused `logger` import, the test title promising a log assertion it does not make, or missing middleware tests reported as `(not in diff — missing)`).
 """),
     },
 )
@@ -569,7 +569,7 @@ The answer reviews a diff that correctly implements every acceptance criterion. 
 
 1. The ticket coverage marks all four criteria as covered, each with a file:line pointer into the diff.
 2. There are no must-fix findings, and the must-fix bucket is written as `_None._`.
-3. Any recommended or cosmetic finding points at a real, defensible improvement on a line the diff adds (for example test coverage for the middleware, or the O(n) sweep cost), not an invented bug, and not the pre-existing `sessionId == undefined` context line.
+3. Any should-fix or nit finding points at a real, defensible improvement on a line the diff adds (for example test coverage for the middleware, or the O(n) sweep cost), not an invented bug, and not the pre-existing `sessionId == undefined` context line.
 """),
     },
 )
@@ -589,7 +589,7 @@ The answer reviews a diff with exactly one planted bug: `evictIdle` uses `<` ins
 
 1. A must-fix finding identifies the inverted comparison on the `if (now - record.lastSeenAt < SESSION_IDLE_TTL_MS)` line and its suggestion changes only that comparison, to `>` or `>=`.
 2. The finding's `**Anchor:**` is that line copied verbatim from the `+` side of the diff (not the removed TODO comment lines, not an old-side line).
-3. No other must-fix is reported. The middleware wiring is descoped per the implementation brief, so its absence is reported as descoped or at most recommended, not must-fix; the middleware file is not reviewed.
+3. No other must-fix is reported. The middleware wiring is descoped per the implementation brief, so its absence is reported as descoped or at most should-fix, not must-fix; the middleware file is not reviewed.
 """),
 }
 fire_case(
@@ -617,7 +617,7 @@ fire_case(
 The answer reviews a diff whose logic is correct but which breaks two repository conventions from the brief. All claims must hold to pass.
 
 1. `const now = Date.now();` inside `evictIdle` is reported as must-fix, citing the repository's hard rule that library code uses the injected `Clock` and never `Date.now()`. The suggestion removes `Date.now()`, for example by giving `evictIdle` a `now: number` parameter that the middleware passes from `clock.now()` (the middleware call `store.evictIdle();` then needs `now`; a sketch or a second finding for it is acceptable).
-2. `console.log(...)` instead of `logger.debug(...)` is reported with a suggestion using `logger.debug`. Recommended severity (convention drift) or must-fix (because AC1 names a `debug` log line) are both acceptable.
+2. `console.log(...)` instead of `logger.debug(...)` is reported with a suggestion using `logger.debug`. Should-fix severity (convention drift) or must-fix (because AC1 names a `debug` log line) are both acceptable.
 3. No must-fix is reported for anything else; the eviction comparison itself is correct and is not flagged as a bug.
 """),
     },
