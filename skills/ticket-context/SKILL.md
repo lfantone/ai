@@ -17,6 +17,7 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
 - **Gitea issue:** `tea api repos/<owner>/<repo>/issues/<n> | jq '{title,body}'`, then
   `.../comments`.
 - **Slack / Teams thread:** the pasted text. Never invent a ticket around it.
+- **Jira without the Atlassian MCP:** `acli` — read `references/acli.md`.
 - No tool access → ask for pasted text; never guess requirements.
 
 ## Brief (≤200 words)
@@ -34,7 +35,7 @@ description: Turn a Jira key, a GitHub or Gitea issue, or a pasted Slack/Teams t
 
 - **Jira:** `createJiraIssue` with `projectKey`, `issueTypeName`, `summary`, `description`,
   or `editJiraIssue` with `fields: {"description": …}` — both with
-  `contentFormat: "markdown"`.
+  `contentFormat: "markdown"`. Without the MCP: `references/acli.md`.
 - **GitHub:** `gh issue create --title <t> --body-file -` · `gh issue edit <n> --body-file -`.
 - **Gitea:** `tea issues create --title <t> --description-file -` ·
   `tea issues edit <n> --description-file -`.

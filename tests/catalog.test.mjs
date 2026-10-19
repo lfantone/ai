@@ -92,6 +92,7 @@ const install = (
       names,
       ...scopeArgs,
       ...providerArgs,
+      ...(options.args ?? []),
     ],
     {
       cwd: ROOT,
@@ -564,6 +565,113 @@ test("command model pins: Claude keeps them, OpenCode maps them, command-skills 
     [],
     "every pin must be a known tier that each harness keeps, maps, or drops",
   );
+});
+
+test("--prefix namespaces every command and every reference to one", () => {
+  // Arrange — a bare `/plan`-style reference anywhere in the output means a missed rewrite
+  const bareReference =
+    /(?<![\w./-])\/(investigate|plan|implement|verify|ship|review)(?![\w-]|\.md)/;
+  const options = { args: ["--prefix", "oct-"] };
+
+  // Act
+  const claude = install("claude", "pokemon", undefined, undefined, options);
+  const github = install("github", "norse", undefined, undefined, options);
+  const claudeFiles = [".claude/commands", ".claude/agents"].flatMap((dir) =>
+    fs
+      .readdirSync(path.join(claude, dir))
+      .map((file) => path.join(claude, dir, file)),
+  );
+  const reviewSkill = splitDoc(
+    fs.readFileSync(
+      path.join(github, ".github/skills/oct-review/SKILL.md"),
+      "utf8",
+    ),
+  ).frontmatter;
+
+  // Assert
+  assert.deepEqual(fs.readdirSync(path.join(claude, ".claude/commands")), [
+    "oct-implement.md",
+    "oct-investigate.md",
+    "oct-plan.md",
+    "oct-review.md",
+    "oct-ship.md",
+    "oct-verify.md",
+  ]);
+  assert.deepEqual(
+    claudeFiles
+      .filter((file) => bareReference.test(fs.readFileSync(file, "utf8")))
+      .map((file) => path.basename(file)),
+    [],
+    "every command reference must carry the prefix",
+  );
+  assert.equal(reviewSkill.name, "oct-review");
+  assert.match(
+    fs.readFileSync(path.join(github, ".github/agents/mimir.agent.md"), "utf8"),
+    /Spawned by \/oct-review\./,
+  );
+});
+
+test("Copilot and Codex workflow skills are user-run, never model-invoked", () => {
+  // Arrange — Copilot code review activates any repo skill that looks relevant
+  const projects = { github: install("github"), codex: install("codex") };
+  const skillDirs = { github: ".github/skills", codex: ".agents/skills" };
+
+  // Act
+  const rows = Object.keys(projects).flatMap((harness) =>
+    commandFiles().map((file) => {
+      const name = file.replace(/\.md$/, "");
+      return {
+        id: `${harness}/${name}`,
+        frontmatter: splitDoc(
+          fs.readFileSync(
+            path.join(projects[harness], skillDirs[harness], name, "SKILL.md"),
+            "utf8",
+          ),
+        ).frontmatter,
+      };
+    }),
+  );
+
+  // Assert
+  assert.deepEqual(
+    rows
+      .filter(
+        ({ frontmatter }) =>
+          frontmatter["disable-model-invocation"] !== true ||
+          !/^Interactive workflow the user starts with [/$]/.test(
+            frontmatter.description,
+          ),
+      )
+      .map(({ id }) => id),
+    [],
+    "workflow skills must opt out of model invocation and say they are user-run",
+  );
+});
+
+test("--skip leaves catalog entries out and rejects unknown names", () => {
+  // Arrange
+  const installer = path.join(ROOT, "scripts/install.mjs");
+
+  // Act
+  const project = install("github", "pokemon", undefined, undefined, {
+    args: ["--skip", "tea-cli"],
+  });
+  const typo = spawnSync(
+    process.execPath,
+    [installer, "--harness", "github", "--skip", "tea-clie", "--dry-run"],
+    { cwd: ROOT, encoding: "utf8", env: testEnv },
+  );
+
+  // Assert
+  assert.equal(
+    fs.existsSync(path.join(project, ".github/skills/tea-cli")),
+    false,
+  );
+  assert.ok(
+    fs.existsSync(path.join(project, ".github/skills/gh-cli/SKILL.md")),
+  );
+  assert.notEqual(typo.status, 0);
+  assert.match(typo.stderr, /unknown tea-clie/);
 });
 
 test("installer rejects unsupported provider combinations", () => {

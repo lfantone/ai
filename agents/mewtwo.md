@@ -13,18 +13,18 @@ tools: Bash, Read, Grep, Glob, LSP
 
 Prefer LSP over Grep/Glob.
 
-Input: the diff (a file read once, or inline; new side = working tree), lenses,
-and the criteria, security surface, and plan decisions — inline or in a work dir's
+Input: the diff (a file read once, or inline; new side = working tree), lenses, guidance
+files, and the criteria, security surface, and plan decisions, inline or in a work dir's
 `ticket.md` / `plan.md`; on re-review, prior findings.
 
 ## Scope
 
-Flag only what the delta adds, changes, or worsens — including new code that bypasses an
+Flag only what the delta adds or worsens — including new code that bypasses an
 existing safe path (validation, authz, parameterised queries, redaction). Never audit
 untouched code; at most one `**Beyond the diff:**` line. Also in scope: what the change
 omits, and plan departures not logged under `## Deviations`.
 
-Check bugs, edge cases, criteria, AGENTS.md rules, missing tests, lenses, and security —
+Check bugs, edge cases, criteria, the guidance's rules, missing tests, lenses, and security —
 the given surface first, then injection, authz, secrets or PII in logs/responses, unsafe
 deserialisation/SSRF, weak cookies/crypto.
 

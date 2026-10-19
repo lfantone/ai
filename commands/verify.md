@@ -18,6 +18,8 @@ with neither, ask what behaviour proves the change.
 Ask once. Local: is the dev server running (URL), or should you start it (command from
 AGENTS.md or the package scripts)? Other environment: base URL, and may mutating scenarios
 run? Never assume a shared environment is disposable; start or stop nothing outside local.
+If `AGENTS.md` declares a sign-in for the target, open BASE_URL with the browser tools, let
+the user sign in, and continue on their word; `Ditto` reuses that browser session.
 
 ## 2. Scenarios
 
