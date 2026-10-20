@@ -47,4 +47,4 @@ your user settings — `$CLAUDE_CONFIG_DIR/settings.json`, else `~/.claude/setti
   lists both and marks the catalog's with `(user)`; pick that one.
 - Ditto lists no `tools:`, so it inherits your session's MCP servers and finds the Chrome
   DevTools tools under whatever name you registered them; `disallowedTools` keeps it from
-  editing files or running commands. `/investigate` needs the Atlassian MCP for Jira keys.
+  editing files or running commands. `/investigate` and `/plan` need the Atlassian MCP for Jira keys.
