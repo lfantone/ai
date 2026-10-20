@@ -1155,14 +1155,40 @@ test("commands and the reviewer retain their explicit safety gates", () => {
         },
         { name: "verification fixes nothing", pattern: /Fix nothing here/ },
         { name: "ticket posts need a yes", pattern: /only on an explicit yes/ },
+        {
+          name: "a run records the working tree it tested",
+          pattern: /git write-tree/,
+        },
       ],
     },
     {
       file: "commands/ship.md",
       requirements: [
-        { name: "commit needs a yes", pattern: /Commit on yes/ },
-        { name: "push needs a yes", pattern: /origin HEAD` on yes/ },
-        { name: "PR creation needs a yes", pattern: /create on yes/ },
+        {
+          name: "running /ship is the yes to commit, push, and open the PR",
+          pattern: /Running `\/ship` is the user's yes/,
+        },
+        {
+          name: "the commit message is the only question",
+          pattern: /The one question is the commit message/,
+        },
+        {
+          name: "red gates stop shipping",
+          pattern: /on failure stop with the output/,
+        },
+        {
+          name: "a failed verification stops shipping",
+          pattern: /a FAIL stops here/,
+        },
+        {
+          name: "unverified or changed work opens a draft PR",
+          pattern: /the PR opens as a draft and says why/,
+        },
+        {
+          name: "never commits to the default branch",
+          pattern: /Never commit to\s+the default branch/,
+        },
+        { name: "never force-pushes", pattern: /Never force-push/ },
         { name: "merge stays manual", pattern: /Merging stays with the user/ },
       ],
     },
