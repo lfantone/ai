@@ -93,4 +93,9 @@ Report failing lines (`status: "fail"` + `error`) as evidence, never full respon
 - v3 runs in Safe Mode: scripts can't use npm packages or the filesystem. Pass
   `--sandbox=developer` only when a test truly needs it.
 - `bru run` must execute inside the collection folder (where `bruno.json` lives).
-- No secrets in committed environment files — inject them with `--env-var key=value`.
+- No secrets in committed environment files or on the command line (`--env-var` shows in the
+  process list): read them from the process environment, `{{process.env.NAME}}`.
+
+## References
+
+- Read `references/signed-in-requests.md` when a request needs a signed-in user or a token.

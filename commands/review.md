@@ -14,8 +14,9 @@ $ARGUMENTS: an optional PR, then extra lenses (e.g. performance, accessibility).
    ```
 
    Slug: the one in the branch name, else `pr-<index>` for a PR, or the newest folder in the
-   work root. If a PR's head equals `reviewed_sha` in its `review.md`, show the stored
-   findings; skip to step 5.
+   work root. If a PR's head equals `reviewed_sha` in its `review.md` and its `lenses` cover
+   the requested ones, show the stored findings; skip to step 5. Otherwise review the whole
+   change (step 3 ignores `reviewed_sha`).
 
 3. **Diff** — write it to the work dir's `review.diff`, never into context. PR:
    `git diff <reviewed_sha>..HEAD` when that is an ancestor, else the PR's diff via the
@@ -33,7 +34,7 @@ $ARGUMENTS: an optional PR, then extra lenses (e.g. performance, accessibility).
    `addressed` (evidence: file:line or sha) · `disagree` (grounded in code, conventions, or
    the ticket — never taste) · `question` (an answer). Draft a short reply for each; for
    `disagree`, acknowledge the concern first.
-6. **Save** — `review.md`: `reviewed_sha`, the PR, each judged thread (verdict, last comment
+6. **Save** — `review.md`: `reviewed_sha`, the `lenses` applied, the PR, each judged thread (verdict, last comment
    id), and per finding its block verbatim, id, source, status, and comment or thread id.
    Status: `open`, `fixed`, `resolved`, `wontfix`; Mewtwo's `still-outstanding` /
    `partially-addressed` reopen it. The user may flip verdicts or mark findings

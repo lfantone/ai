@@ -10,8 +10,9 @@ W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's
 ```
 
 Work dir: `<work root>/<slug>/`. Slug: $ARGUMENTS, else the one in the branch name, else the
-newest folder in the work root. If `verify.md` is missing or its latest run has a FAIL, say so
-and ask whether to ship anyway.
+newest folder in the work root. If `verify.md` is missing, its latest run leaves a criterion
+anything but PASS (FAIL or NOT VERIFIED), or files changed since that run's commit
+(`git diff --stat <commit>`), say so, list them, and ask whether to ship anyway.
 
 1. **Branch** — on the default branch, propose `<type>/<slug>-<short-name>`; create it on
    yes.
@@ -35,6 +36,9 @@ and ask whether to ship anyway.
    ## How to test
 
    <one paragraph: setup, steps, expected result — from verify.md>
+
+   Verified: <PASS / FAIL / NOT VERIFIED per AC> at <commit> on <environment>, and "shipped
+   anyway" when the user chose to; or "not verified" and why.
 
    Ticket: <link>
    ```
