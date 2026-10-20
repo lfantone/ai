@@ -8,6 +8,28 @@ acli jira workitem search --jql "project = IE AND status = 'To Do'"
 acli jira workitem edit -k IE-123 --summary "New title" --yes
 ```
 
+## Create
+
+Write the definition to a temporary file outside the repository, create, then delete the file:
+
+```bash
+acli jira workitem create --from-json /tmp/workitem.json --json
+```
+
+```json
+{
+  "projectKey": "IE",
+  "type": "Task",
+  "summary": "Short title",
+  "description": { "version": 1, "type": "doc", "content": [] },
+  "labels": ["optional"]
+}
+```
+
+`type` is case-sensitive (`Task`, `Story`, `Bug`); `parentIssueId` makes it a sub-task, and
+`--json` prints the result with the new key. The description is an ADF document (below);
+`acli jira workitem create --generate-json` prints every field, custom ones included.
+
 ## Descriptions are ADF
 
 `--description-file` leaves the description empty. Send it with `--from-json` instead:
