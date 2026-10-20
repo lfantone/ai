@@ -56,7 +56,7 @@ and a precise plan lets a cheaper one implement. An agent is added only when iso
 
 One folder per repository, outside it and shared by every worktree:
 `~/.agents/work/<repo>/<slug>/`, where `<repo>` is the main checkout's folder name
-(`~/.agents/work/adg-octopus/OC-319/`), so two checkouts with the same name share it. Every
+(`~/.agents/work/my-app/IE-123/`), so two checkouts with the same name share it. Every
 command resolves it with the same line, so a phase started in another worktree or a fresh
 session finds the previous phase's files:
 
