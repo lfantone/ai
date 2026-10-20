@@ -1112,6 +1112,19 @@ test("commands and the reviewer retain their explicit safety gates", () => {
           name: "low confidence triggers one round of questions",
           pattern: /When\s+low,\s+ask\s+one\s+round\s+of\s+questions/,
         },
+        {
+          name: "a tracker ticket stands in for a missing ticket.md",
+          pattern:
+            /With\s+no\s+`ticket\.md`,\s+the\s+tracker\s+ticket[^.]*`ticket-context`\s+skill/,
+        },
+        {
+          name: "a failed fetch asks for the ticket instead of guessing it",
+          pattern: /ask\s+for\s+its\s+text\s+if\s+that\s+fails/,
+        },
+        {
+          name: "a draft or missing ticket still stops for /investigate",
+          pattern: /Otherwise\s+stop\s+and\s+suggest\s+`\/investigate`/,
+        },
       ],
     },
     {

@@ -78,5 +78,5 @@ Allow the workflow folder once in your global config, `~/.config/opencode/openco
 
 - The installer copies into a real `.opencode/`. It removes entries it installed before
   (`.ai-catalog-manifest.json`) plus retired catalog names; other tools' entries stay.
-- Ditto needs the Chrome DevTools MCP configured in `opencode.json`; `/investigate` needs
-  the Atlassian MCP for Jira keys.
+- Ditto needs the Chrome DevTools MCP configured in `opencode.json`; `/investigate` and
+  `/plan` need the Atlassian MCP for Jira keys.

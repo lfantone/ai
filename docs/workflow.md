@@ -13,11 +13,14 @@ carry.
 | Phase       | Command                         | Model           | Writes                                                                                       | Stops for you                        |
 | ----------- | ------------------------------- | --------------- | -------------------------------------------------------------------------------------------- | ------------------------------------ |
 | Investigate | `/investigate <key\|url\|text>` | Opus · xhigh    | `ticket.md`: why, what, acceptance criteria, scope, how to drive it                          | approve the ticket; publish it       |
-| Plan        | `/plan`                         | Opus · high     | `plan.md`: decisions, design, work units, test plan, security surface                        | approve the plan                     |
+| Plan        | `/plan [slug\|key]`             | Opus · high     | `plan.md`: decisions, design, work units, test plan, security surface                        | approve the plan                     |
 | Implement   | `/implement`                    | Sonnet · medium | code and unit tests; ticks units, logs deviations; parallel `Machop` (Haiku) units           | a decision or criterion would change |
 | Verify      | `/verify [local\|env URL]`      | session         | `verify.md` + `bruno/`: scenarios, PASS / FAIL / NOT VERIFIED per criterion; web via `Ditto` | environment; scenarios               |
 | Ship        | `/ship`                         | session         | commit, push, PR with what, how, and how to test                                             | each outward step                    |
 | Review      | `/review [PR] [lenses]`         | session         | `review.md`: `Mewtwo` findings, PR-thread verdicts, `reviewed_sha`                           | publishing, replies, resolutions     |
+
+Skip `/investigate` when the tracker ticket already holds the why, the what and the criteria:
+`/plan <key>` saves it as `ticket.md` and plans from it.
 
 The loop: verify failures and open review findings (including valid human PR threads) go back
 to `/implement`; `/ship` then pushes to the open PR and `/review` re-reviews only the new
@@ -60,7 +63,8 @@ the previous phase's files:
 W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
 ```
 
-- `ticket.md`: the investigated ticket; `Status: approved` unlocks `/plan`.
+- `ticket.md`: the investigated ticket, or the tracker ticket `/plan` saves when you skip
+  `/investigate`; `Status: approved` unlocks `/plan`.
 - `plan.md`: the plan; `Status: approved` unlocks `/implement`, which ticks units and logs
   deviations here.
 - `verify.md` + `bruno/`: scenarios and dated runs; the API collection reruns with one `bru run`.
