@@ -15,7 +15,7 @@ an issue, else kebab-case of the first ~5 words. Work dir: `<work root>/<slug>/`
 existing `ticket.md`. The work root is one folder per repo, shared by every worktree:
 
 ```bash
-W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
 ```
 
 ## 2. Investigate

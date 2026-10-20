@@ -6,7 +6,7 @@ argument-hint: "[slug] [--draft]"
 Work root, one folder per repo shared by every worktree:
 
 ```bash
-W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
 ```
 
 Work dir: `<work root>/<slug>/`. Slug: $ARGUMENTS, else the one in the branch name, else the

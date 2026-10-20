@@ -6,7 +6,7 @@ argument-hint: "[local | env URL] [slug]"
 Target: $ARGUMENTS. Work root, one folder per repo shared by every worktree:
 
 ```bash
-W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
 ```
 
 Work dir: `<work root>/<slug>/`. Slug: given, else the one in the branch name, else the newest
@@ -25,7 +25,7 @@ requests), or are `BLOCKED`.
 
 ## 2. Scenarios
 
-Keep them in `verify.md` and reuse existing ones — at least one per AC, plus the obvious edge
+Keep them in `verify.md`, reusing existing ones — at least one per AC, plus the obvious edge
 case:
 
 ```text

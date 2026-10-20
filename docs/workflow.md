@@ -55,12 +55,13 @@ and a precise plan lets a cheaper one implement. An agent is added only when iso
 ## State
 
 One folder per repository, outside it and shared by every worktree:
-`~/.agents/work/<repo>/<slug>/`, where `<repo>` is the main checkout's path. Every command
-resolves it with the same line, so a phase started in another worktree or a fresh session finds
-the previous phase's files:
+`~/.agents/work/<repo>/<slug>/`, where `<repo>` is the main checkout's folder name
+(`~/.agents/work/adg-octopus/OC-319/`), so two checkouts with the same name share it. Every
+command resolves it with the same line, so a phase started in another worktree or a fresh
+session finds the previous phase's files:
 
 ```bash
-W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
 ```
 
 - `ticket.md`: the investigated ticket, or the tracker ticket `/plan` saves when you skip
@@ -83,8 +84,17 @@ read-only. So allow the folder once in each harness you use:
 Coming from the old per-worktree `.agents/work/`? Run this in each checkout that has one:
 
 ```bash
-W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
 mkdir -p "$W" && mv .agents/work/* "$W"/ && rmdir .agents/work
+```
+
+Coming from the full-path layout (`~/.agents/work/Users/<you>/…/<repo>/`)? Run this once in the
+checkout, after updating the commands:
+
+```bash
+old=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
+mkdir -p "$W" && mv "$old"/* "$W"/ && rmdir -p "$old" 2>/dev/null
 ```
 
 Coding standards come from each project's own instructions. Personal defaults

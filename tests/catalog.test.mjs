@@ -928,9 +928,9 @@ test("Claude global install honours CLAUDE_CONFIG_DIR", () => {
 });
 
 test("every command resolves one shared work dir, never a per-worktree path", () => {
-  // Arrange — the exact line, so every worktree and every command lands in the same folder
-  const workDir =
-    "W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\\.git$||')";
+  // Arrange — the exact line, so every worktree and every command lands in the same folder,
+  // named after the main checkout (~/.agents/work/<repo>), not its full path
+  const workDir = `W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\\.git$||')")`;
   const commands = commandFiles().map((file) => ({
     file,
     source: read(`commands/${file}`),

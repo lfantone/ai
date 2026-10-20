@@ -10,7 +10,7 @@ $ARGUMENTS: an optional PR, then extra lenses (e.g. performance, accessibility).
 2. **State** — work dir `<work root>/<slug>/`, with the work root:
 
    ```bash
-   W=~/.agents/work$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')
+   W=~/.agents/work/$(basename "$(git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||')")
    ```
 
    Slug: the one in the branch name, else `pr-<index>` for a PR, or the newest folder in the
