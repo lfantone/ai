@@ -451,7 +451,7 @@ test("OpenCode providers map every capability tier", () => {
     {
       provider: "claude",
       agent: "machop",
-      model: "anthropic/claude-haiku-4-5",
+      model: "anthropic/claude-haiku-5-5",
     },
     {
       provider: "claude",
@@ -510,7 +510,7 @@ test("OpenCode providers map every capability tier", () => {
 test("command model pins: Claude keeps them, OpenCode maps them, command-skills drop them", () => {
   // Arrange — the commands that pin a tier, and OpenCode's default (Copilot) id per tier
   const copilot = {
-    haiku: "github-copilot/claude-haiku-4.5",
+    haiku: "github-copilot/claude-haiku-5.5",
     sonnet: "github-copilot/claude-sonnet-5.5",
     opus: "github-copilot/claude-opus-5.5",
   };
@@ -1232,12 +1232,12 @@ test("every agent installs under a Norse name with --names norse", () => {
 });
 
 test("OpenCode v2 agents use permission rules, effort variants, and only supported sampling", () => {
-  // Arrange — expectations checked against `opencode debug agents` on OpenCode 2.0.20
+  // Arrange — expectations checked against `opencode debug agents` and `opencode run` on OpenCode 2.0.32
   const expected = [
     {
       provider: "copilot",
       agent: "machop",
-      model: "github-copilot/claude-haiku-4.5",
+      model: "github-copilot/claude-haiku-5.5#low",
       temperature: 0.1,
     },
     {

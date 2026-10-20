@@ -33,12 +33,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MODEL_MAP = {
   opencode: {
     copilot: {
-      haiku: "github-copilot/claude-haiku-4.5",
+      haiku: "github-copilot/claude-haiku-5.5",
       sonnet: "github-copilot/claude-sonnet-5.5",
       opus: "github-copilot/claude-opus-5.5",
     },
     claude: {
-      haiku: "anthropic/claude-haiku-4-5",
+      haiku: "anthropic/claude-haiku-5-5",
       sonnet: "anthropic/claude-sonnet-5-5",
       opus: "anthropic/claude-opus-5-5",
     },
@@ -49,7 +49,7 @@ const MODEL_MAP = {
     },
   },
   github: {
-    haiku: "claude-haiku-4.5",
+    haiku: "claude-haiku-5.5",
     sonnet: "claude-sonnet-5.5",
     opus: "claude-opus-5.5",
   },
@@ -64,11 +64,9 @@ const MODEL_MAP = {
 // no name-keyed maps here, so renames/rebrands can never orphan them).
 
 // OpenCode v2 sends `request.body` verbatim and takes effort as a model variant (`#high`).
-// Checked with `opencode models <provider> --verbose` (2026-09-30): only the haiku-tier models
-// accept sampling params, and Claude Haiku 4.5 has no low/medium variant (it runs unthinking).
+// Only the haiku-tier models accept sampling params. Checked with `opencode run` on 2.0.32
+// (2026-10-20): Claude Haiku 5.5 takes `#low` together with `temperature`.
 const V2_SAMPLING_TIERS = ["haiku"];
-const lacksVariant = (model, variant) =>
-  /claude-haiku-4/.test(model) && ["low", "medium"].includes(variant);
 
 // Pokémon → Norse. Order matters: longest-overlapping first.
 const NORSE = [
@@ -399,8 +397,7 @@ for (const f of agents) {
       `    effect: ${allowed ? "allow" : "deny"}`,
     ];
     const model = modelMap[fm.model] ?? modelMap.sonnet;
-    const variant =
-      fm.effort && !lacksVariant(model, fm.effort) ? `#${fm.effort}` : "";
+    const variant = fm.effort ? `#${fm.effort}` : "";
     const lines = [
       `description: ${yamlStr(fm.description)}`,
       `mode: subagent`,

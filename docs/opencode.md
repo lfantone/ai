@@ -28,7 +28,7 @@ Re-run after pulling catalog updates. Add `--dry-run` to preview.
 
 | Tier   | Copilot                            | Claude                        | OpenAI/Codex                 |
 | ------ | ---------------------------------- | ----------------------------- | ---------------------------- |
-| haiku  | `github-copilot/claude-haiku-4.5`  | `anthropic/claude-haiku-4-5`  | `openai/gpt-5.4-mini`        |
+| haiku  | `github-copilot/claude-haiku-5.5`  | `anthropic/claude-haiku-5-5`  | `openai/gpt-5.4-mini`        |
 | sonnet | `github-copilot/claude-sonnet-5.5` | `anthropic/claude-sonnet-5-5` | `openai/gpt-5.3-codex-spark` |
 | opus   | `github-copilot/claude-opus-5.5`   | `anthropic/claude-opus-5-5`   | `openai/gpt-5.6-sol`         |
 
@@ -38,13 +38,12 @@ agent frontmatter. Colors are the Pokémon type color shaded by tier (Machop `#E
 ## OpenCode v2
 
 `--harness opencode-v2` writes the same dirs, commands, skills, and instructions block, but
-emits agents in the v2 schema (verified with `opencode debug agents` on 2.0.20). `--provider`
+emits agents in the v2 schema (verified with `opencode debug agents` on 2.0.32). `--provider`
 works the same.
 
 - `permission` → an ordered `permissions` list (`action` / `resource: "*"` / `effect`;
   `bash` → `shell`), appended after v2's allow-all base.
-- `effort:` → a model variant (`claude-opus-5.5#high`), only where the model has that
-  variant — Claude Haiku 4.5 has no `low`, so Machop runs on its default.
+- `effort:` → a model variant: `claude-opus-5.5#high` for Mewtwo, `claude-haiku-5.5#low` for Machop.
 - `temperature` → `request.body.temperature`, only for the haiku tier: v2 sends the body as-is,
   and the Sonnet/Opus-tier models reject sampling params.
 
