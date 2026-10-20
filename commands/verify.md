@@ -19,7 +19,9 @@ Ask once. Local: is the dev server running (URL), or should you start it (comman
 AGENTS.md or the package scripts)? Other environment: base URL, and may mutating scenarios
 run? Never assume a shared environment is disposable; start or stop nothing outside local.
 If `AGENTS.md` declares a sign-in for the target, open BASE_URL with the browser tools, let
-the user sign in, and continue on their word; `Ditto` reuses that browser session.
+the user sign in, and continue on their word; `Ditto` reuses that browser session. API
+scenarios don't share it: they need a credential the user hands over (`bruno-cli`'s signed-in
+requests), or are `BLOCKED`.
 
 ## 2. Scenarios
 
@@ -44,7 +46,8 @@ Show counts per surface and mutating, then wait for yes / adjust.
 
 - A server you start: run it in the background, poll health for ~60 s, stop it at the end.
 - api: the `bruno-cli` skill; keep the collection in `bruno/` in the work dir so a rerun is
-  one `bru run`. cli: run the command and compare its output with the expect line.
+  one `bru run`. Signed-in runs start with the preflight; a sign-in failure is `BLOCKED`,
+  not FAIL. cli: run the command and compare its output with the expect line.
 - web: spawn `Ditto` with BASE_URL, the web scenarios, and whether mutating is allowed. On
   `blocked`, check routes over HTTP and flag degraded coverage.
 - Run api and web in parallel; retry a flaky failure once and say so.
@@ -52,7 +55,8 @@ Show counts per surface and mutating, then wait for yes / adjust.
 ## 4. Report
 
 Append a dated run to `verify.md`: environment, commit, one line per scenario —
-`V<n>: PASS | FAIL — <evidence>` (failing assert, screenshot path) — then PASS / FAIL per AC,
-plus warnings (console errors, failed requests) even when green. Fix nothing here: failures
+`V<n>: PASS | FAIL | BLOCKED — <evidence or reason>` (failing assert, screenshot path) — then
+PASS / FAIL / NOT VERIFIED per AC (a BLOCKED scenario leaves its AC not verified), plus
+warnings (console errors, failed requests) even when green. Fix nothing here: failures
 go to `/implement <slug>`; all green → `/ship <slug>`. Offer to post the verdict to the
 ticket (Jira `addCommentToJiraIssue` or a forge comment) — only on an explicit yes.
