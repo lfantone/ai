@@ -92,7 +92,12 @@ const TARGETS = {
   },
   github: {
     // .agents/skills is the cross-tool folder: Copilot, OpenCode, and Codex all read it.
-    project: { agents: "{p}/.github/agents", skills: "{p}/.agents/skills" },
+    // OpenCode 2 no longer turns skills into slash commands: a thin command loads each one.
+    project: {
+      agents: "{p}/.github/agents",
+      skills: "{p}/.agents/skills",
+      opencodeCommands: "{p}/.opencode/commands",
+    },
     global: { agents: "{h}/.copilot/agents", skills: "{h}/.copilot/skills" },
   },
   claude: {
@@ -111,6 +116,7 @@ const TARGETS = {
     project: {
       agents: "{p}/.codex/agents",
       skills: "{p}/.agents/skills",
+      opencodeCommands: "{p}/.opencode/commands",
     },
     global: {
       agents: "{h}/.codex/agents",
@@ -472,7 +478,8 @@ for (const f of commands) {
     // Copilot and Codex invoke workflows as skills → agentskills SKILL.md per command.
     // Copilot code review activates any repo skill that looks relevant, so a workflow skill
     // must say it is user-run and opt out of model invocation. OpenCode reads .agents/skills
-    // too; its metadata keys make the skill a slash command it never picks on its own.
+    // too and never picks it on its own (autoinvoke); OpenCode 2 ignores `opencode/slash`, so a
+    // project install also writes the command that loads the skill.
     const invoke = `${harness === "codex" ? "$" : "/"}${command}`;
     const out = body
       .replaceAll(/`\$ARGUMENTS`|\$ARGUMENTS/g, "the user's request")
@@ -486,6 +493,12 @@ for (const f of commands) {
         `---\nname: ${command}\ndescription: ${yamlStr(description)}\ndisable-model-invocation: true\nmetadata:\n  opencode/slash: "true"\n  opencode/autoinvoke: "false"\n---\n${out}`,
       ),
     );
+    if (dirs.opencodeCommands) {
+      emit(
+        path.join(dirs.opencodeCommands, `${command}.md`),
+        `---\ndescription: ${yamlStr(fm.description)}\n---\n\nLoad the \`${command}\` skill with the skill tool and follow it exactly. The user's request: $ARGUMENTS\n`,
+      );
+    }
   }
 }
 
@@ -527,7 +540,16 @@ const isWithinInstallRoot = (installRoot, file) => {
 };
 const currentWrites = writes.map((write) => write.file);
 const installStates = installRoots.map((installRoot) => {
-  const manifestFile = path.join(installRoot, ".ai-catalog-manifest.json");
+  // An OpenCode install keeps its manifest in .opencode/ too: a Copilot or Codex install writing
+  // commands there keeps its own, so neither run removes the other's files.
+  const sharesOpencodeRoot =
+    !isOpencode && path.basename(installRoot) === ".opencode";
+  const manifestFile = path.join(
+    installRoot,
+    sharesOpencodeRoot
+      ? `.ai-catalog-manifest.${harness}.json`
+      : ".ai-catalog-manifest.json",
+  );
   let previousWrites = [];
   try {
     const entries = JSON.parse(fs.readFileSync(manifestFile, "utf8"));

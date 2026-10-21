@@ -53,8 +53,9 @@ request body — install with `opencode-v2` once you switch.
 ## Next to a Copilot install
 
 A project with the Copilot install already has the skills and the workflow in `.agents/skills`,
-which OpenCode reads: the workflow skills carry `opencode/slash` and `opencode/autoinvoke`, so
-they run as `/<name>` and are never picked on their own. Install only the agents:
+which OpenCode reads, plus `.opencode/commands/<name>.md` for each workflow: OpenCode 2 doesn't
+turn skills into slash commands, so each command loads its skill (`@<name>` loads one directly).
+`opencode/autoinvoke` keeps OpenCode from picking them on its own. Install only the agents:
 
 ```bash
 ./scripts/install.mjs --harness opencode-v2 --project <p> --names norse --skip commands,skills
