@@ -1188,6 +1188,10 @@ test("commands and the reviewer retain their explicit safety gates", () => {
           name: "never commits to the default branch",
           pattern: /Never commit to\s+the default branch/,
         },
+        {
+          name: "the commit carries the ticket key and passes commitlint",
+          pattern: /never count on a hook to add it/,
+        },
         { name: "never force-pushes", pattern: /Never force-push/ },
         { name: "merge stays manual", pattern: /Merging stays with the user/ },
       ],

@@ -26,8 +26,10 @@ I=$(mktemp) && cp "$(git rev-parse --git-path index)" "$I" && GIT_INDEX_FILE=$I 
    the default branch.
 2. **Gates** — run the project's test, lint, and typecheck; on failure stop with the output.
 3. **Commit** — stage only this work (`git status`, diff stat). Write the message by the repo's
-   commit rules (AGENTS.md, commitlint, history), including how they reference ticket keys,
-   else Conventional Commits. Show it and ask once: use it, or edit it. Then commit.
+   commit rules (AGENTS.md, commitlint, history), else Conventional Commits, and reference the
+   ticket their way with the key from the slug or branch name; never count on a hook to add it.
+   Check it with the repo's commitlint when it has one, and fix what fails. Show it and ask once:
+   use it, or edit it. Then commit.
 4. **Push** — `git push -u origin HEAD`. Never force-push: if the push is rejected, stop and
    report it.
 5. **PR** — with the forge skill. If the branch already has one, the push updated it: report its
