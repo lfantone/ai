@@ -115,6 +115,42 @@ test("GitHub agents with MCP dependencies do not receive a restrictive tool list
   assert.doesNotMatch(ditto, /^tools:/m);
 });
 
+test("a Copilot project install gives OpenCode a command per workflow and keeps an OpenCode install's files", () => {
+  // Arrange — OpenCode 2 ignores `opencode/slash`, so each workflow skill needs a command that loads it
+  const project = install("github", "norse", undefined, undefined, {
+    args: ["--prefix", "oct-"],
+  });
+  install("opencode-v2", "norse", undefined, project, {
+    args: ["--prefix", "oct-", "--skip", "commands,skills"],
+  });
+
+  // Act
+  install("github", "norse", undefined, project, {
+    args: ["--prefix", "oct-"],
+  });
+
+  // Assert
+  const commandsDir = path.join(project, ".opencode/commands");
+  const missing = commandFiles()
+    .map((file) => `oct-${file.replace(/\.md$/, "")}`)
+    .filter((name) => {
+      const file = path.join(commandsDir, `${name}.md`);
+      return (
+        !fs.existsSync(file) ||
+        !fs.readFileSync(file, "utf8").includes(`\`${name}\` skill`)
+      );
+    });
+  assert.deepEqual(
+    missing,
+    [],
+    "every workflow skill has a command that loads it",
+  );
+  assert.ok(
+    fs.existsSync(path.join(project, ".opencode/agents/mimir.md")),
+    "the OpenCode agents survive",
+  );
+});
+
 test("installer refreshes catalog entries without removing external entries", () => {
   // Arrange
   const project = fs.mkdtempSync(path.join(os.tmpdir(), "ai-install-clean-"));

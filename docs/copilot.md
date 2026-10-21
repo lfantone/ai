@@ -22,8 +22,9 @@ usually committed, so gitignore the installed entries if they shouldn't land in 
   They are marked user-run (`disable-model-invocation: true` and a description saying so):
   agent mode and Copilot code review otherwise activate any repo skill that looks relevant.
   That field is a Copilot extension, so strict `agentskills validate` rejects these generated
-  skills; Copilot honours it. `metadata` `opencode/slash` and `opencode/autoinvoke` do the same
-  for OpenCode. Command model and effort pins don't carry over.
+  skills; Copilot honours it. `metadata` `opencode/autoinvoke` keeps OpenCode from picking them
+  too, and a project install writes `.opencode/commands/<name>.md` to load each one, since OpenCode
+  2 doesn't turn skills into slash commands. Command model and effort pins don't carry over.
 - **Catalog skills** (`.agents/skills/`): copied as-is.
 - **Global only:** the `instructions/AGENTS.md` block in
   `~/.copilot/copilot-instructions.md` (verified against Copilot CLI 0.0.418), between
